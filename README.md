@@ -5,19 +5,19 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 ## Version
 
 - Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a137105`
-- Source archive: Alpha 13.7.105
+- Version in `manifest.json`: `0.2.0a137107`
+- Source archive: Alpha 13.7.107
 
 ## Installation via HACS
 
 1. Open HACS in Home Assistant.
-2. Add `https://github.com/bax680/rotapfel-homeassistant-dashboard-manager` as a custom repository of type **Integration** (requires access to this private repository).
+2. Add `https://github.com/bax680/rotapfel-homeassistant-dashboard-manager` as a custom repository of type **Integration**.
 3. Install the integration, restart Home Assistant, then open **Settings → Devices & services → Add integration**.
 4. Search for **Rotapfel Dashboard Control Manager**.
 
 The repository must include `custom_components/rotapfel_dashboard_manager/` with the integration files. The frontend JavaScript and logo assets belong in its `frontend/` subfolder.
 
-**Note:** HACS installation and Marketplace compatibility have not yet been tested. A private repository may require additional access setup. Back up Home Assistant before installation.
+**Note:** Installation and updates through the Home Assistant Marketplace have been successfully tested on the development system. This remains alpha software; back up Home Assistant before installation or updates.
 
 ## Manual installation
 
@@ -32,6 +32,9 @@ custom_components/
     ├── config_flow.py
     ├── const.py
     ├── manifest.json
+    ├── brand/
+    │   ├── icon.png
+    │   └── logo.png
     └── frontend/
         ├── red-apple-logo.png
         ├── rotapfel-manager.js
@@ -54,7 +57,7 @@ In Lovelace storage mode, the integration attempts to register this URL as a Jav
 
 The legacy DashHaus ORB card and its resource are not modified. Existing manual Rotapfel resource URLs are also not deleted or rewritten; avoid loading two copies of the same custom element at once. Equinox and Climate Cluster remain separate third-party dependencies.
 
-**Status:** Repository integration completed; automatic resource registration still needs testing on Home Assistant. No GitHub release has been published yet.
+**Status:** Marketplace installation and automatic resource registration have been tested on the development system. No tagged GitHub release has been published yet.
 
 ## License and upstream attribution
 
