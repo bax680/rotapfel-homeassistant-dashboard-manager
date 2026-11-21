@@ -45,6 +45,29 @@ async def async_setup_entry(hass, entry):
             cache_headers=False,
         ),
     ])
+    # Register bundled ThermCard as a Lovelace resource in storage mode.
+    # Existing resources and legacy ORB cards are left untouched.
+    try:
+        from homeassistant.components.lovelace import DOMAIN as LOVELACE_DOMAIN
+        lovelace = hass.data.get(LOVELACE_DOMAIN)
+        resources = getattr(lovelace, "resources", None)
+        if resources is not None:
+            await resources.async_load()
+            thermcard_url = f"/{DOMAIN}/rotapfel-simple-thermcard.js"
+            existing = resources.async_items()
+            if not any(
+                item.get("url", "").split("?")[0] == thermcard_url
+                for item in existing
+            ):
+                await resources.async_create_item({
+                    "url": thermcard_url,
+                    "res_type": "module",
+                })
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Could not register Rotapfel Simple ThermCard resource automatically"
+        )
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="rotapfel-dashboard-manager",
