@@ -221,6 +221,35 @@ class RotapfelDashboardManager extends HTMLElement {
     }
     return !!customElements.get(tag);
   }
+  mountThermPreview(box,card){
+    if(!box||!card)return;
+    const frame=document.createElement('div');
+    frame.style.cssText='pointer-events:none;user-select:none;width:142.857%;transform:scale(.7);transform-origin:top left;overflow:visible;';
+    frame.appendChild(card);
+    box.replaceChildren(frame);
+    box.style.overflow='hidden';
+    const measure=()=>{
+      if(!frame.isConnected)return;
+      const roots=[card.shadowRoot].filter(Boolean);
+      let height=Math.max(card.offsetHeight||0,card.scrollHeight||0);
+      for(let i=0;i<roots.length&&i<16;i++){
+        const root=roots[i];
+        for(const el of root.querySelectorAll('.hd,.hd-c,.ha-surface')){
+          height=Math.max(height,el.offsetHeight||0,el.scrollHeight||0);
+        }
+        for(const el of root.querySelectorAll('*'))if(el.shadowRoot)roots.push(el.shadowRoot);
+      }
+      if(height>0)box.style.height=Math.ceil(height*.7+12)+'px';
+    };
+    requestAnimationFrame(()=>requestAnimationFrame(measure));
+    // Custom card contents can render asynchronously after hass is assigned.
+    if(typeof ResizeObserver!=='undefined'){
+      const observer=new ResizeObserver(measure);
+      observer.observe(card);
+      const check=()=>{if(!frame.isConnected){observer.disconnect();return;}requestAnimationFrame(check);};
+      requestAnimationFrame(check);
+    }
+  }
   applyThermColors(host,opts={}){
     if(!host)return;
     // The bundled ThermCard defines its palette inside its own shadow root.
@@ -347,7 +376,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const fields=c.variant==='equinox'?[['temperature_entity','Temperatursensor'],['humidity_entity','Feuchtigkeitssensor'],['power_entity','Energiesensor'],['name','Anzeigename in der Karte']]:
       c.variant==='climate_cluster'?[['name','Anzeigename in der Karte']]:
       c.variant==='rotapfel_simple_thermcard'?[['card_name','Kurzer Anzeigename (z. B. Heizung)']]:[];
-    const thermFields=c.variant==='rotapfel_simple_thermcard'?`<label>Darstellung<select data-opt="card_footprint"><option value="">Standard der Karte</option>${['compact','standard','featured'].map(v=>`<option value="${v}" ${opts.card_footprint===v?'selected':''}>${v==='compact'?'Kompakt':v==='standard'?'Standard':'Hervorgehoben'}</option>`).join('')}</select></label><label>Temperatursteuerung<select data-opt="card_show_control"><option value="">Standard der Karte</option><option value="true" ${opts.card_show_control===true?'selected':''}>Anzeigen</option><option value="false" ${opts.card_show_control===false?'selected':''}>Ausblenden</option></select></label><label>Verlauf<select data-opt="card_history"><option value="">Standard der Karte</option><option value="true" ${opts.card_history===true?'selected':''}>Aktivieren</option><option value="false" ${opts.card_history===false?'selected':''}>Deaktivieren</option></select></label><label>Uhrzeit anzeigen<select data-opt="show_time"><option value="">Standard der Karte</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.show_time)===v?"selected":""}>${v==="true"?"Ja":"Nein"}</option>`).join("")}</select></label><label>Reduzierte Darstellung<select data-opt="quiet"><option value="">Standard der Karte</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.quiet)===v?"selected":""}>${v==="true"?"Aktivieren":"Deaktivieren"}</option>`).join("")}</select></label><label>Akzentfarbe<select data-opt="accent"><option value="">Standard der Karte</option>${['yellow','sage','coral','sky','lilac'].map(v=>`<option value="${v}" ${opts.accent===v?'selected':''}>${({yellow:'Gelb',sage:'Salbeigrün',coral:'Koralle',sky:'Himmelblau',lilac:'Flieder'})[v]}</option>`).join('')}</select></label>`:'';
+    const thermFields=c.variant==='rotapfel_simple_thermcard'?`<label>Darstellung<select data-opt="card_footprint"><option value="">Standard der Karte</option>${['compact','standard','featured'].map(v=>`<option value="${v}" ${opts.card_footprint===v?'selected':''}>${v==='compact'?'Kompakt':v==='standard'?'Standard':'Hervorgehoben'}</option>`).join('')}</select></label><label>Temperatursteuerung<select data-opt="card_show_control"><option value="">Standard der Karte</option><option value="true" ${opts.card_show_control===true?'selected':''}>Anzeigen</option><option value="false" ${opts.card_show_control===false?'selected':''}>Ausblenden</option></select></label><label>Verlauf<select data-opt="card_history"><option value="">Standard der Karte</option><option value="true" ${opts.card_history===true?'selected':''}>Aktivieren</option><option value="false" ${opts.card_history===false?'selected':''}>Deaktivieren</option></select></label><label>Uhrzeit anzeigen<select data-opt="show_time"><option value="">Standard der Karte</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.show_time)===v?"selected":""}>${v==="true"?"Ja":"Nein"}</option>`).join("")}</select></label><label>Reduzierte Darstellung<select data-opt="quiet"><option value="">Standard der Karte</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.quiet)===v?"selected":""}>${v==="true"?"Aktivieren":"Deaktivieren"}</option>`).join("")}</select></label>`:'';
     overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(550px,96vw);max-height:90vh;overflow:auto"><h2>Thermostatkarte konfigurieren</h2><p>${esc(this.resourceNames()[c.variant]||c.variant)} · ${esc(c.entity_id)}</p>${fields.map(([k,label])=>`<label>${label}<input data-opt="${k}" value="${esc(opts[k]||'')}" placeholder="sensor...."></label>`).join('')}${thermFields}${c.variant==='rotapfel_simple_thermcard'?'<strong>Live-Vorschau (70 %)</strong><div id="thermo-live-preview" style="margin:12px 0;min-height:110px;overflow:hidden"></div>':''}<p class="muted">Die Originalkarte wird über ihre Home-Assistant-Ressource geladen. Bei Rotapfel Simple ThermCard wirkt der kurze Anzeigename auf neu angelegte Karten ohne eigene rows-Konfiguration.</p><div class="actions"><button id="thermo-save">Übernehmen</button><button class="secondary" id="thermo-cancel">Abbrechen</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const readOptions=()=>{
@@ -375,10 +404,7 @@ class RotapfelDashboardManager extends HTMLElement {
           return typeof value==='function'?value.bind(target):value;
         }});
         this.applyThermColors(card,draft.external_options);
-        const frame=document.createElement('div');
-        frame.style.cssText='pointer-events:none;user-select:none;width:142.857%;transform:scale(.7);transform-origin:top left;';
-        frame.appendChild(card);box.replaceChildren(frame);
-        requestAnimationFrame(()=>{if(frame.isConnected)box.style.height=Math.ceil(Math.max(card.offsetHeight,card.scrollHeight,150)*.7+12)+'px';});
+        this.mountThermPreview(box,card);
       }catch(err){box.textContent='Vorschau nicht verfügbar: '+String(err);}
     };
     overlay.querySelectorAll('[data-opt]').forEach(input=>{input.addEventListener('input',updateLive);input.addEventListener('change',updateLive);});
@@ -1074,7 +1100,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.7.122 · Build 0.2.0a137122</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.7.122 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.7.123 · Build 0.2.0a137123</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.7.123 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1082,7 +1108,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.7.122</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a137122</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.7.123</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a137123</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -2582,6 +2608,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const externalMode=c.design?.external_mode||'original';
     const cardConfig=profile?this.externalConfig(c):null;
     const thermColors=c.variant==='rotapfel_simple_thermcard'?'<fieldset style="border:1px solid #8885;border-radius:10px;padding:12px;margin:12px 0"><legend>Individuelle Kartenfarben</legend>'+[['therm_background','Kartenhintergrund','#faf9f5'],['therm_text','Schriftfarbe','#1c1a17']].map(([key,label,fallback])=>'<label style="display:flex;align-items:center;gap:10px;margin:10px 0">'+label+' <input type="color" data-design-color="'+key+'" value="'+(/^#[0-9a-fA-F]{6}$/.test(c.external_options?.[key]||'')?c.external_options[key]:fallback)+'" style="width:56px;height:34px"><input type="checkbox" data-design-color-on="'+key+'" '+(c.external_options?.[key]?'checked':'')+'> Eigene Farbe</label>').join('')+'</fieldset>':'';
+    const thermAccent=c.variant==='rotapfel_simple_thermcard'?'<label>Akzentfarbe<select id="d-therm-accent"><option value="">Standard der Karte</option>'+['yellow','sage','coral','sky','lilac'].map(v=>'<option value="'+v+'" '+(c.external_options?.accent===v?'selected':'')+'>'+({yellow:'Gelb',sage:'Salbeigrün',coral:'Koralle',sky:'Himmelblau',lilac:'Flieder'})[v]+'</option>').join('')+'</select></label>':'';
     const profileFields=profile?.fields||[];
     const profileFieldMarkup=profileFields.map(f=>{
       const value=c.external_options?.[f.key]??cardConfig?.[f.key]??f.fallback;
@@ -2631,7 +2658,7 @@ class RotapfelDashboardManager extends HTMLElement {
       </details>
       </div>
       <div style="min-width:0">
-        ${thermColors}<strong>Live-Vorschau</strong>
+        ${thermColors}${thermAccent}<strong>Live-Vorschau</strong>
         <div id="d-preview" style="margin-top:12px;padding:18px;border:1px dashed var(--divider-color,#888);border-radius:12px;min-height:140px;overflow:hidden"></div>
         <p class="muted">Die Vorschau verändert noch keine gespeicherten Einstellungen. Bei der Rotapfel Simple ThermCard wird die echte Karte ohne Bedienfunktion angezeigt. Andere externe Karten nutzen weiterhin eine stilisierte Vorschau.</p>
         <button class="secondary" id="d-reset" type="button">Auf Standard zurücksetzen</button>
@@ -2692,6 +2719,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(c.variant==='rotapfel_simple_thermcard'){
         // Preview is read-only: never attach the live Home Assistant service client.
         const config=this.externalConfig(c);
+        if(c.variant==='rotapfel_simple_thermcard'){const accent=overlay.querySelector('#d-therm-accent')?.value;if(accent)config.accent=accent;else delete config.accent;}
         for(const field of profileFields){
           const input=el('profile-'+field.key);
           if(input&&input.value)config[field.key]=input.value;
@@ -2716,18 +2744,7 @@ class RotapfelDashboardManager extends HTMLElement {
               else delete liveColorOpts[key];
             }
             this.applyThermColors(card,liveColorOpts);
-            const frame=document.createElement('div');
-            // Scale the entire real card to 70% without changing the
-            // dashboard card size or the saved layout dimensions.
-            frame.style.cssText='pointer-events:none;user-select:none;width:142.857%;transform:scale(.7);transform-origin:top left;overflow:visible;';
-            frame.appendChild(card);
-            box.replaceChildren(frame);
-            requestAnimationFrame(()=>{
-              if(!frame.isConnected)return;
-              const naturalHeight=Math.max(card.offsetHeight||0,card.scrollHeight||0);
-              frame.style.height=Math.ceil(naturalHeight)+'px';
-              box.style.height=Math.ceil(naturalHeight*.7+36)+'px';
-            });
+            this.mountThermPreview(box,card);
           }catch(err){box.textContent='Live-Vorschau nicht verfügbar: '+String(err);}
         };
         renderLive();
@@ -2740,6 +2757,7 @@ class RotapfelDashboardManager extends HTMLElement {
     };
     if(external)el('external-mode').addEventListener('change',()=>{el('wrapper-options').style.display=el('external-mode').value==='wrapper'?'block':'none';});
     overlay.querySelectorAll('input,select').forEach(input=>{input.addEventListener('input',preview);input.addEventListener('change',preview);});
+    overlay.querySelector('#d-therm-accent')?.addEventListener('change',preview);
     overlay.querySelectorAll('[data-design-color],[data-design-color-on]').forEach(input=>{input.addEventListener('input',preview);input.addEventListener('change',preview);});
     el('cancel').onclick=()=>overlay.remove();
     el('reset').onclick=()=>{
@@ -2830,6 +2848,7 @@ class RotapfelDashboardManager extends HTMLElement {
           }
         }
         c.external_options={...(c.external_options||{}),...updates};
+        if(c.variant==='rotapfel_simple_thermcard'){const accent=overlay.querySelector('#d-therm-accent')?.value;if(accent)c.external_options.accent=accent;else delete c.external_options.accent;}
         for(const input of overlay.querySelectorAll('[data-design-color]')){
           const key=input.dataset.designColor;
           if(overlay.querySelector('[data-design-color-on="'+key+'"]')?.checked)c.external_options[key]=input.value;
