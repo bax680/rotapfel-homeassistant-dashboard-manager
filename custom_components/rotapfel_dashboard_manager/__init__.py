@@ -34,11 +34,11 @@ async def async_setup_entry(hass, entry):
             str(Path(__file__).parent / "frontend" / "rotapfel-canvas-card.js"),
             cache_headers=False,
         ),
-        StaticPathConfig(
+        *([StaticPathConfig(
             f"/{DOMAIN}/rotapfel-simple-thermcard.js",
             str(Path(__file__).parent / "frontend" / "rotapfel-simple-thermcard.js"),
             cache_headers=False,
-        ),
+        )] if (Path(__file__).parent / "frontend" / "rotapfel-simple-thermcard.js").is_file() else []),
         StaticPathConfig(
             f"/{DOMAIN}/red-apple-logo.png",
             str(Path(__file__).parent / "frontend" / "red-apple-logo.png"),
