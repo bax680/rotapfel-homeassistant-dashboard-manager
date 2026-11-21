@@ -246,8 +246,9 @@ class RotapfelDashboardManager extends HTMLElement {
     if(typeof ResizeObserver!=='undefined'){
       const observer=new ResizeObserver(measure);
       observer.observe(card);
-      const check=()=>{if(!frame.isConnected){observer.disconnect();return;}requestAnimationFrame(check);};
-      requestAnimationFrame(check);
+      // Observe only the active card; disconnect the previous preview observer.
+      if(box._thermPreviewObserver)box._thermPreviewObserver.disconnect();
+      box._thermPreviewObserver=observer;
     }
   }
   applyThermColors(host,opts={}){
