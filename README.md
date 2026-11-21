@@ -1,0 +1,1 @@
+# rotapfel-homeassistant-dashboard-manager
