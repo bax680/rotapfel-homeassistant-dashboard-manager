@@ -1,7 +1,7 @@
 {
   "domain": "rotapfel_dashboard_manager",
   "name": "Rotapfel Dashboard Control Manager",
-  "version": "0.2.0a137116",
+  "version": "0.2.0a137117",
   "documentation": "https://www.home-assistant.io/integrations/panel_custom/",
   "codeowners": [],
   "dependencies": [
