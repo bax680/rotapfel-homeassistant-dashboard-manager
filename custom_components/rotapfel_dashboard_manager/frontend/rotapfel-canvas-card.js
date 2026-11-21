@@ -80,7 +80,7 @@ class RotapfelCanvasCard extends HTMLElement {
       const candidates=[...custom,'iphone','fire_hd','desktop'];
       return candidates.reduce((best,key)=>Math.abs((profiles[key]?.width||baseWidth)-screen)<Math.abs((profiles[best]?.width||baseWidth)-screen)?key:best,screen<=600?'iphone':screen>=1600?'desktop':'fire_hd');
     };
-    const style=document.createElement('style');style.textContent=`:host{display:block;width:100%;min-width:0;overflow:visible!important}.viewport{width:100%;overflow-x:hidden;overflow-y:visible;position:relative}.canvas{position:relative;transform-origin:top left}.tile{position:absolute;box-sizing:border-box;overflow:hidden}.tile>*{width:100%;box-sizing:border-box}.tile>rotapfel-entity-card{height:100%}.external-fit{position:absolute;left:0;top:0;transform-origin:top left;overflow:visible}.external-fit>*{display:block;width:100%;box-sizing:border-box}`;
+    const style=document.createElement('style');style.textContent=`:host{display:block;width:100%;min-width:0;overflow:visible!important}.viewport{width:100%;overflow-x:hidden;overflow-y:visible;position:relative;background:transparent!important}.canvas{position:relative;transform-origin:top left;background:transparent!important;background-image:none!important}.tile{position:absolute;box-sizing:border-box;overflow:hidden}.tile>*{width:100%;box-sizing:border-box}.tile>rotapfel-entity-card{height:100%}.external-fit{position:absolute;left:0;top:0;transform-origin:top left;overflow:visible}.external-fit>*{display:block;width:100%;box-sizing:border-box}`;
     root.append(style);
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
     if(rooms.length>1){
@@ -102,6 +102,7 @@ class RotapfelCanvasCard extends HTMLElement {
     for(const [value,label] of [['auto','Automatisch'],...Object.entries(profiles).map(([key,p])=>[key,p.name||key])]){const o=document.createElement('option');o.value=value;o.textContent=label;profileSelect.append(o);}
     profileSelect.value=this._manualProfile||'auto';profileSelect.onchange=()=>{this._manualProfile=profileSelect.value==='auto'?null:profileSelect.value;fit();};
     controls.append(profileLabel,profileSelect);root.append(controls);
+    this.style.background='transparent';this.style.backgroundImage='none';
     const viewport=document.createElement('div');viewport.className='viewport';
     const canvas=document.createElement('div');canvas.className='canvas';canvas.style.width=width+'px';canvas.style.height=height+'px';viewport.append(canvas);root.append(viewport);
     const fit=()=>{
