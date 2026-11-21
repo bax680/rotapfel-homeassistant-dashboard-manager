@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.7.116, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.7.117, isolated from existing dashboards."""
 import asyncio
 import copy
 import re
@@ -22,7 +22,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a137116"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a137117"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
