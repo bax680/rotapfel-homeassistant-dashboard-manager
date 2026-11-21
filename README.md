@@ -55,3 +55,9 @@ In Lovelace storage mode, the integration attempts to register this URL as a Jav
 The legacy DashHaus ORB card and its resource are not modified. Existing manual Rotapfel resource URLs are also not deleted or rewritten; avoid loading two copies of the same custom element at once. Equinox and Climate Cluster remain separate third-party dependencies.
 
 **Status:** Repository integration completed; automatic resource registration still needs testing on Home Assistant. No GitHub release has been published yet.
+
+## License and upstream attribution
+
+The bundled **Rotapfel Simple ThermCard** is a modified and renamed derivative of **DashHaus ORB** by **Krystian Czesak** (Copyright (c) 2026), distributed under the **MIT License**. The original MIT license text and copyright notice are retained in [LICENSE](LICENSE). Original project: https://github.com/krystosterone/dashhaus (https://krystosterone.github.io/dashhaus/orb/).
+
+The bundled JavaScript also includes third-party notices (including React and ReactDOM); these notices must remain intact. Rotapfel modifications are not endorsed by or affiliated with the original DashHaus author. The LICENSE file preserves the upstream MIT terms; it does not independently establish authorship or license status of unrelated project components.
