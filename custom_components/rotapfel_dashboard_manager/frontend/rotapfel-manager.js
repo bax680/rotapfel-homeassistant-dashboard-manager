@@ -1014,7 +1014,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.7.110 · Build 0.2.0a137110</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.7.110 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.7.111 · Build 0.2.0a137111</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.7.111 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1022,7 +1022,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.7.110</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a137110</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.7.111</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a137111</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -1274,12 +1274,12 @@ class RotapfelDashboardManager extends HTMLElement {
       const surface=kind==='equinox'?this.findExternalSurface(host):null;
       // Equinox uses its own responsive shadow-DOM surface. Its actual
       // dimensions, not a guessed 430 x 310 box, define the scaling ratio.
-      const intrinsicWidth=kind==='climate_cluster'?850:kind==='equinox'?430:400;
+      const intrinsicWidth=kind==='climate_cluster'?850:kind==='equinox'?430:Math.max(100,host?.offsetWidth||400);
       slot.style.position='absolute';slot.style.left='0';slot.style.top='0';
       slot.style.width=intrinsicWidth+'px';slot.style.minWidth=intrinsicWidth+'px';slot.style.maxWidth='none';
       slot.style.height='auto';slot.style.maxHeight='none';slot.style.overflow='visible';
       slot.style.transformOrigin='0 0';slot.style.transform='none';
-      let naturalHeight=kind==='climate_cluster'?0:kind==='equinox'?0:220;
+      let naturalHeight=kind==='climate_cluster'?0:kind==='equinox'?0:0;
       if(host){
         naturalHeight=Math.max(naturalHeight,host.offsetHeight||0,host.scrollHeight||0);
         if(host.shadowRoot&&kind!=='equinox'){
@@ -1289,6 +1289,7 @@ class RotapfelDashboardManager extends HTMLElement {
       }
       if(kind==='equinox')naturalHeight=surface?.offsetHeight>40&&surface.offsetHeight<1000?surface.offsetHeight:220;
       if(kind==='climate_cluster')naturalHeight=Math.max(180,naturalHeight);
+      if(kind==='rotapfel_simple_thermcard')naturalHeight=Math.max(80,naturalHeight);
       const width=Math.max(1,tile.clientWidth-2),height=Math.max(1,tile.clientHeight-2);
       // Preserve the card's aspect ratio. Independent X/Y scaling distorted
       // text, icons and gauges, especially in narrow phone layouts.
@@ -2522,7 +2523,7 @@ class RotapfelDashboardManager extends HTMLElement {
       <div style="min-width:0">
         <strong>Live-Vorschau</strong>
         <div id="d-preview" style="margin-top:12px;padding:18px;border:1px dashed var(--divider-color,#888);border-radius:12px;min-height:140px;overflow:hidden"></div>
-        <p class="muted">Die Vorschau verändert noch keine gespeicherten Einstellungen. Bei externen Karten wird eine stilisierte Vorschau angezeigt.</p>
+        <p class="muted">Die Vorschau verändert noch keine gespeicherten Einstellungen. Bei der Rotapfel Simple ThermCard wird die echte Karte ohne Bedienfunktion angezeigt. Andere externe Karten nutzen weiterhin eine stilisierte Vorschau.</p>
         <button class="secondary" id="d-reset" type="button">Auf Standard zurücksetzen</button>
         <div style="${external?'display:none;':''}margin-top:16px;border-top:1px solid #8885;padding-top:12px"><strong>Designvorlagen</strong>
           <label>Vorlage<select id="d-template"><option value="">Vorlage auswählen …</option></select></label>
@@ -2578,6 +2579,36 @@ class RotapfelDashboardManager extends HTMLElement {
       const name=el('show-name').checked?`<strong>${this.esc(c.title)}</strong>`:'';
       const id=el('show-id').checked?`<small style="display:block">${this.esc(c.entity_id||'Keine Entität')}</small>`:'';
       box.innerHTML=external&&el('external-mode').value!=='wrapper'?`<div style="padding:16px;border:1px dashed #888;border-radius:8px">${this.esc(profile?.label||'Custom Card')} – Originaldarstellung wird von der Karte selbst erzeugt.<div class="muted">Farbvorschau oben ist eine Browser-Näherung. Die echte Karte wird nach Übernehmen neu geladen.</div></div>`:`<div style="${style}">${name}${id}<div style="margin-top:12px;color:${d.fg}">${external?'Äußerer Kartencontainer – Vorschau':this.esc(this.stateLabel(c))}</div><span style="display:inline-block;margin-top:10px;background:${d.accent};color:white;padding:5px 12px;border-radius:8px">Akzent</span></div>`;
+      if(c.variant==='rotapfel_simple_thermcard'){
+        // Preview is read-only: never attach the live Home Assistant service client.
+        const config=this.externalConfig(c);
+        for(const field of profileFields){
+          const input=el('profile-'+field.key);
+          if(input&&input.value)config[field.key]=input.value;
+        }
+        const renderLive=()=>{
+          if(!overlay.isConnected||!box.isConnected)return;
+          const tag=config.type.replace(/^custom:/,'');
+          if(!customElements.get(tag))return;
+          try{
+            const card=document.createElement(tag);
+            card.setConfig(config);
+            const readonlyHass=this._hass?new Proxy(this._hass,{get(target,key){
+              if(key==='callService'||key==='callApi'||key==='callWS')return ()=>Promise.reject(new Error('Designvorschau: Steuerung deaktiviert'));
+              const value=Reflect.get(target,key,target);
+              return typeof value==='function'?value.bind(target):value;
+            }}):null;
+            if(readonlyHass)card.hass=readonlyHass;
+            const frame=document.createElement('div');
+            frame.style.cssText='pointer-events:none;user-select:none;width:100%;overflow:hidden;';
+            frame.appendChild(card);
+            box.replaceChildren(frame);
+          }catch(err){box.textContent='Live-Vorschau nicht verfügbar: '+String(err);}
+        };
+        renderLive();
+        if(!customElements.get(config.type.replace(/^custom:/,'')))
+          this.ensureExternalResource(c).then(renderLive).catch(()=>{});
+      }
       for(const key of ['bg','fg','accent','border_color'])overlay.querySelector('#v-'+key).textContent=el(key).value;
       overlay.querySelector('#v-opacity').textContent=d.opacity+' %';
       if(el('auto-height'))el('height').disabled=el('auto-height').checked;
