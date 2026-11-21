@@ -120,7 +120,7 @@ class RotapfelDashboardManager extends HTMLElement {
   validResourceUrl(url){
     if(typeof url!=='string')return false;
     // Local-only resources. Absolute URLs, data:, javascript: and protocol-relative paths are disallowed.
-    return /^\/(?:local|hacsfiles|frontend_latest)\/[A-Za-z0-9_./?=&%+~-]+$/.test(url)&&!url.includes('..');
+    return /^\/(?:local|hacsfiles|frontend_latest|rotapfel_dashboard_manager)\/[A-Za-z0-9_./?=&%+~-]+$/.test(url)&&!url.includes('..');
   }
   manualResources(){
     try{
@@ -2425,6 +2425,7 @@ class RotapfelDashboardManager extends HTMLElement {
         if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(choice))c.variant=choice;else if(choice!=='nexus')c.variant='nexus-'+choice;
         if(choice==='equinox'&&eid==='climate.wohn_esszimmer_vtherm_wz_ez')c.external_options={power_entity:'sensor.wohn_esszimmer_vtherm_wz_ez_energie',humidity_entity:'sensor.tempsensor_wz_ez_humidity',temperature_entity:'sensor.tempsensor_wz_ez_temperature'};
         this.placeNewCard(room,c);room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();
+        if(choice==='rotapfel_simple_thermcard')this.configureThermostat(c,change);
       });
     };
   }
