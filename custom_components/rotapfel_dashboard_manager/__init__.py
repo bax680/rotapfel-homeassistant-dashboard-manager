@@ -35,6 +35,11 @@ async def async_setup_entry(hass, entry):
             cache_headers=False,
         ),
         StaticPathConfig(
+            f"/{DOMAIN}/rotapfel-simple-thermcard.js",
+            str(Path(__file__).parent / "frontend" / "rotapfel-simple-thermcard.js"),
+            cache_headers=False,
+        ),
+        StaticPathConfig(
             f"/{DOMAIN}/red-apple-logo.png",
             str(Path(__file__).parent / "frontend" / "red-apple-logo.png"),
             cache_headers=False,
