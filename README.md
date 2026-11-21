@@ -35,7 +35,8 @@ custom_components/
     └── frontend/
         ├── red-apple-logo.png
         ├── rotapfel-manager.js
-        └── rotapfel-canvas-card.js
+        ├── rotapfel-canvas-card.js
+        └── rotapfel-simple-thermcard.js
 hacs.json
 README.md
 .gitignore
@@ -44,3 +45,13 @@ README.md
 ## Development status
 
 The integration is currently an alpha release. Compatibility with existing dashboard/card configurations should be verified before production use.
+
+## Bundled Rotapfel Simple ThermCard
+
+The tested Rotapfel Simple ThermCard V1.0 is bundled at `frontend/rotapfel-simple-thermcard.js` and served from `/rotapfel_dashboard_manager/rotapfel-simple-thermcard.js`.
+
+In Lovelace storage mode, the integration attempts to register this URL as a JavaScript module resource on setup. If automatic registration is unavailable (e.g. YAML resource mode), add this module URL manually under dashboard resources. The card type is `custom:rotapfel-simple-thermcard`.
+
+The legacy DashHaus ORB card and its resource are not modified. Existing manual Rotapfel resource URLs are also not deleted or rewritten; avoid loading two copies of the same custom element at once. Equinox and Climate Cluster remain separate third-party dependencies.
+
+**Status:** Repository integration completed; automatic resource registration still needs testing on Home Assistant. No GitHub release has been published yet.
