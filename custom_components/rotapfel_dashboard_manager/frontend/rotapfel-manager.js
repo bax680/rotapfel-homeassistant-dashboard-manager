@@ -1852,6 +1852,16 @@ class RotapfelDashboardManager extends HTMLElement {
  .rotapfel-position-overlay .position-mobile-drawer>label{display:flex!important;align-items:center;gap:8px;flex:0 0 auto}
  .rotapfel-position-overlay .position-mobile-drawer>span{display:block!important}
  .rotapfel-position-overlay .position-mobile-drawer #position-mobile-options{display:none!important}
+  /* Reparented controls must remain visible and scroll independently of card drag. */
+  .rotapfel-position-overlay .position-mobile-drawer #position-touch-mode,
+  .rotapfel-position-overlay .position-mobile-drawer #position-mobile-select,
+  .rotapfel-position-overlay .position-mobile-drawer #position-mobile-select-all{display:flex!important;flex:0 0 auto!important}
+  .rotapfel-position-overlay .position-mobile-drawer #close{position:static!important;order:0!important;width:100%!important;margin:0!important;background:var(--primary-color,#168fc0)!important;color:#fff!important}
+  .rotapfel-position-overlay .position-mobile-drawer .position-section{max-width:100%;box-sizing:border-box}
+  .rotapfel-position-overlay .position-mobile-drawer .position-options-pane input,
+  .rotapfel-position-overlay .position-mobile-drawer .position-options-pane select{max-width:100%}
+  .rotapfel-position-overlay .position-mobile-drawer .position-options-pane .align-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .rotapfel-position-overlay.position-nav-expanded .position-canvas-pane{pointer-events:none!important}
  .rotapfel-position-overlay .position-mobile-drawer .position-options-pane{display:block!important;position:static!important;flex:0 0 auto;max-height:none!important;overflow:visible!important;border:0!important;box-shadow:none!important;padding:12px 0!important;width:100%!important;background:transparent!important}
  .rotapfel-position-overlay .position-editor-body{display:block!important}
  .rotapfel-position-overlay .position-canvas-pane{height:100%!important}
@@ -2742,7 +2752,7 @@ class RotapfelDashboardManager extends HTMLElement {
       overlay.querySelector('#close').click();
       this.openPositionEditor(tab);
     };
-    overlay.querySelector('#close').onclick=()=>{document.removeEventListener('keydown',onPositionHistoryKey,true);positionObserver.disconnect();canvasResizeObserver.disconnect();overlay.remove();this.render();};choose(active?.id);
+    overlay.querySelector('#close').onclick=()=>{this._positionDrawerAbort?.abort();this._positionDrawerAbort=null;document.removeEventListener('keydown',onPositionHistoryKey,true);positionObserver.disconnect();canvasResizeObserver.disconnect();overlay.remove();this.render();};choose(active?.id);
   }
   // Alpha 13.7.105: Kopien erhalten unabhängige IDs, Konfiguration und Profil-Layouts bleiben erhalten.
   cloneRoomForLayout(room){
