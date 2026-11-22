@@ -2277,24 +2277,37 @@ class RotapfelDashboardManager extends HTMLElement {
       const originals=new Map([...positions].map(([id,q])=>[id,{...q}]));
       const movedIds=new Set(ordered.map(v=>v.c.id));
       const size=horizontal?'w':'h',cross=horizontal?'h':'w',otherAxis=horizontal?'y':'x';
-      const span=ordered.reduce((n,v)=>n+v.q[size],0)+gap*(ordered.length-1);
-      const thickness=Math.max(...ordered.map(v=>v.q[cross]));
-      if((horizontal&&span>width)||(!horizontal&&fixed&&span>height)||(!horizontal&&thickness>width)){
-        alert('Die ausgewählten Karten passen mit diesem Abstand nicht auf die Displayfläche.');return;
+      const rawSpan=ordered.reduce((n,v)=>n+v.q[size],0)+gap*(ordered.length-1);
+      const lineLimit=horizontal?width:(fixed?height:Math.max(height,...[...originals.values()].map(q=>q.y+q.h)));
+      const lines=[];let line=[],lineSpan=0;
+      for(const item of ordered){
+        if(item.q[size]>lineLimit){alert('Mindestens eine Karte ist größer als die verfügbare Displayachse.');return;}
+        if(line.length&&lineSpan+gap+item.q[size]>lineLimit){lines.push(line);line=[];lineSpan=0;}
+        lineSpan+=item.q[size]+(line.length?gap:0);line.push(item);
+      }
+      if(line.length)lines.push(line);
+      const lineSizes=lines.map(items=>({span:items.reduce((n,v)=>n+v.q[size],0)+gap*(items.length-1),thickness:Math.max(...items.map(v=>v.q[cross]))}));
+      const span=Math.max(...lineSizes.map(v=>v.span));
+      const thickness=lineSizes.reduce((n,v)=>n+v.thickness,0)+gap*(lines.length-1);
+      if((horizontal&&fixed&&thickness>height)||(!horizontal&&thickness>width)){
+        alert('Auch mit automatischem Zeilen- bzw. Spaltenumbruch reicht die Displayfläche nicht aus.');return;
       }
       const originX=Math.min(...ordered.map(v=>v.q.x)),originY=Math.min(...ordered.map(v=>v.q.y));
       const candidate=(x,y)=>{
         const next=new Map([...originals].map(([id,q])=>[id,{...q}]));
-        let cursor=horizontal?x:y;
-        for(const {c} of ordered){
-          const q=next.get(c.id);
-          q.x=horizontal?Math.round(cursor):Math.round(x);
-          q.y=horizontal?Math.round(y):Math.round(cursor);
-          const alignment=overlay.querySelector('#fixed-gap-alignment').value;
-          const offset=alignment==='center'?(thickness-q[cross])/2:alignment==='end'?thickness-q[cross]:0;
-          if(horizontal)q.y=Math.round(y+offset);else q.x=Math.round(x+offset);
-          cursor+=q[size]+gap;
-        }
+        const alignment=overlay.querySelector('#fixed-gap-alignment').value;
+        let crossCursor=horizontal?y:x;
+        lines.forEach((items,i)=>{
+          let cursor=horizontal?x:y;
+          for(const {c} of items){
+            const q=next.get(c.id);
+            const offset=alignment==='center'?(lineSizes[i].thickness-q[cross])/2:alignment==='end'?lineSizes[i].thickness-q[cross]:0;
+            if(horizontal){q.x=Math.round(cursor);q.y=Math.round(crossCursor+offset);}
+            else{q.x=Math.round(crossCursor+offset);q.y=Math.round(cursor);}
+            cursor+=q[size]+gap;
+          }
+          crossCursor+=lineSizes[i].thickness+gap;
+        });
         return next;
       };
       const inside=q=>q.x>=0&&q.y>=0&&q.x+q.w<=width&&(!fixed||q.y+q.h<=height);
@@ -2307,7 +2320,7 @@ class RotapfelDashboardManager extends HTMLElement {
         return true;
       };
       const maxX=horizontal?width-span:width-thickness;
-      const maxY=fixed?height-(horizontal?thickness:span):Math.max(height,...[...originals.values()].map(q=>q.y+q.h))+span+24;
+      const maxY=fixed?height-(horizontal?thickness:span):Math.max(height,...[...originals.values()].map(q=>q.y+q.h))+thickness+span+24;
       const clampOrigin=(v,max)=>Math.max(0,Math.min(Math.floor(max),Math.round(v)));
       const x0=clampOrigin(originX,maxX),y0=clampOrigin(originY,maxY);
       let solution=candidate(x0,y0);
