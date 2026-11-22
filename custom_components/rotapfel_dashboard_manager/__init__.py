@@ -1,6 +1,8 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.15, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.16, isolated from existing dashboards."""
 import asyncio
 import copy
+import json
+import yaml
 import re
 import uuid
 from datetime import datetime, timezone
@@ -22,7 +24,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13915"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13916"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
@@ -152,12 +154,27 @@ class RotapfelView(HomeAssistantView):
 
     async def post(self, request, action):
         self._check_admin(request)
-        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "restore_version", "create_manual_version", "delete_manual_version"}:
+        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml"}:
             raise web.HTTPNotFound()
         try:
             body = await request.json()
         except (ValueError, web.HTTPBadRequest):
             raise web.HTTPBadRequest(text="Invalid JSON")
+        if action == "parse_card_yaml":
+            source = body.get("yaml")
+            if not isinstance(source, str) or len(source) > 100_000:
+                raise web.HTTPBadRequest(text="YAML-Konfiguration fehlt oder ist zu lang")
+            try:
+                parsed = yaml.safe_load(source)
+                if not isinstance(parsed, dict):
+                    raise ValueError("Die Konfiguration muss ein YAML-Objekt sein")
+                # Reject YAML-specific scalar values that cannot round-trip to JSON.
+                json.dumps(parsed, allow_nan=False)
+                if not all(isinstance(key, str) for key in parsed):
+                    raise ValueError("Alle YAML-Schlüssel müssen Text sein")
+            except (yaml.YAMLError, ValueError, TypeError, OverflowError) as exc:
+                raise web.HTTPBadRequest(text=f"Ungültige YAML-Konfiguration: {exc}") from exc
+            return self.json({"config": parsed})
         state = self._state()
         async with state["lock"]:
             if action == "save_layout_templates":
