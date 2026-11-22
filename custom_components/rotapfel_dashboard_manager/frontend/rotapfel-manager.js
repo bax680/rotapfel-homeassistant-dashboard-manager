@@ -1752,6 +1752,7 @@ class RotapfelDashboardManager extends HTMLElement {
  .rotapfel-position-overlay .position-options-pane{z-index:110!important}
 }
 /* Alpha 13.8.7: compact touch-first editor controls and readable mode feedback. */
+.rotapfel-position-overlay #position-touch-hint{display:none}
 @media(max-width:767px){
  .rotapfel-position-overlay .position-tools{padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px!important;gap:6px!important}
  .rotapfel-position-overlay .position-tools #position-nav-toggle,
@@ -1764,7 +1765,7 @@ class RotapfelDashboardManager extends HTMLElement {
  .rotapfel-position-overlay.position-touch-drag .position-tile .position-drag-handle{touch-action:none!important}
  .rotapfel-position-overlay .position-resize,
  .rotapfel-position-overlay .position-resize-edge{min-width:24px;min-height:24px;touch-action:none}
- .rotapfel-position-overlay #position-touch-hint{flex:1 1 100%;font-size:12px;line-height:1.35;padding:3px 6px;opacity:.9}
+ .rotapfel-position-overlay #position-touch-hint{display:block;flex:1 1 100%;font-size:12px;line-height:1.35;padding:3px 6px;opacity:.9}
 }
 `;overlay.append(style);
     this.shadowRoot.append(overlay);
