@@ -2483,6 +2483,40 @@ class RotapfelDashboardManager extends HTMLElement {
           }
         }
         showMagnetFeedback(raw,aligned,q,magnetActive);
+        // Optional push chain, calculated atomically. A locked card or canvas
+        // boundary aborts the push, leaving the collision warning in place.
+        if(!start.resizeAxis&&start.groupStart.size===1&&overlay.querySelector('#auto-push-cards').checked){
+          const intended={...q,w:start.q.w,h:start.q.h};
+          intended.x=clamp(Math.round(intended.x),0,width-intended.w);
+          intended.y=Math.max(0,Math.round(intended.y));
+          const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
+          const movingRight=intended.x-start.q.x>=0;
+          const movingDown=intended.y-start.q.y>=0;
+          const horizontal=Math.abs(intended.x-start.q.x)>=Math.abs(intended.y-start.q.y);
+          const axis=horizontal?'x':'y',size=horizontal?'w':'h',forward=horizontal?movingRight:movingDown;
+          const next=new Map([...positions].map(([id,v])=>[id,{...v}]));
+          next.set(start.c.id,intended);
+          const overlaps=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>1;
+          let valid=true;
+          const queue=[start.c.id],seen=new Set([start.c.id]);
+          while(queue.length&&valid){
+            const id=queue.shift(),a=next.get(id);
+            for(const {c:peer} of cards){
+              if(peer.id===id||!overlaps(a,next.get(peer.id)))continue;
+              if(seen.has(peer.id)||isEditorLocked(peer)||peer.groupId){valid=false;break;}
+              const b=next.get(peer.id);
+              const target=forward?a[axis]+a[size]+fixedGap():a[axis]-b[size]-fixedGap();
+              b[axis]=Math.round(target);
+              if(b.x<0||b.x+b.w>width||b.y<0||(fixed&&b.y+b.h>height)){valid=false;break;}
+              seen.add(peer.id);queue.push(peer.id);
+            }
+          }
+          if(valid&&seen.size>1){
+            for(const {c:peer} of cards){
+              if(peer.id!==start.c.id&&seen.has(peer.id))update(peer,next.get(peer.id));
+            }
+          }
+        }
         update(start.c,q);
         if(!start.resizeAxis&&start.groupStart.size>1){
           const moved=positions.get(start.c.id),deltaX=moved.x-start.q.x,deltaY=moved.y-start.q.y;
