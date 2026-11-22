@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.5, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.6, isolated from existing dashboards."""
 import asyncio
 import copy
 import re
@@ -22,7 +22,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a1395"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a1396"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
@@ -306,12 +306,20 @@ class RotapfelView(HomeAssistantView):
                         if not isinstance(cards, list) or len(cards) > 100:
                             raise web.HTTPBadRequest(text="Invalid cards")
                         for card in cards:
-                            if not isinstance(card, dict) or card.get("type") not in {"placeholder", "entity"} or not isinstance(card.get("id"), str) or not isinstance(card.get("title"), str) or len(card["title"]) > 80:
+                            if not isinstance(card, dict) or card.get("type") not in {"placeholder", "entity", "custom"} or not isinstance(card.get("id"), str) or not isinstance(card.get("title"), str) or len(card["title"]) > 80:
                                 raise web.HTTPBadRequest(text="Invalid card")
                             design = card.get("design")
                             if design is not None:
                                 if not isinstance(design, dict) or not isinstance(design.get("width"), int) or not 1 <= design["width"] <= 4 or not isinstance(design.get("height"), int) or not 76 <= design["height"] <= 320 or any(not isinstance(design.get(k), str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", design[k]) for k in ("bg", "fg", "accent")):
                                     raise web.HTTPBadRequest(text="Invalid card design")
+                            if card["type"] == "custom":
+                                config = card.get("custom_config")
+                                legacy = card.get("custom")
+                                if config is not None:
+                                    if not isinstance(config, dict) or not isinstance(config.get("type"), str) or not re.fullmatch(r"custom:[a-z0-9_-]+", config["type"], re.IGNORECASE):
+                                        raise web.HTTPBadRequest(text="Invalid custom card configuration")
+                                elif not isinstance(legacy, dict):
+                                    raise web.HTTPBadRequest(text="Missing custom card configuration")
                             if card["type"] == "entity":
                                 eid = card.get("entity_id")
                                 if not isinstance(eid, str) or len(eid) > 255 or not re.fullmatch(r"(?:light|switch|sensor|binary_sensor|climate|cover|input_boolean)\.[a-z0-9_]+", eid):
