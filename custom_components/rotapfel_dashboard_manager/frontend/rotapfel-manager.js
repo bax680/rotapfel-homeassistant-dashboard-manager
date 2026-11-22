@@ -1,6 +1,6 @@
 class RotapfelDashboardManager extends HTMLElement {
   set hass(v) { this._hass=v; if(!this._loaded){this._loaded=true;this.load();}else{this.refreshStates();} }
-  connectedCallback(){this.render();this.installMobileButtonTouchFix();window.rotapfelInstallSidebarLogo?.();this.collapseMobileSidebar();}
+  connectedCallback(){this.refreshCustomCardCatalog();this.render();this.installMobileButtonTouchFix();window.rotapfelInstallSidebarLogo?.();this.collapseMobileSidebar();}
   // Alpha 13.7.105: iOS Safari sometimes fails to synthesize a click on
   // controls inside nested scrolling / fixed Home Assistant shadow panels.
   // Handle a stationary touch directly, while leaving scroll gestures native.
@@ -280,6 +280,18 @@ class RotapfelDashboardManager extends HTMLElement {
     ['equinox-card','climate-cluster-card','rotapfel-simple-thermcard'].forEach(add);
     this._customCardCatalog=[...types].sort((a,b)=>a.localeCompare(b,'de'));
     return this._customCardCatalog;
+  }
+  refreshCustomCardCatalog(force=false){
+    if(!this._hass)return Promise.resolve(this._customCardCatalog||[]);
+    const now=Date.now();
+    if(this._customCardCatalogPending)return this._customCardCatalogPending;
+    if(!force&&this._customCardCatalogUpdatedAt&&now-this._customCardCatalogUpdatedAt<60000)
+      return Promise.resolve(this._customCardCatalog||[]);
+    this._customCardCatalogPending=this.discoverCustomCardTypes(true)
+      .then(types=>{this._customCardCatalogUpdatedAt=Date.now();return types;})
+      .catch(err=>{console.warn('Rotapfel: Automatischer Kartenabgleich',err);return this._customCardCatalog||[];})
+      .finally(()=>{this._customCardCatalogPending=null;});
+    return this._customCardCatalogPending;
   }
   async ensureGenericCustomResource(tag){
     if(customElements.get(tag))return true;
@@ -620,7 +632,7 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   uid(){return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;}
   async api(action,data){return this._hass.callApi(data?'POST':'GET',`rotapfel_dashboard_manager/${action}`,data);}
-  async load(){try{this.items=(await this.api('dashboards')).dashboards;this.error='';}catch(e){this.error=String(e);}this.render();}
+  async load(){try{this.items=(await this.api('dashboards')).dashboards;this.error='';}catch(e){this.error=String(e);}this.render();this.refreshCustomCardCatalog();}
   async act(action,data){try{this.items=(await this.api(action,data)).dashboards;this.error='';return true;}catch(e){this.error=String(e);this.render();return false;}}
   migrateLegacyThermCards(tabs){
     let count=0;
@@ -1214,7 +1226,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.22 · Build 0.2.0a13922</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.22 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.23 · Build 0.2.0a13923</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.23 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1222,7 +1234,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.22</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13922</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.23</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13923</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -1767,6 +1779,7 @@ class RotapfelDashboardManager extends HTMLElement {
   }
 
   openPositionEditor(tab){
+    this.refreshCustomCardCatalog();
     const cv=this.effectiveCanvas(tab),width=Math.max(320,Number(cv.width)||1920),height=Math.max(240,Number(cv.height)||1080),dynamicHeight=this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false,gap=Math.max(0,Number(cv.gap)||0),cols=Math.max(1,Number(cv.columns)||12);
     if(cv.mode!=='fixed'){alert('Bitte zuerst unter Dashboard-Maße / Raster eine feste Pixelgröße wählen.');return;}
     const rooms=tab.rooms||[];
@@ -1888,7 +1901,7 @@ class RotapfelDashboardManager extends HTMLElement {
  .rotapfel-position-overlay #position-touch-mode[aria-pressed="true"]{background:var(--primary-color,#168fc0)!important;color:#fff!important}
  .rotapfel-position-overlay .position-options-pane{z-index:110!important}
 }
-/* Alpha 13.9.22: compact touch-first editor controls and readable mode feedback. */
+/* Alpha 13.9.23: compact touch-first editor controls and readable mode feedback. */
 .rotapfel-position-overlay #position-touch-hint{display:none}
 @media(max-width:767px){
  .rotapfel-position-overlay .position-tools{padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px!important;gap:6px!important}
@@ -3144,7 +3157,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const knownTypes=[...new Set([...catalog,initialType].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
     const typeOptions=knownTypes.map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('');
     const initialText=stored?JSON.stringify(stored,null,2):legacy.configuration||'{}';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>Eigene Custom Card</h2><p class="muted">Vollständige YAML- oder JSON-Konfiguration aus Home Assistant einfügen. Der Kartentyp wird aus der type-Zeile automatisch erkannt. Bestehende Konfigurationen können direkt bearbeitet werden.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><button class="secondary" id="custom-refresh-types" type="button">Kartenliste aktualisieren</button><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">Übernehmen</button><button class="secondary" id="custom-cancel">Abbrechen</button></div></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>Eigene Custom Card</h2><p class="muted">Vollständige YAML- oder JSON-Konfiguration aus Home Assistant einfügen. Der Kartentyp wird aus der type-Zeile automatisch erkannt. Bestehende Konfigurationen können direkt bearbeitet werden.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">Übernehmen</button><button class="secondary" id="custom-cancel">Abbrechen</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const select=overlay.querySelector('#custom-type-select'),typeInput=overlay.querySelector('#custom-type');
     if(knownTypes.includes(initialType))select.value=initialType;
@@ -3174,14 +3187,10 @@ class RotapfelDashboardManager extends HTMLElement {
       else{select.value='__manual__';typeInput.readOnly=false;}
     };
     configInput.addEventListener('input',detectType);
-    const refresh=async force=>{
-      const btn=overlay.querySelector('#custom-refresh-types');btn.disabled=true;
-      try{fillTypes(await this.discoverCustomCardTypes(force));}
-      catch(error){overlay.querySelector('#custom-error').textContent='Kartenliste: '+String(error);}
-      finally{btn.disabled=false;}
-    };
-    overlay.querySelector('#custom-refresh-types').onclick=()=>refresh(true);
-    refresh(false);
+    // Refresh automatically; the dropdown updates without blocking editing.
+    this.refreshCustomCardCatalog().then(types=>{
+      if(overlay.isConnected)fillTypes(types);
+    });
     detectType();
     overlay.querySelector('#custom-cancel').onclick=()=>overlay.remove();
     overlay.querySelector('#custom-save').onclick=async()=>{
