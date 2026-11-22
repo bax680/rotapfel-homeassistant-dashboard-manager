@@ -130,6 +130,8 @@ class RotapfelCanvasCard extends HTMLElement {
       this.style.height='auto';
       viewport.style.overflowX='hidden';
       viewport.style.overflowY='visible';
+      // No toolbar space in the live dashboard unless explicitly enabled for smartphones.
+      controls.style.display=this._config.show_mobile_layout_selector===true&&profile==='iphone'?'flex':'none';
       controls.style.justifyContent=profile==='iphone'?'center':'flex-end';
       profileSelect.style.maxWidth=profile==='iphone'?'140px':'180px';
     };
