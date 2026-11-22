@@ -1402,8 +1402,9 @@ class RotapfelDashboardManager extends HTMLElement {
           const tileRect=tile.getBoundingClientRect();
           const cardRect=painted.getBoundingClientRect();
           // Translation is expressed in rendered pixels; scale stays intact.
-          const dx=(tileRect.left+2-cardRect.left);
-          const dy=(tileRect.top+2-cardRect.top);
+          const outerZoom=tile.offsetWidth>0?tileRect.width/tile.offsetWidth:1;
+          const dx=(tileRect.left+2*outerZoom-cardRect.left)/Math.max(.01,outerZoom);
+          const dy=(tileRect.top+2*outerZoom-cardRect.top)/Math.max(.01,outerZoom);
           if(Number.isFinite(dx)&&Number.isFinite(dy)&&Math.abs(dx)<300&&Math.abs(dy)<300)
             slot.style.transform=`translate(${dx}px,${dy}px) scale(${uniformScale})`;
         }
