@@ -5,8 +5,8 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software â
 ## Version
 
 - Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a137125`
-- Source archive: Alpha 13.7.125
+- Version in `manifest.json`: `0.2.0a137126`
+- Source archive: Alpha 13.7.126
 
 ## Installation via HACS
 
