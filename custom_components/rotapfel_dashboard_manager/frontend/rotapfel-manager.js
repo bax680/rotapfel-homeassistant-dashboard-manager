@@ -2173,10 +2173,33 @@ class RotapfelDashboardManager extends HTMLElement {
           // Spread over the ENTIRE profile width. Respect a 12 px outer margin.
           const margin=12,available=width-2*margin;
           const used=ordered.reduce((sum,v)=>sum+v.q.w,0);
-          if(used>available){alert('Die ausgewählten Karten sind zusammen breiter als die verfügbare Profilbreite. Bitte zuerst verkleinern.');return;}
-          const gap=(available-used)/(ordered.length-1);
-          let cursor=margin;
-          ordered.forEach(item=>{item.q.x=Math.round(cursor);cursor+=item.q.w+gap;});
+          if(used>available){
+            // Wrap into balanced rows without resizing cards. Keep a 12 px
+            // minimum horizontal/vertical gap and distribute each row evenly.
+            const spacing=12,rows=[];let row=[],rowWidth=0;
+            for(const item of ordered){
+              if(item.q.w>available){alert('Mindestens eine Karte ist breiter als die verfügbare Profilbreite. Bitte diese Karte verkleinern.');return;}
+              if(row.length&&rowWidth+spacing+item.q.w>available){rows.push(row);row=[];rowWidth=0;}
+              row.push(item);rowWidth+=item.q.w+(row.length>1?spacing:0);
+            }
+            if(row.length)rows.push(row);
+            const rowHeights=rows.map(items=>Math.max(...items.map(v=>v.q.h)));
+            const totalHeight=rowHeights.reduce((sum,h)=>sum+h,0)+spacing*(rows.length-1);
+            const maxHeight=dynamicHeight?Math.max(height,...[...positions.values()].map(v=>v.y+v.h+24),totalHeight+24):height;
+            if(totalHeight>maxHeight-2*margin){alert('Für den horizontalen Zeilenumbruch ist nicht genügend Höhe vorhanden. Bitte Karten verkleinern oder die Displayhöhe erhöhen.');return;}
+            let y=margin;
+            rows.forEach((items,i)=>{
+              const sum=items.reduce((n,v)=>n+v.q.w,0);
+              const rowGap=items.length>1?(available-sum)/(items.length-1):0;
+              let x=items.length===1?margin+(available-sum)/2:margin;
+              items.forEach(item=>{item.q.x=Math.round(x);item.q.y=Math.round(y);x+=item.q.w+rowGap;});
+              y+=rowHeights[i]+spacing;
+            });
+          }else{
+            const gap=(available-used)/(ordered.length-1);
+            let cursor=margin;
+            ordered.forEach(item=>{item.q.x=Math.round(cursor);cursor+=item.q.w+gap;});
+          }
         }else if(ordered.length===2){
           // A pair has no intermediate card: place the second card directly
           // below the first, preserving its x position and a 12 px gap.
