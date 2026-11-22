@@ -236,7 +236,7 @@ class RotapfelDashboardManager extends HTMLElement {
   async discoverCustomCardTypes(force=false){
     if(!force&&this._customCardCatalog?.length)return this._customCardCatalog;
     const types=new Set(['custom:equinox-card','custom:climate-cluster-card','custom:rotapfel-simple-thermcard']);
-    for(const name of Object.keys(customElements.getNames?.()||{}))if(name.includes('-card'))types.add('custom:'+name);
+    for(const name of (customElements.getNames?.()||[]))if(name.includes('-card'))types.add('custom:'+name);
     // The resources API lists modules, not the individual cards they define.
     // Known families supply choices while manual input supports all others.
     const families={
