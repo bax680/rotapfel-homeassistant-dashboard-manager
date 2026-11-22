@@ -204,6 +204,20 @@ class RotapfelCanvasCard extends HTMLElement {
               const targetW=Math.max(1,tile.clientWidth),targetH=Math.max(1,tile.clientHeight);
               const savedScale=Number(item.therm_scale);
               const factor=isTherm&&Number.isFinite(savedScale)&&savedScale>0?Math.min(3,savedScale):Math.min(targetW/intrinsicWidth,targetH/Math.max(1,naturalHeight));
+              if(isTherm&&card.shadowRoot){
+                const painted=card.shadowRoot.querySelector('.hd')||[...card.shadowRoot.querySelectorAll('*')].find(n=>n.shadowRoot?.querySelector('.hd'))?.shadowRoot?.querySelector('.hd');
+                if(painted&&painted.offsetWidth>0&&painted.offsetHeight>0){
+                  const safeScale=Math.max(.01,Math.min(factor,(targetW-4)/painted.offsetWidth,(targetH-4)/painted.offsetHeight));
+                  fitHost.style.transform=`scale(${safeScale})`;
+                  const tileRect=tile.getBoundingClientRect(),paintedRect=painted.getBoundingClientRect();
+                  const zoom=tile.offsetWidth>0?tileRect.width/tile.offsetWidth:1;
+                  const dx=(tileRect.left+2*zoom-paintedRect.left)/Math.max(.01,zoom);
+                  const dy=(tileRect.top+2*zoom-paintedRect.top)/Math.max(.01,zoom);
+                  if(Number.isFinite(dx)&&Number.isFinite(dy)&&Math.abs(dx)<300&&Math.abs(dy)<300)
+                    fitHost.style.transform=`translate(${dx}px,${dy}px) scale(${safeScale})`;
+                  return;
+                }
+              }
               fitHost.style.transform=`scale(${Math.max(0.01,factor)})`;
             };
             const observer=new ResizeObserver(()=>requestAnimationFrame(updateFit));
