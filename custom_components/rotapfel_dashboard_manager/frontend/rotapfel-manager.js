@@ -918,7 +918,10 @@ class RotapfelDashboardManager extends HTMLElement {
     save.onclick=async()=>{
       save.disabled=true;discard.disabled=true;cancel.disabled=true;save.textContent='Speichert …';
       try{
-        const response=await this.api('save_layout',{id:this.editing,tabs:this.layout,theme:this.theme,canvas:this.canvas});
+        const profile=this._deviceLayoutProfile||'fire_hd';
+        this.eachLayoutCard(c=>{if(c.position){c.deviceLayouts=c.deviceLayouts||{};c.deviceLayouts[profile]=JSON.parse(JSON.stringify(c.position));}});
+        const tabs=this.layout.map(t=>({...t,rooms:(t.rooms||[]).map(room=>({...room,cards:(room.cards||[]).map(c=>({...c,position:c.deviceLayouts?.fire_hd||c.position}))}))}));
+        const response=await this.api('save_layout',{id:this.editing,tabs,theme:this.theme,canvas:this.canvas,deviceProfiles:this.deviceProfiles});
         this.items=response.dashboards;
         this.error='';this.dirty=false;this.editing=null;this.layout=null;
         close();this.render();
