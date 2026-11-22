@@ -146,7 +146,7 @@ class RotapfelCanvasCard extends HTMLElement {
         for(const [key,value] of Object.entries({left:item.x,top:item.y,width:item.w,height:item.h}))tile.style[key]=rotapfelNumber(value,0,10000,0)+'px';
         const d=item.design||{};
         // External cards retain their own backgrounds. Apply non-invasive wrapper effects only.
-        if(item.card?.type!=='custom:rotapfel-entity-card'&&['wrapper','sync'].includes(d.external_mode||'original')){
+        if(item.card?.type!=='custom:rotapfel-entity-card'&&item.card?.type!=='custom:rotapfel-simple-thermcard'&&['wrapper','sync'].includes(d.external_mode||'original')){
           if(d.bg&&/^#[0-9a-f]{6}$/i.test(d.bg)){const rgb=[1,3,5].map(i=>parseInt(d.bg.slice(i,i+2),16));tile.style.backgroundColor=`rgba(${rgb.join(',')},${rotapfelNumber(d.opacity,0,100,100)/100})`;}
           if(d.radius!=null)tile.style.borderRadius=rotapfelNumber(d.radius,0,48,12)+'px';
           if(d.border_width)tile.style.border=rotapfelNumber(d.border_width,0,12,0)+'px solid '+rotapfelHex(d.border_color,'#64748b');
@@ -186,7 +186,8 @@ class RotapfelCanvasCard extends HTMLElement {
             const kind=String(item.card?.type||'');
             const isEquinox=kind==='custom:equinox-card';
             const isCluster=kind==='custom:climate-cluster-card';
-            const intrinsicWidth=isCluster?850:isEquinox?430:Math.max(200,rotapfelNumber(item.w,76,10000,400));
+            const isTherm=kind==='custom:rotapfel-simple-thermcard';
+            const intrinsicWidth=isCluster?850:isEquinox?430:isTherm?400:Math.max(200,rotapfelNumber(item.w,76,10000,400));
             const fitHost=document.createElement('div');fitHost.className='external-fit';
             fitHost.style.width=intrinsicWidth+'px';fitHost.append(card);tile.append(fitHost);
             const updateFit=()=>{
@@ -201,7 +202,8 @@ class RotapfelCanvasCard extends HTMLElement {
                 Math.max(270,surface?.offsetHeight||0,card.scrollHeight||0):
                 Math.max(80,card.scrollHeight||0,card.offsetHeight||0);
               const targetW=Math.max(1,tile.clientWidth),targetH=Math.max(1,tile.clientHeight);
-              const factor=Math.min(targetW/intrinsicWidth,targetH/Math.max(1,naturalHeight));
+              const savedScale=Number(item.therm_scale);
+              const factor=isTherm&&Number.isFinite(savedScale)&&savedScale>0?Math.min(3,savedScale):Math.min(targetW/intrinsicWidth,targetH/Math.max(1,naturalHeight));
               fitHost.style.transform=`scale(${Math.max(0.01,factor)})`;
             };
             const observer=new ResizeObserver(()=>requestAnimationFrame(updateFit));
