@@ -1101,7 +1101,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.8.3 · Build 0.2.0a1383</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.8.3 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.8.4 · Build 0.2.0a1384</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.8.4 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1109,7 +1109,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.8.3</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a1383</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.8.4</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a1384</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -2151,31 +2151,90 @@ class RotapfelDashboardManager extends HTMLElement {
     const arrangeFixedGap=axis=>{
       const chosen=cards.filter(({c})=>selectedIds.has(c.id)&&!isEditorLocked(c)).map(({c})=>({c,q:{...positions.get(c.id)}}));
       if(chosen.length<2){alert('Bitte mindestens zwei entsperrte Karten auswählen.');return;}
-      const horizontal=axis==='x',size=horizontal?'w':'h',gap=fixedGap();
-      chosen.sort((a,b)=>a.q[axis]-b.q[axis]);
-      const proposed=new Map([...positions].map(([id,q])=>[id,{...q}]));
-      let cursor=chosen[0].q[axis];
-      for(const item of chosen){
-        const q=proposed.get(item.c.id);q[axis]=Math.round(cursor);cursor+=q[size]+gap;
-      }
+      const horizontal=axis==='x',gap=fixedGap(),ordered=chosen.sort((a,b)=>a.q[axis]-b.q[axis]);
       const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
       const overlaps=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>1;
-      for(const item of chosen){
-        const q=proposed.get(item.c.id);
-        if(q.x<0||q.y<0||q.x+q.w>width||(fixed&&q.y+q.h>height)){
-          alert('Die Anordnung passt nicht in die verfügbare Displayfläche.');return;
+      const originals=new Map([...positions].map(([id,q])=>[id,{...q}]));
+      const movedIds=new Set(ordered.map(v=>v.c.id));
+      const size=horizontal?'w':'h',cross=horizontal?'h':'w',otherAxis=horizontal?'y':'x';
+      const span=ordered.reduce((n,v)=>n+v.q[size],0)+gap*(ordered.length-1);
+      const thickness=Math.max(...ordered.map(v=>v.q[cross]));
+      if((horizontal&&span>width)||(!horizontal&&fixed&&span>height)||(!horizontal&&thickness>width)){
+        alert('Die ausgewählten Karten passen mit diesem Abstand nicht auf die Displayfläche.');return;
+      }
+      const originX=Math.min(...ordered.map(v=>v.q.x)),originY=Math.min(...ordered.map(v=>v.q.y));
+      const candidate=(x,y)=>{
+        const next=new Map([...originals].map(([id,q])=>[id,{...q}]));
+        let cursor=horizontal?x:y;
+        for(const {c} of ordered){
+          const q=next.get(c.id);
+          q.x=horizontal?Math.round(cursor):Math.round(x);
+          q.y=horizontal?Math.round(y):Math.round(cursor);
+          cursor+=q[size]+gap;
         }
+        return next;
+      };
+      const inside=q=>q.x>=0&&q.y>=0&&q.x+q.w<=width&&(!fixed||q.y+q.h<=height);
+      const valid=next=>{
+        if(ordered.some(({c})=>!inside(next.get(c.id))))return false;
         for(const {c} of cards){
-          if(selectedIds.has(c.id))continue;
-          const other=proposed.get(c.id),before=positions.get(item.c.id);
-          if(overlaps(q,other)&&!overlaps(before,other)){
-            alert('Die Anordnung würde eine nicht ausgewählte Karte überlagern.');return;
-          }
+          if(movedIds.has(c.id))continue;
+          if(ordered.some(({c:v})=>overlaps(next.get(v.id),next.get(c.id))))return false;
+        }
+        return true;
+      };
+      const maxX=horizontal?width-span:width-thickness;
+      const maxY=fixed?height-(horizontal?thickness:span):Math.max(height,...[...originals.values()].map(q=>q.y+q.h))+span+24;
+      const clampOrigin=(v,max)=>Math.max(0,Math.min(Math.floor(max),Math.round(v)));
+      const x0=clampOrigin(originX,maxX),y0=clampOrigin(originY,maxY);
+      let solution=candidate(x0,y0);
+      if(!valid(solution)){
+        // First find the nearest collision-free location for the whole selection.
+        // Search exact blocker edges as well as a modest regular grid.
+        const xs=new Set([0,x0,Math.floor(maxX)]),ys=new Set([0,y0,Math.floor(maxY)]);
+        for(const {c} of cards){
+          if(movedIds.has(c.id))continue;
+          const q=originals.get(c.id);
+          for(const v of [q.x+q.w+gap,q.x-span-gap])if(v>=0&&v<=maxX)xs.add(Math.round(v));
+          for(const v of [q.y+q.h+gap,q.y-(horizontal?thickness:span)-gap])if(v>=0&&v<=maxY)ys.add(Math.round(v));
+        }
+        for(let x=0;x<=maxX;x+=20)xs.add(x);
+        for(let y=0;y<=maxY;y+=20)ys.add(y);
+        const spots=[];
+        for(const x of xs)for(const y of ys)spots.push({x,y,d:Math.abs(x-x0)+Math.abs(y-y0)});
+        spots.sort((a,b)=>a.d-b.d);
+        solution=null;
+        for(const spot of spots){
+          const next=candidate(spot.x,spot.y);
+          if(valid(next)){solution=next;break;}
         }
       }
-      if(!chosen.some(({c})=>proposed.get(c.id)[axis]!==positions.get(c.id)[axis]))return;
+      if(!solution){
+        // If no free location exists, push only movable blockers, in the
+        // arrangement direction. Never modify locked or grouped cards.
+        const next=candidate(x0,y0),queue=ordered.map(v=>v.c.id);
+        const touched=new Set(queue);
+        let possible=ordered.every(({c})=>inside(next.get(c.id)));
+        while(queue.length&&possible){
+          const id=queue.shift(),a=next.get(id);
+          for(const {c} of cards){
+            if(c.id===id||!overlaps(a,next.get(c.id)))continue;
+            if(movedIds.has(c.id)||isEditorLocked(c)||c.groupId||touched.has(c.id)){possible=false;break;}
+            const q=next.get(c.id);
+            q[axis]=Math.round(a[axis]+a[size]+gap);
+            if(!inside(q)){possible=false;break;}
+            touched.add(c.id);queue.push(c.id);
+          }
+        }
+        if(possible)solution=next;
+      }
+      if(!solution){
+        alert('Keine kollisionsfreie Anordnung möglich. Gesperrte Karten und Displaygrenzen bleiben unverändert.');return;
+      }
+      const changes=cards.filter(({c})=>{const a=originals.get(c.id),b=solution.get(c.id);return a.x!==b.x||a.y!==b.y;});
+      if(!changes.length)return;
       rememberChange();
-      for(const {c} of chosen)update(c,proposed.get(c.id));
+      for(const {c} of changes)update(c,solution.get(c.id));
       syncSelection();
     };
     overlay.querySelectorAll('[data-fixed-gap]').forEach(b=>b.onclick=()=>arrangeFixedGap(b.dataset.fixedGap));
