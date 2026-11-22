@@ -1794,6 +1794,39 @@ class RotapfelDashboardManager extends HTMLElement {
       navButton.setAttribute('aria-expanded',String(expanded));
       navButton.textContent=expanded?'✕ Navigation schließen':'☰ Navigation';
     });
+    // Alpha 13.8.9: mobile drawer is independent of canvas drag/scroll mode.
+    const mobileDrawer=document.createElement('div');
+    mobileDrawer.className='position-mobile-drawer';
+    mobileDrawer.setAttribute('aria-label','Werkzeuge und Kartenoptionen');
+    const mobileDrawerBackdrop=document.createElement('div');
+    mobileDrawerBackdrop.className='position-mobile-backdrop';
+    overlay.append(mobileDrawerBackdrop,mobileDrawer);
+    const mobileTools=overlay.querySelector('.position-tools');
+    const mobileOptionsPane=overlay.querySelector('.position-options-pane');
+    const originalOptionsParent=mobileOptionsPane.parentNode;
+    const originalOptionsNext=mobileOptionsPane.nextSibling;
+    const movedTools=[...mobileTools.children].filter(el=>!el.matches('strong,#position-nav-toggle'));
+    const installMobileDrawer=()=>{
+      if(window.matchMedia('(max-width:767px)').matches){
+        movedTools.forEach(el=>mobileDrawer.appendChild(el));
+        mobileDrawer.appendChild(mobileOptionsPane);
+      }else{
+        movedTools.forEach(el=>mobileTools.appendChild(el));
+        originalOptionsParent.insertBefore(mobileOptionsPane,originalOptionsNext);
+        overlay.classList.remove('position-nav-expanded');
+      }
+    };
+    installMobileDrawer();
+    window.addEventListener('resize',installMobileDrawer,{signal:(this._positionDrawerAbort=new AbortController()).signal});
+    mobileDrawerBackdrop.addEventListener('click',()=>{
+      overlay.classList.remove('position-nav-expanded');
+      navButton?.setAttribute('aria-expanded','false');
+      if(navButton)navButton.textContent='☰ Navigation';
+    });
+    // Allow native touch scrolling inside the drawer even while dragging cards.
+    for(const eventName of ['touchstart','touchmove','pointerdown','pointermove']){
+      mobileDrawer.addEventListener(eventName,ev=>ev.stopPropagation(),{passive:true});
+    }
     const touchHint=document.createElement('span');
     touchHint.id='position-touch-hint';
     touchHint.setAttribute('role','status');
@@ -1806,6 +1839,25 @@ class RotapfelDashboardManager extends HTMLElement {
       touchModeButton.textContent=dragging?'✥ Verschieben aktiv':'↕ Scrollen';
       touchHint.textContent=dragging?'Verschiebemodus: Karten mit dem Finger ziehen. Zum Scrollen erneut umschalten.':'Scrollmodus: Fläche mit dem Finger verschieben. Zum Bearbeiten Verschieben aktivieren.';
     });
+    style.textContent+=`
+@media(max-width:767px){
+ .rotapfel-position-overlay .position-tools{height:56px!important;min-height:56px!important;max-height:56px!important;overflow:hidden!important;display:flex!important;flex-wrap:nowrap!important;padding:6px 10px!important;align-items:center!important}
+ .rotapfel-position-overlay .position-tools>strong{flex:1 1 auto!important;order:0!important;font-size:13px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .rotapfel-position-overlay .position-tools #position-nav-toggle{order:-1!important;flex:0 0 auto!important;min-height:42px!important}
+ .rotapfel-position-overlay .position-mobile-backdrop{display:none;position:fixed;inset:0;z-index:120;background:#0007}
+ .rotapfel-position-overlay.position-nav-expanded .position-mobile-backdrop{display:block}
+ .rotapfel-position-overlay .position-mobile-drawer{position:fixed!important;left:0;top:env(safe-area-inset-top,0px);bottom:0;width:min(88vw,390px);z-index:121!important;display:flex!important;flex-direction:column;gap:9px;padding:16px 12px calc(20px + env(safe-area-inset-bottom,0px));box-sizing:border-box;background:var(--card-background-color,#fff);box-shadow:8px 0 24px #0004;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain;touch-action:pan-y!important;transform:translateX(-110%);visibility:hidden;transition:transform .2s ease,visibility .2s}
+ .rotapfel-position-overlay.position-nav-expanded .position-mobile-drawer{transform:translateX(0);visibility:visible}
+ .rotapfel-position-overlay .position-mobile-drawer>button{display:flex!important;min-height:44px;flex:0 0 auto;justify-content:center;touch-action:manipulation}
+ .rotapfel-position-overlay .position-mobile-drawer>label{display:flex!important;align-items:center;gap:8px;flex:0 0 auto}
+ .rotapfel-position-overlay .position-mobile-drawer>span{display:block!important}
+ .rotapfel-position-overlay .position-mobile-drawer #position-mobile-options{display:none!important}
+ .rotapfel-position-overlay .position-mobile-drawer .position-options-pane{display:block!important;position:static!important;flex:0 0 auto;max-height:none!important;overflow:visible!important;border:0!important;box-shadow:none!important;padding:12px 0!important;width:100%!important;background:transparent!important}
+ .rotapfel-position-overlay .position-editor-body{display:block!important}
+ .rotapfel-position-overlay .position-canvas-pane{height:100%!important}
+}
+@media(min-width:768px){.rotapfel-position-overlay .position-mobile-drawer,.rotapfel-position-overlay .position-mobile-backdrop{display:none!important}}
+`;
     this.mountExternalCards();
     const canvasPane=overlay.querySelector('.position-canvas-pane');
     const heightLabel=overlay.querySelector('#position-height-label');
