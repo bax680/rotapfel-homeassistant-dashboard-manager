@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.49, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.50, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -9,11 +9,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView, StaticPathConfig
-from homeassistant.components import panel_custom
+from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13949"
+VERSION = "0.2.0a13950"
+
+SHARED_PANEL = "rotapfel-shared"
 
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
 
@@ -82,10 +84,20 @@ async def async_setup_entry(hass, entry):
         require_admin=True,
         config={},
     )
+    await panel_custom.async_register_panel(
+        hass,
+        webcomponent_name="rotapfel-shared-dashboards",
+        frontend_url_path=SHARED_PANEL,
+        module_url=js_url,
+        sidebar_title="Rotapfel Dashboards",
+        sidebar_icon="mdi:view-dashboard",
+        require_admin=False,
+    )
     return True
 
 async def async_unload_entry(hass, entry):
-    panel_custom.async_remove_panel(hass, PANEL_PATH)
+    frontend.async_remove_panel(hass, PANEL_PATH)
+    frontend.async_remove_panel(hass, SHARED_PANEL)
     hass.data[DOMAIN].pop(entry.entry_id, None)
     return True
 
@@ -119,7 +131,39 @@ class RotapfelView(HomeAssistantView):
         del history[:-15]
 
     async def get(self, request, action):
+        if action == "shared_dashboards":
+            user = request["hass_user"]
+            if not user.is_active or user.system_generated:
+                raise web.HTTPForbidden()
+            state = self.hass.data.get(DOMAIN, {}).get(self.entry_id)
+            if state is None:
+                raise web.HTTPNotFound()
+            allowed = []
+            for dashboard in state["data"]["dashboards"]:
+                publication = dashboard.get("publication") or {}
+                if publication.get("access") == "selected" and user.id in publication["user_ids"]:
+                    allowed.append((dashboard["id"], publication["layout"]))
+            requested = request.query.get("id")
+            if requested is not None:
+                layout = next((layout for ident, layout in allowed if ident == requested), None)
+                if layout is None:
+                    raise web.HTTPNotFound()
+                response = self.json({"layout": layout, "country": getattr(self.hass.config, "country", None)})
+                response.headers["Cache-Control"] = "private, no-store"
+                return response
+            response = self.json({"dashboards": [
+                {"id": ident, "name": layout["title"]} for ident, layout in allowed
+            ], "country": getattr(self.hass.config, "country", None)})
+            response.headers["Cache-Control"] = "private, no-store"
+            return response
+
         self._check_admin(request)
+        if action == "publication_users":
+            users = await self.hass.auth.async_get_users()
+            return self.json({"users": [
+                {"id": user.id, "name": user.name or user.id, "admin": user.is_admin}
+                for user in users if user.is_active and not user.system_generated
+            ]})
         if action == "dashboard_history":
             target = next((d for d in self._state()["data"]["dashboards"] if d["id"] == request.query.get("id")), None)
             if target is None:
@@ -146,7 +190,7 @@ class RotapfelView(HomeAssistantView):
             return self.json({"templates": self._state()["data"].get("design_templates", [])})
         if action != "dashboards":
             raise web.HTTPNotFound()
-        return self.json({"dashboards": self._state()["data"]["dashboards"], "version": VERSION})
+        return self.json({"dashboards": self._state()["data"]["dashboards"], "version": VERSION, "country": getattr(self.hass.config, "country", None)})
 
     @staticmethod
     def _valid_canvas(value):
@@ -158,7 +202,7 @@ class RotapfelView(HomeAssistantView):
 
     async def post(self, request, action):
         self._check_admin(request)
-        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library"}:
+        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "shared_publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library"}:
             raise web.HTTPNotFound()
         try:
             body = await request.json()
@@ -255,10 +299,48 @@ class RotapfelView(HomeAssistantView):
                 await save()
                 return self.json({"templates": templates})
             dashboards = data["dashboards"]
+            if action == "shared_publication":
+                target = next((d for d in dashboards if d["id"] == body.get("id")), None)
+                if target is None:
+                    raise web.HTTPNotFound()
+                previous = target.get("publication") or {}
+                if previous and previous.get("access") != "selected":
+                    raise web.HTTPConflict(text="Remove the existing Lovelace publication first")
+                if body.get("remove") is True:
+                    target.pop("publication", None)
+                else:
+                    user_ids = body.get("user_ids")
+                    if (not isinstance(user_ids, list) or not user_ids
+                            or any(not isinstance(ident, str) for ident in user_ids)):
+                        raise web.HTTPBadRequest(text="Select at least one user")
+                    users = await self.hass.auth.async_get_users()
+                    active = {user.id for user in users if user.is_active and not user.system_generated}
+                    if not set(user_ids) <= active:
+                        raise web.HTTPBadRequest(text="Invalid or inactive user")
+                    layout = body.get("layout")
+                    views = layout.get("views") if isinstance(layout, dict) else None
+                    if (not isinstance(views, list) or not 1 <= len(views) <= 30
+                            or any(not isinstance(view, dict) or not isinstance(view.get("title"), str)
+                                   or not isinstance(view.get("cards"), list) or len(view["cards"]) != 1
+                                   or not isinstance(view["cards"][0], dict)
+                                   or view["cards"][0].get("type") != "custom:rotapfel-canvas-card"
+                                   for view in views)):
+                        raise web.HTTPBadRequest(text="Invalid shared dashboard")
+                    target["publication"] = {
+                        "access": "selected",
+                        "url_path": f"{SHARED_PANEL}/{target['id']}",
+                        "user_ids": list(dict.fromkeys(user_ids)),
+                        "layout": {"title": target["name"], "views": views},
+                    }
+                await save()
+                return self.json({"dashboards": dashboards})
+
             if action == "publication":
                 target = next((d for d in dashboards if d["id"] == body.get("id")), None)
                 if target is None:
                     raise web.HTTPNotFound(text="Dashboard not found")
+                if (target.get("publication") or {}).get("access") == "selected":
+                    raise web.HTTPConflict(text="Use the shared publication endpoint")
                 publication = body.get("publication")
                 if publication is not None:
                     if (

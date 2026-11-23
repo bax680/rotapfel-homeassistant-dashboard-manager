@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.49 · **Integrationsversion:** `0.2.0a13949` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.50 · **Integrationsversion:** `0.2.0a13950` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -22,6 +22,10 @@ Der Link öffnet das Repository im Marketplace deiner Instanz. Bestätige das Hi
 4. Öffne danach **Rotapfel Control** in der Seitenleiste. Wenn der Tab bereits geöffnet war, lade die Browserseite neu.
 
 Für eine manuelle Installation kopierst du `custom_components/rotapfel_dashboard_manager` aus dem Quellarchiv unter `/config/custom_components/`. Danach gelten dieselben Schritte für Neustart und Einrichtung.
+
+## Sprache des Rotapfel Managers
+
+In der Übersicht kannst du **Automatisch**, **Deutsch** oder **English** auswählen. Automatisch verwendet Deutsch für Deutschland, Österreich und die Schweiz, sonst Englisch. Ohne Länderangabe gilt die Browsersprache. Die Auswahl gilt pro Benutzerkonto im jeweiligen Browser. Die englische Übersetzung deckt die wichtigsten Bedienelemente ab. In einigen Dialogen und Meldungen erscheinen noch deutsche Texte. Native Karteneditoren verwenden weiterhin die Home-Assistant-Sprache.
 
 ## Erstes Dashboard erstellen
 
@@ -78,8 +82,10 @@ Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen.
 
 1. Prüfe unter **Einstellungen → Dashboards → Ressourcen**, ob `/rotapfel_dashboard_manager/rotapfel-canvas-card.js` als JavaScript-Modul eingetragen ist. Ergänze die Ressource, falls sie fehlt.
 2. Speichere den Layoutentwurf und wähle in der Rotapfel-Übersicht **Veröffentlichen**.
-3. Wähle **Angemeldete Nutzer** oder **Nur Administratoren**. Öffne das veröffentlichte Dashboard anschließend über die Home-Assistant-Seitenleiste.
-4. Nach späteren Layoutänderungen speicherst du den Entwurf und wählst **Aktualisieren**, um die veröffentlichte Fassung zu übernehmen.
+3. Wähle **Alle angemeldeten Benutzer**, **Ausgewählte Benutzer** oder **Nur Administratoren**. Bei **Ausgewählte Benutzer** markierst du ein oder mehrere aktive Konten. Diese Konten finden ihre Freigaben in der Seitenleiste unter **Rotapfel Dashboards**. Bei den beiden anderen Optionen erscheint das Dashboard als eigener Eintrag.
+4. Nach späteren Layoutänderungen speicherst du den Entwurf und wählst **Veröffentlichung aktualisieren**. Bei einer Benutzerfreigabe kannst du dabei auch die Konten ändern.
+
+Home Assistant prüft die Benutzerfreigabe beim Abrufen des veröffentlichten Rotapfel-Layouts auf dem Server. Entitätsberechtigungen gelten weiterhin separat. Zum Wechsel zwischen einer Benutzerfreigabe und einem regulären Lovelace-Dashboard entfernst du die Veröffentlichung und veröffentlichst das gespeicherte Layout erneut.
 
 Der Rotapfel-Editor selbst ist Administratoren vorbehalten. Der Zugriff auf das veröffentlichte Dashboard richtet sich nach der gewählten Einstellung. Ältere Veröffentlichungen ohne Rotapfel-Kennung müssen für die weitere Verwaltung neu veröffentlicht werden. Über **Veröffentlichung entfernen** kannst du die alte Verknüpfung lösen. Prüfe anschließend den vorhandenen Home-Assistant-Eintrag, bevor du am selben Pfad neu veröffentlichst.
 
@@ -170,3 +176,7 @@ Erweitert die Kartenauswahl um 69 native Home-Assistant-Kartentypen, darunter St
 ### Alpha 13.9.49
 
 Lädt die Home-Assistant-Übersetzungen für die Kartenauswahl und den nativen Karteneditor direkt im Rotapfel-Panel. Dadurch erscheinen Feldbeschriftungen und Auswahltexte auch beim direkten Öffnen des Managers.
+
+### Alpha 13.9.50
+
+Automatische Sprachwahl für den Manager mit manueller Auswahl von Deutsch oder Englisch. Dashboards können serverseitig für einzelne Home-Assistant-Benutzerkonten freigegeben werden.

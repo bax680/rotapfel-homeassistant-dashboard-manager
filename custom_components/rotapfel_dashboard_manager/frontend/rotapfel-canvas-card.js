@@ -2,6 +2,16 @@
 const rotapfelHex=(v,fallback)=>/^#[0-9a-f]{6}$/i.test(v||'')?v:fallback;
 const rotapfelNumber=(v,lo,hi,def)=>{const n=Number(v);return Number.isFinite(n)?Math.min(hi,Math.max(lo,n)):def;};
 const rotapfelEscape=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const rotapfelCardLanguage=(hass)=>{
+  let override;
+  if(hass?.user?.id){
+    try{override=localStorage.getItem('rotapfel-language:'+hass.user.id);}catch{}
+  }
+  if(override==='en'||override==='de')return override;
+  const country=String(hass?.config?.country||'').trim().toUpperCase();
+  if(country)return ['DE','AT','CH'].includes(country)?'de':'en';
+  return /^de(?:[-_]|$)/i.test(navigator.language)?'de':'en';
+};
 class RotapfelEntityCard extends HTMLElement {
   setConfig(config){
     if(!config||!config.entity)throw new Error('Rotapfel-Entitätskarte benötigt entity');
@@ -13,12 +23,14 @@ class RotapfelEntityCard extends HTMLElement {
   getCardSize(){return 2;}
   _render(){
     const c=this._config,d=c.design||{},disp=c.display||{},entity=c.entity;
+    const german=rotapfelCardLanguage(this._hass)==='de';
+    const on=german?'Ein':'On',off=german?'Aus':'Off';
     const state=this._hass?.states?.[entity],domain=entity.split('.')[0],raw=state?.state??'unavailable';
     const unavailable=!state||['unavailable','unknown'].includes(raw);
     const deviceClass=state?.attributes?.device_class;
     let value=raw;
-    if(['light','switch','input_boolean'].includes(domain))value=raw==='on'?'Ein':raw==='off'?'Aus':raw;
-    else if(domain==='binary_sensor'&&['window','door','opening','garage_door'].includes(deviceClass))value=raw==='off'?'Geschlossen':raw==='on'?'Offen':raw;
+    if(['light','switch','input_boolean'].includes(domain))value=raw==='on'?on:raw==='off'?off:raw;
+    else if(domain==='binary_sensor'&&['window','door','opening','garage_door'].includes(deviceClass))value=raw==='off'?(german?'Geschlossen':'Closed'):raw==='on'?(german?'Offen':'Open'):raw;
     else if(domain==='sensor'&&state?.attributes?.unit_of_measurement)value=raw+' '+state.attributes.unit_of_measurement;
     const icon={light:'💡',switch:'⏻',input_boolean:'⏻',binary_sensor:'▣',sensor:'◉',climate:'♨',cover:'▤'}[domain]||'◈';
     const bg=rotapfelHex(d.bg,'#e5e7eb'),fg=rotapfelHex(d.fg,'#202124'),accent=rotapfelHex(d.accent,'#009ac4');
@@ -41,7 +53,7 @@ class RotapfelEntityCard extends HTMLElement {
       strong,small,.state{overflow-wrap:anywhere}small{font-size:.75em;opacity:.8}.state{font-weight:600}
       button{border:0;border-radius:8px;background:${accent};color:white;padding:9px 12px;cursor:pointer;flex:none;font:inherit}
       button:disabled{opacity:.5;cursor:default}
-    </style><div class="card"><span class="icon" aria-hidden="true">${icon}</span><div class="content">${name}${id}<span class="state">${rotapfelEscape(value)}</span></div>${toggle?`<button type="button" aria-label="${raw==='on'?'Ausschalten':'Einschalten'}">${raw==='on'?'Ein':'Aus'}</button>`:''}</div>`;
+    </style><div class="card"><span class="icon" aria-hidden="true">${icon}</span><div class="content">${name}${id}<span class="state">${rotapfelEscape(value)}</span></div>${toggle?`<button type="button" aria-label="${raw==='on'?(german?'Ausschalten':'Turn off'):(german?'Einschalten':'Turn on')}">${raw==='on'?on:off}</button>`:''}</div>`;
     const btn=root.querySelector('button');if(btn)btn.onclick=async()=>{
       if(!this._hass?.callService)return;
       btn.disabled=true;
@@ -81,7 +93,11 @@ class RotapfelCanvasCard extends HTMLElement {
     if(!this.shadowRoot)this.attachShadow({mode:'open'});
     this._render();
   }
-  set hass(hass){this._hass=hass;for(const card of this._cards||[])card.hass=hass;}
+  set hass(hass){
+    this._hass=hass;
+    if(this._config&&this._language!==rotapfelCardLanguage(hass))this._render();
+    for(const card of this._cards||[])card.hass=hass;
+  }
   getCardSize(){return 8;}
   _render(){
     if(this._windowResizeHandler)window.removeEventListener('resize',this._windowResizeHandler);
@@ -89,6 +105,8 @@ class RotapfelCanvasCard extends HTMLElement {
     this._cardFitObservers?.forEach(observer=>observer.disconnect());
     this._cardFitObservers=[];
     const root=this.shadowRoot;root.replaceChildren();
+    const language=this._language=rotapfelCardLanguage(this._hass);
+    const german=language==='de';
     const baseWidth=rotapfelNumber(this._config.canvas_width,320,10000,1920),baseHeight=rotapfelNumber(this._config.canvas_height,240,10000,1080);
     const profiles=this._config.device_profiles||{fire_hd:{width:baseWidth,height:baseHeight},desktop:{width:baseWidth,height:baseHeight},iphone:{width:402,height:874}};
     const dimensions=key=>profiles[key]||profiles.fire_hd||{width:baseWidth,height:baseHeight};
@@ -104,10 +122,10 @@ class RotapfelCanvasCard extends HTMLElement {
     root.append(style);
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
     if(rooms.length>1){
-      const nav=document.createElement('nav');nav.setAttribute('aria-label','Raumauswahl');
+      const nav=document.createElement('nav');nav.setAttribute('aria-label',german?'Raumauswahl':'Select room');
       nav.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:4px 0';
       for(const room of rooms){
-        const button=document.createElement('button');button.type='button';button.textContent=room.name||'Raum';
+        const button=document.createElement('button');button.type='button';button.textContent=room.name||(german?'Raum':'Room');
         const active=String(room.id)===String(this._activeRoomId);
         button.setAttribute('aria-pressed',String(active));
         button.style.cssText='cursor:pointer;border-radius:8px;padding:9px 14px;font:inherit;border:1px solid var(--divider-color,#bbb);background:'+(active?'var(--primary-color,#03a9f4)':'var(--card-background-color,#fff)')+';color:'+(active?'var(--text-primary-color,#fff)':'var(--primary-text-color,#222)');
@@ -118,8 +136,8 @@ class RotapfelCanvasCard extends HTMLElement {
     }
     const controls=document.createElement('div');controls.style.cssText='display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 8px;font:12px var(--primary-font-family,Arial,sans-serif)';
     const profileLabel=document.createElement('span');profileLabel.textContent='Layout:';
-    const profileSelect=document.createElement('select');profileSelect.setAttribute('aria-label','Geräteprofil');profileSelect.style.cssText='max-width:180px;padding:5px;border-radius:6px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#bbb)';
-    for(const [value,label] of [['auto','Automatisch'],...Object.entries(profiles).map(([key,p])=>[key,p.name||key])]){const o=document.createElement('option');o.value=value;o.textContent=label;profileSelect.append(o);}
+    const profileSelect=document.createElement('select');profileSelect.setAttribute('aria-label',german?'Geräteprofil':'Device profile');profileSelect.style.cssText='max-width:180px;padding:5px;border-radius:6px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#bbb)';
+    for(const [value,label] of [['auto',german?'Automatisch':'Automatic'],...Object.entries(profiles).map(([key,p])=>[key,p.name||key])]){const o=document.createElement('option');o.value=value;o.textContent=label;profileSelect.append(o);}
     profileSelect.value=this._manualProfile||'auto';profileSelect.onchange=()=>{this._manualProfile=profileSelect.value==='auto'?null:profileSelect.value;fit();};
     controls.append(profileLabel,profileSelect);root.append(controls);
     this.style.background='transparent';this.style.backgroundImage='none';
@@ -163,6 +181,7 @@ class RotapfelCanvasCard extends HTMLElement {
       let helpers;
       try{helpers=await window.loadCardHelpers();}
       catch(e){console.error('Rotapfel: Card Helpers nicht verfügbar',e);return;}
+      if(viewport.parentNode!==root)return;
       for(const item of this._config.elements.filter(item=>!rooms.length||item.room_id==null||String(item.room_id)===String(this._activeRoomId))){
         const tile=document.createElement('div');tile.className='tile';tile._rotapfelItem=item;tile.style.background='transparent';tile.style.zIndex=String(rotapfelNumber(item.z,0,9999,0));
         for(const [key,value] of Object.entries({left:item.x,top:item.y,width:item.w,height:item.h}))tile.style[key]=rotapfelNumber(value,0,10000,0)+'px';
