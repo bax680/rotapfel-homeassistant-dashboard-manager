@@ -52,7 +52,14 @@ Beim Duplizieren einer Karte zeigt Rotapfel ebenfalls eine Einfügevorschau. **L
 
 Die native Rotapfel-Entitätskarte und die mitgelieferte **Rotapfel Simple ThermCard** kannst du direkt im Manager auswählen. Bei Lovelace-Ressourcen im Storage-Modus versucht die Integration, die ThermCard-Ressource beim Start zu registrieren. Falls sie fehlt, füge `/rotapfel_dashboard_manager/rotapfel-simple-thermcard.js` als JavaScript-Modul hinzu. Ihr Kartentyp lautet `custom:rotapfel-simple-thermcard`.
 
-**Equinox**, **Climate Cluster** und **Mushroom** sind optionale, separat installierte Erweiterungen. Sie benötigen ihre jeweiligen Lovelace-Ressourcen. Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen. Der Custom-Card-Editor bietet für unterstützte Typen Schnelleinstellungen für Anzeigename, Icon und Iconfarbe. Individuelle Optionen stehen in der YAML- oder JSON-Konfiguration.
+Equinox, Climate Cluster Card und Mushroom sind optionale Erweiterungen. Installiere und registriere die jeweilige Lovelace-Ressource, wenn du den Kartentyp verwendest.
+
+| Karte | Installation |
+| --- | --- |
+| Equinox | [Im Marketplace öffnen](https://my.home-assistant.io/redirect/marketplace_repository/?owner=KipK&repository=equinox&category=plugin) · [Original-Repository](https://github.com/KipK/equinox) |
+| Climate Cluster Card | [Im Marketplace öffnen](https://my.home-assistant.io/redirect/marketplace_repository/?owner=rickyfont94&repository=climate-cluster-card&category=plugin) · [Original-Repository](https://github.com/rickyfont94/climate-cluster-card) |
+
+Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen. Der Custom-Card-Editor bietet für unterstützte Typen Schnelleinstellungen für Anzeigename, Icon und Iconfarbe. Individuelle Optionen stehen in der YAML- oder JSON-Konfiguration.
 
 ## Dashboard veröffentlichen
 
