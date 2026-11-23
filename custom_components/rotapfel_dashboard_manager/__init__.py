@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.39, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.40, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -24,7 +24,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13939"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13940"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
@@ -162,6 +162,8 @@ class RotapfelView(HomeAssistantView):
             body = await request.json()
         except (ValueError, web.HTTPBadRequest):
             raise web.HTTPBadRequest(text="Invalid JSON")
+        if not isinstance(body, dict):
+            raise web.HTTPBadRequest(text="Expected a JSON object")
         if action == "parse_card_yaml":
             source = body.get("yaml")
             if not isinstance(source, str) or len(source) > 100_000:
@@ -179,6 +181,12 @@ class RotapfelView(HomeAssistantView):
             return self.json({"config": parsed})
         state = self._state()
         async with state["lock"]:
+            data = copy.deepcopy(state["data"])
+
+            async def save():
+                await state["store"].async_save(data)
+                state["data"] = data
+
             if action == "save_card_library":
                 cards = body.get("cards")
                 if not isinstance(cards, list) or len(cards) > 100:
@@ -195,8 +203,8 @@ class RotapfelView(HomeAssistantView):
                     if not isinstance(card, dict) or len(json.dumps(card, allow_nan=False)) > 100_000:
                         raise web.HTTPBadRequest(text="Ungültige Kartenvorlage")
                     seen.add(ident)
-                state["data"]["card_library"] = copy.deepcopy(cards)
-                await state["store"].async_save(state["data"])
+                data["card_library"] = copy.deepcopy(cards)
+                await save()
                 return self.json({"cards": cards})
             if action == "save_layout_templates":
                 templates = body.get("templates")
@@ -219,8 +227,8 @@ class RotapfelView(HomeAssistantView):
                         raise web.HTTPBadRequest(text="Invalid device profiles")
                     if not isinstance(template.get("canvas"), dict):
                         raise web.HTTPBadRequest(text="Invalid canvas")
-                state["data"]["layout_templates"] = templates
-                await state["store"].async_save(state["data"])
+                data["layout_templates"] = templates
+                await save()
                 return self.json({"templates": templates})
             if action == "save_design_templates":
                 templates = body.get("templates")
@@ -241,17 +249,24 @@ class RotapfelView(HomeAssistantView):
                         raise web.HTTPBadRequest(text="Invalid template colors")
                     if any(not isinstance(display.get(k, True), bool) for k in ("show_name", "show_entity_id")):
                         raise web.HTTPBadRequest(text="Invalid display flags")
-                state["data"]["design_templates"] = templates
-                await state["store"].async_save(state["data"])
+                data["design_templates"] = templates
+                await save()
                 return self.json({"templates": templates})
-            dashboards = state["data"]["dashboards"]
+            dashboards = data["dashboards"]
             if action == "publication":
                 target = next((d for d in dashboards if d["id"] == body.get("id")), None)
                 if target is None:
                     raise web.HTTPNotFound(text="Dashboard not found")
                 publication = body.get("publication")
                 if publication is not None:
-                    if not isinstance(publication, dict) or set(publication) != {"url_path"}:
+                    if (
+                        not isinstance(publication, dict)
+                        or set(publication) != {"url_path", "dashboard_id", "owner_key"}
+                        or not isinstance(publication["dashboard_id"], str)
+                        or not 1 <= len(publication["dashboard_id"]) <= 255
+                        or not isinstance(publication["owner_key"], str)
+                        or not re.fullmatch(r"[0-9a-f]{32}", publication["owner_key"])
+                    ):
                         raise web.HTTPBadRequest(text="Invalid publication")
                     path = publication["url_path"]
                     expected = "rotapfel-" + re.sub(r"[^a-z0-9]", "", target["id"].lower())[:20]
@@ -263,7 +278,7 @@ class RotapfelView(HomeAssistantView):
                     target["publication"] = publication
                 else:
                     target.pop("publication", None)
-                await state["store"].async_save(state["data"])
+                await save()
                 return self.json({"dashboards": dashboards})
 
             target = next((d for d in dashboards if d["id"] == body.get("id")), None)
@@ -278,7 +293,7 @@ class RotapfelView(HomeAssistantView):
                 target.setdefault("manual_history", []).append({
                     "id": str(uuid.uuid4()), "timestamp": datetime.now(timezone.utc).isoformat(),
                     "reason": label.strip(), "manual": True, "snapshot": snapshot})
-                await state["store"].async_save(state["data"])
+                await save()
                 return self.json({"ok": True})
             if action == "delete_manual_version":
                 if target is None:
@@ -288,7 +303,7 @@ class RotapfelView(HomeAssistantView):
                 if match is None:
                     raise web.HTTPNotFound(text="Manueller Sicherungspunkt nicht gefunden")
                 manual.remove(match)
-                await state["store"].async_save(state["data"])
+                await save()
                 return self.json({"ok": True})
             if action == "restore_version":
                 if target is None:
@@ -305,7 +320,7 @@ class RotapfelView(HomeAssistantView):
                     else:
                         target.pop(key, None)
                 target["updated_at"] = datetime.now(timezone.utc).isoformat()
-                await state["store"].async_save(state["data"])
+                await save()
                 return self.json({"dashboards": dashboards})
             if action != "create" and target is None:
                 raise web.HTTPNotFound(text="Dashboard not found")
@@ -403,5 +418,5 @@ class RotapfelView(HomeAssistantView):
                 dashboards.append(target)
             else:
                 dashboards.remove(target)
-            await state["store"].async_save(state["data"])
+            await save()
             return self.json({"dashboards": dashboards})

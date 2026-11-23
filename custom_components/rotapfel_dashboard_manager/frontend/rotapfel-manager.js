@@ -892,146 +892,126 @@ class RotapfelDashboardManager extends HTMLElement {
     this.shadowRoot.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
     alert('Lovelace-YAML wurde heruntergeladen.\n\nErforderliche Ressource: /rotapfel_dashboard_manager/rotapfel-canvas-card.js (JavaScript-Modul).\n\nDer Export registriert noch kein Dashboard in der Seitenleiste.'+(warnings.length?'\n\nHinweise:\n'+warnings.join('\n'):''));
   }
-  async deletePublishedDashboard(path){
-    // Home Assistant requires dashboard_id for deletion; url_path is not accepted.
+  publicationPath(d){
+    return 'rotapfel-'+d.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase();
+  }
+  async findPublication(path){
     const dashboards=await this._hass.callWS({type:'lovelace/dashboards/list'});
-    const target=dashboards.find(x=>x.url_path===path);
-    if(!target)return false;
-    const dashboardId=target.id;
-    if(dashboardId===undefined||dashboardId===null||dashboardId===''){
-      throw Error('Dashboard-ID konnte nicht ermittelt werden. Veröffentlichung wurde nicht entfernt.');
+    return dashboards.find(item=>item.url_path===path);
+  }
+  async verifyPublication(publication,target){
+    if(!publication?.owner_key||target.id!==publication.dashboard_id){
+      throw Error('Die Veröffentlichung gehört nicht eindeutig zu diesem Rotapfel-Dashboard.');
     }
-    await this._hass.callWS({type:'lovelace/dashboards/delete',dashboard_id:dashboardId});
+    const config=await this._hass.callWS({type:'lovelace/config',url_path:publication.url_path});
+    if(config?.rotapfel_publication_id!==publication.owner_key){
+      throw Error('Die Veröffentlichungskennung stimmt nicht überein.');
+    }
+  }
+  async deletePublishedDashboard(publication){
+    const target=await this.findPublication(publication.url_path);
+    if(!target)return false;
+    await this.verifyPublication(publication,target);
+    await this._hass.callWS({type:'lovelace/dashboards/delete',dashboard_id:target.id});
     return true;
   }
   async deleteManagedDashboard(d){
-    const path=d.publication?.url_path;
-    const warning=path
-      ? 'Das Dashboard wird vollständig gelöscht: zuerst seine Home-Assistant-Veröffentlichung, danach die Konfiguration im Rotapfel Manager.\n\nDiese Aktion kann nicht rückgängig gemacht werden. Zentral gespeicherte Layout-Vorlagen bleiben erhalten.'
-      : 'Die gesamte Dashboard-Konfiguration wird dauerhaft gelöscht.\n\nDiese Aktion kann nicht rückgängig gemacht werden. Zentral gespeicherte Layout-Vorlagen bleiben erhalten.';
-    if(!confirm('Dashboard „'+d.name+'“ endgültig löschen?\n\n'+warning))return;
+    const publication=d.publication;
+    if(!confirm('Dashboard „'+d.name+'“ und seine Veröffentlichung endgültig löschen?'))return;
     try{
-      let removedPublication=false;
-      if(path){
-        const dashboards=await this._hass.callWS({type:'lovelace/dashboards/list'});
-        const target=dashboards.find(x=>x.url_path===path);
-        if(target){
-          // Delete only the publication owned by this manager dashboard.
-          const expected='rotapfel-'+d.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase();
-          if(path!==expected)throw Error('Der Veröffentlichungspfad stimmt nicht mit der Dashboard-ID überein. Löschung abgebrochen.');
-          removedPublication=await this.deletePublishedDashboard(path);
-        }
+      if(publication&&publication.url_path!==this.publicationPath(d)){
+        throw Error('Der Veröffentlichungspfad stimmt nicht mit dem Rotapfel-Dashboard überein.');
       }
-      // Never delete the manager configuration if removal of the HA publication failed.
+      const removed=publication&&await this.deletePublishedDashboard(publication);
       const result=await this.api('delete',{id:d.id});
       this.items=result.dashboards;
       this.render();
-      if(removedPublication){
-        // A full reload is the reliable fallback for HA sidebar route caching.
-        window.location.reload();
-      }else{
-        alert('Dashboard „'+d.name+'“ endgültig gelöscht.');
-      }
+      if(removed)window.location.reload();
     }catch(err){
       await this.load();
-      alert('Dashboard konnte nicht vollständig gelöscht werden:\n'+String(err?.message||err)+'\n\nBitte Veröffentlichungsstatus prüfen, bevor du es erneut versuchst.');
-      console.error('Rotapfel dashboard deletion failed',err);
+      alert('Dashboard konnte nicht vollständig gelöscht werden:\n'+String(err?.message||err));
     }
   }
+  choosePublicationAccess(name){
+    const dialog=document.createElement('dialog');
+    dialog.innerHTML=`<form method="dialog"><h2>Dashboard veröffentlichen</h2>
+      <p>${this.esc(name)}</p>
+      <label>Zugriff<select name="access">
+        <option value="users">Angemeldete Nutzer</option>
+        <option value="admin">Nur Administratoren</option>
+      </select></label>
+      <div class="actions"><button value="publish">Veröffentlichen</button><button class="secondary" value="cancel">Abbrechen</button></div>
+    </form>`;
+    this.shadowRoot.append(dialog);
+    return new Promise(resolve=>{
+      dialog.addEventListener('close',()=>{
+        const access=dialog.querySelector('select').value;
+        const result=dialog.returnValue==='publish'?access:null;
+        dialog.remove();
+        resolve(result);
+      },{once:true});
+      dialog.showModal();
+    });
+  }
   async publicationAction(d,action){
-    let stored=d.publication||null;
-    const base='rotapfel-'+d.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase();
-    // Legacy duplicates may carry their source dashboard's publication link.
-    // Never touch that original publication; detach the stale link on the copy.
-    if(stored?.url_path && stored.url_path!==base){
-      if(action!=='publish'){
-        alert('Diese Dashboard-Kopie besitzt eine veraltete Veröffentlichungsverknüpfung. Bitte zuerst „Veröffentlichen“ verwenden, nachdem die Kopie bereinigt wurde.');
-        return;
-      }
-      try{
-        const cleaned=await this.api('publication',{id:d.id,publication:null});
-        this.items=cleaned.dashboards;
-        stored=null;
-      }catch(err){alert('Die alte Veröffentlichungsverknüpfung konnte nicht bereinigt werden: '+String(err?.message||err));return;}
-    }
-    const path=stored?.url_path||base;
-    const {yaml,warnings}=this.exportDashboard(d);
-    if(action!=='remove'&&!yaml.views.length){alert('Dashboard hat noch keine Tabs.');return;}
-    const description=action==='publish'?'als neues Home-Assistant-Dashboard veröffentlichen':action==='update'?'im veröffentlichten Dashboard aktualisieren':'aus Home Assistant entfernen';
-    if(!confirm('„'+d.name+'“ '+description+'?\n\nAndere Dashboards werden nicht verändert.'))return;
+    const path=this.publicationPath(d),stored=d.publication;
+    if(this._publicationPending)return;
+    this._publicationPending=true;
     try{
-      if(action==='publish'){
-        if(stored)throw Error('Bereits veröffentlicht. Bitte Aktualisieren verwenden.');
-        // Check for a path collision before creating anything.
-        const dashboards=await this._hass.callWS({type:'lovelace/dashboards/list'});
-        if(dashboards.some(x=>x.url_path===path))throw Error('Dashboard-Pfad ist bereits vergeben: '+path);
-        // The renderer must already be registered as a Lovelace module resource.
-        const resources=await this._hass.callWS({type:'lovelace/resources'});
-        if(!Array.isArray(resources)||!resources.some(x=>String(x.url||'').split('?')[0]==='/rotapfel_dashboard_manager/rotapfel-canvas-card.js')){
-          throw Error('Bitte zuerst die JavaScript-Modul-Ressource /rotapfel_dashboard_manager/rotapfel-canvas-card.js unter Einstellungen → Dashboards → Ressourcen registrieren.');
+      const target=await this.findPublication(path);
+      if(stored&&(stored.url_path!==path||!stored.owner_key)){
+        if(action==='remove'&&confirm('Nur die alte Rotapfel-Verknüpfung lösen? Das Home-Assistant-Dashboard bleibt bestehen.')){
+          this.items=(await this.api('publication',{id:d.id,publication:null})).dashboards;
+          this.render();
+          return;
         }
-        await this._hass.callWS({type:'lovelace/dashboards/create',url_path:path,mode:'storage',title:d.name,icon:'mdi:view-dashboard',show_in_sidebar:true,require_admin:false});
-        try{await this._hass.callWS({type:'lovelace/config/save',url_path:path,config:yaml});}
-        catch(e){
-          // Roll back only the newly created dashboard, never a pre-existing one.
-          try{await this.deletePublishedDashboard(path);}catch(rollbackError){console.error('Rotapfel: rollback failed',rollbackError);}
-          throw e;
-        }
-        const result=await this.api('publication',{id:d.id,publication:{url_path:path}});
-        this.items=result.dashboards;
-      }else{
-        if(!stored)throw Error('Dieses Dashboard wurde noch nicht über Rotapfel veröffentlicht.');
-        // Confirm the exact registered target before touching it.
-        const dashboards=await this._hass.callWS({type:'lovelace/dashboards/list'});
-        const targetDashboard=dashboards.find(x=>x.url_path===path);
-        const exists=!!targetDashboard;
-        if(action==='update'){
-          if(!exists){
-            if(!confirm('Das bisher veröffentlichte Dashboard wurde in Home Assistant gelöscht.\n\nSoll es unter demselben Pfad neu erstellt und mit dem aktuellen Layout veröffentlicht werden?'))return;
-            const resources=await this._hass.callWS({type:'lovelace/resources'});
-            if(!Array.isArray(resources)||!resources.some(x=>String(x.url||'').split('?')[0]==='/rotapfel_dashboard_manager/rotapfel-canvas-card.js')){
-              throw Error('Die erforderliche Rotapfel-Canvas-Ressource ist nicht registriert.');
-            }
-            // Recheck immediately before creation to avoid overwriting another dashboard.
-            const latest=await this._hass.callWS({type:'lovelace/dashboards/list'});
-            if(latest.some(x=>x.url_path===path))throw Error('Der Dashboard-Pfad ist inzwischen wieder vergeben. Bitte erneut versuchen.');
-            await this._hass.callWS({type:'lovelace/dashboards/create',url_path:path,mode:'storage',title:d.name,icon:'mdi:view-dashboard',show_in_sidebar:true,require_admin:false});
-            try{await this._hass.callWS({type:'lovelace/config/save',url_path:path,config:yaml});}
-            catch(e){
-              try{await this.deletePublishedDashboard(path);}catch(rollbackError){console.error('Rotapfel: rollback failed',rollbackError);}
-              throw e;
-            }
-          }else{
-            // Saving Lovelace config does not rename the registered dashboard/sidebar entry.
-            // Keep the publication path and ID stable; update metadata separately.
-            await this._hass.callWS({type:'lovelace/config/save',url_path:path,config:yaml});
-            if(targetDashboard.title!==d.name){
-              if(targetDashboard.id===undefined||targetDashboard.id===null){
-                throw Error('Dashboard wurde gespeichert, aber die Home-Assistant-Dashboard-ID für die Umbenennung fehlt.');
-              }
-              await this._hass.callWS({type:'lovelace/dashboards/update',dashboard_id:targetDashboard.id,title:d.name});
-            }
-          }
-        }else if(action==='remove'){
-          if(!exists){
-            if(!confirm('Das Dashboard existiert in Home Assistant nicht mehr.\n\nNur die veraltete Veröffentlichungsverknüpfung im Rotapfel Manager entfernen?'))return;
-            const result=await this.api('publication',{id:d.id,publication:null});
-            this.items=result.dashboards;this.render();alert('Veraltete Veröffentlichungsverknüpfung entfernt.');return;
-          }
-          await this.deletePublishedDashboard(path);
-          const result=await this.api('publication',{id:d.id,publication:null});
-          this.items=result.dashboards;
-        }
+        throw Error('Alte Veröffentlichung ohne geprüfte Kennung. Über „Veröffentlichung entfernen“ kannst du die alte Verknüpfung lösen.');
       }
-      this.render();
-      alert(action==='publish'?'Dashboard veröffentlicht.':action==='update'?'Dashboard aktualisiert.':'Veröffentlichung entfernt. Das Dashboard im Manager bleibt erhalten.');
-      if(warnings.length&&action!=='remove')alert('Exporthinweise:\n'+warnings.join('\n'));
-      if(action==='publish'||action==='remove'||action==='update')window.location.reload();
+      if(action==='remove'){
+        if(!stored||!confirm('Veröffentlichung von „'+d.name+'“ entfernen?'))return;
+        await this.deletePublishedDashboard(stored);
+        this.items=(await this.api('publication',{id:d.id,publication:null})).dashboards;
+      }else{
+        const {yaml,warnings}=this.exportDashboard(d);
+        if(!yaml.views.length)throw Error('Dashboard hat noch keine Tabs.');
+        if(action==='update'&&target){
+          await this.verifyPublication(stored,target);
+          if(!confirm('Veröffentlichtes Dashboard „'+d.name+'“ aktualisieren?'))return;
+          await this.verifyPublication(stored,target);
+          await this._hass.callWS({type:'lovelace/config/save',url_path:path,
+            config:{...yaml,rotapfel_publication_id:stored.owner_key}});
+          if(target.title!==d.name){
+            await this._hass.callWS({type:'lovelace/dashboards/update',dashboard_id:target.id,title:d.name});
+          }
+        }else{
+          if(target)throw Error('Der Dashboard-Pfad ist bereits vergeben.');
+          const resources=await this._hass.callWS({type:'lovelace/resources'});
+          if(!Array.isArray(resources)||!resources.some(x=>String(x.url||'').split('?')[0]==='/rotapfel_dashboard_manager/rotapfel-canvas-card.js')){
+            throw Error('Die erforderliche Rotapfel-Canvas-Ressource ist nicht registriert.');
+          }
+          const access=await this.choosePublicationAccess(d.name);
+          if(access===null)return;
+          if(await this.findPublication(path))throw Error('Der Dashboard-Pfad ist inzwischen vergeben.');
+          const created=await this._hass.callWS({type:'lovelace/dashboards/create',url_path:path,mode:'storage',
+            title:d.name,icon:'mdi:view-dashboard',show_in_sidebar:true,require_admin:access==='admin'});
+          const ownerKey=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
+          const publication={url_path:path,dashboard_id:created.id,owner_key:ownerKey};
+          try{
+            await this._hass.callWS({type:'lovelace/config/save',url_path:path,config:{...yaml,rotapfel_publication_id:ownerKey}});
+            await this.verifyPublication(publication,created);
+            this.items=(await this.api('publication',{id:d.id,publication})).dashboards;
+          }catch(err){
+            throw Error('Veröffentlichung konnte nicht vollständig gespeichert werden. Prüfe das neu angelegte Dashboard in Home Assistant. '+String(err?.message||err));
+          }
+        }
+        if(warnings.length)alert('Exporthinweise:\n'+warnings.join('\n'));
+      }
+      window.location.reload();
     }catch(err){
-      // HA WebSocket failures can contain nested objects instead of an Error.message.
-      const detail=typeof err==='string'?err:(typeof err?.message==='string'?err.message:JSON.stringify(err,(key,value)=>value instanceof Error?{message:value.message,name:value.name}:value,2));
-      alert('Veröffentlichung fehlgeschlagen:\n'+(detail&&detail!=='{}'?detail:'Unbekannter Home-Assistant-WebSocket-Fehler')+'\n\nBitte Home-Assistant-Protokolle bzw. Browserkonsole prüfen.');
+      alert('Veröffentlichung fehlgeschlagen:\n'+String(err?.message||err));
       console.error('Rotapfel publication failed',err);
+    }finally{
+      this._publicationPending=false;
     }
   }
   async closeLayoutEditor(){
@@ -1251,7 +1231,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13939</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13940</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1259,7 +1239,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.39</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13939</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.40</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13940</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
