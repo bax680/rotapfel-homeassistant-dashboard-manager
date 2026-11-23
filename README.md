@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Entwicklungsstand:** Alpha 13.9.48 · **Integrationsversion:** `0.2.0a13948` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.48 · **Integrationsversion:** `0.2.0a13948` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -35,13 +35,16 @@ Tabs gliedern das Dashboard, etwa nach Etagen. Räume organisieren die Karten in
 
 ## Home-Assistant-Standardkarten
 
-Unter **Karte hinzufügen → Kategorie → Home Assistant** findest du Standardkarten, Stapel, bedingte Karten und Karten für Energie, Wasser und Gas. Der Editor verwendet die native Kartenkonfiguration, soweit sie verfügbar ist. Jede Karte lässt sich auch mit YAML oder JSON konfigurieren.
+1. Öffne im gewünschten Raum **Karte hinzufügen** und wähle im Dropdown **Kategorie** den Eintrag **Home Assistant**.
+2. Suche nach einer Standardkarte, etwa Wettervorhersage, Entitäten oder einem vertikalen Stapel. Wähle die Karte aus und klicke auf **Karte hinzufügen**.
+3. Konfiguriere die Karte im nativen Home-Assistant-Editor, sofern dieser für den Typ verfügbar ist. Alternativ kannst du die Konfiguration als YAML oder JSON eingeben. Bei Stapeln enthält die Konfiguration auch die untergeordneten Karten.
+4. Speichere das Layout und prüfe die Karte in der Vorschau. Über **Veröffentlichen** oder **Aktualisieren** übernimmst du sie in das veröffentlichte Dashboard.
 
 Die verfügbaren Kartentypen und Daten hängen von deiner Home-Assistant-Version und Einrichtung ab. Energie- und Verbrauchskarten benötigen die passenden Daten in Home Assistant. Für die Standardkarten selbst brauchst du keine zusätzliche Marketplace-Ressource.
 
 ## Beschriftungen
 
-Wähle **Karte hinzufügen → Beschriftung horizontal** oder **Beschriftung vertikal** und gib den Text ein. Die Karte benötigt keine Entität. Die vertikale Beschriftung liest sich von unten nach oben. Text, Design und Position lassen sich über die üblichen Kartenaktionen bearbeiten.
+Wähle unter **Karte hinzufügen** in der Kategorie **Sonstige** den Typ **Beschriftung horizontal** oder **Beschriftung vertikal** und gib den Text ein. Die Karte benötigt keine Entität. Die vertikale Beschriftung liest sich von unten nach oben. Text, Design und Position lassen sich über die üblichen Kartenaktionen bearbeiten.
 
 ## Karten positionieren und skalieren
 
@@ -155,3 +158,11 @@ Ideale Kartengröße ist direkt neben der automatischen Anordnung erreichbar. Ko
 ### Alpha 13.9.46
 
 „Ideale Größe“ setzt zu breite Mushroom Entity Cards auf ihre Rotapfel-Standardbreite zurück.
+
+### Alpha 13.9.47
+
+Fügt horizontale und vertikale Beschriftungskarten ohne Entität hinzu.
+
+### Alpha 13.9.48
+
+Erweitert die Kartenauswahl um 69 native Home-Assistant-Kartentypen, darunter Stapel, bedingte Karten und Verbrauchskarten. Nutzt den nativen Karteneditor, sofern verfügbar, und bietet YAML oder JSON zur manuellen Konfiguration.
