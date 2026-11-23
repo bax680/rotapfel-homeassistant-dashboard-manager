@@ -75,7 +75,7 @@ Der Rotapfel-Editor selbst ist Administratoren vorbehalten. Der Zugriff auf das 
 
 Die gebündelte **Rotapfel Simple ThermCard** basiert auf **DashHaus ORB** von **Krystian Czesak** (Copyright © 2026). Der MIT-Lizenztext und der ursprüngliche Copyright-Hinweis stehen in [LICENSE](LICENSE). Die Hinweise auf gebündelte Drittkomponenten, etwa React und ReactDOM, bleiben im JavaScript erhalten. [Upstream-Projekt](https://github.com/krystosterone/dashhaus)
 
-Für die eigenständigen Teile des Rotapfel Dashboard Managers ist im Repository derzeit keine gesonderte Lizenz ausgewiesen. Der MIT-Hinweis für die ThermCard erteilt keine Lizenz für diese eigenständigen Teile.
+Der eigenständige Rotapfel Dashboard Manager steht ebenfalls unter der [MIT-Lizenz](LICENSE). Copyright © 2026 Jan Schwamberger.
 
 ## Entwicklungshistorie
 
