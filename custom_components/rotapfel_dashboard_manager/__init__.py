@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.35, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.36, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -24,7 +24,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13935"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13936"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
@@ -343,9 +343,16 @@ class RotapfelView(HomeAssistantView):
                         cards = room.get("cards")
                         if not isinstance(cards, list) or len(cards) > 100:
                             raise web.HTTPBadRequest(text="Invalid cards")
-                        for card in cards:
-                            if not isinstance(card, dict) or card.get("type") not in {"placeholder", "entity", "custom"} or not isinstance(card.get("id"), str) or not isinstance(card.get("title"), str) or len(card["title"]) > 80:
-                                raise web.HTTPBadRequest(text="Invalid card")
+                        for index, card in enumerate(cards, start=1):
+                            location = f"{tab['name']} / {room['name']} / Karte {index}"
+                            if not isinstance(card, dict):
+                                raise web.HTTPBadRequest(text=f"{location}: Ungültiges Kartenformat")
+                            if card.get("type") not in ("placeholder", "entity", "custom"):
+                                raise web.HTTPBadRequest(text=f"{location}: Ungültiger Kartentyp")
+                            if not isinstance(card.get("id"), str):
+                                raise web.HTTPBadRequest(text=f"{location}: Ungültige Karten-ID")
+                            if not isinstance(card.get("title"), str):
+                                raise web.HTTPBadRequest(text=f"{location}: Kartentitel muss Text sein")
                             design = card.get("design")
                             if design is not None:
                                 if not isinstance(design, dict) or not isinstance(design.get("width"), int) or not 1 <= design["width"] <= 4 or not isinstance(design.get("height"), int) or not 76 <= design["height"] <= 320 or any(not isinstance(design.get(k), str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", design[k]) for k in ("bg", "fg", "accent")):
