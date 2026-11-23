@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.45, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.46, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -13,7 +13,7 @@ from homeassistant.components import panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13945"
+VERSION = "0.2.0a13946"
 
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
 

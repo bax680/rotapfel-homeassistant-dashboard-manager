@@ -5,8 +5,8 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 ## Version
 
 - Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a13945`
-- Source archive: Alpha 13.9.45
+- Version in `manifest.json`: `0.2.0a13946`
+- Source archive: Alpha 13.9.46
 
 ## Installation via HACS
 
@@ -120,3 +120,7 @@ Ideale Kartengröße ist direkt neben der automatischen Anordnung erreichbar. Ko
 ### Alpha 13.9.45
 
 „Ideale Größe“ verbreitert zu schmale responsive Custom Cards und verwendet ihre unskalierte Inhaltshöhe.
+
+### Alpha 13.9.46
+
+„Ideale Größe“ setzt zu breite Mushroom Entity Cards auf ihre Rotapfel-Standardbreite zurück.
