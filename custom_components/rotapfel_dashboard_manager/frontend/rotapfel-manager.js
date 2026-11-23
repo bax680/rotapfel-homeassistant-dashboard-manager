@@ -3188,6 +3188,7 @@ class RotapfelDashboardManager extends HTMLElement {
     if(knownTypes.includes(initialType))select.value=initialType;
     else if(initialType)select.value='__manual__';
     const configInput=overlay.querySelector('#custom-config');
+    const entityLabel=overlay.querySelector('#custom-entity-label');
     const cardTemplate=type=>{
       const templates={
         'custom:mushroom-entity-card':['entity: light.example','name: Meine Karte'],
@@ -3250,7 +3251,6 @@ class RotapfelDashboardManager extends HTMLElement {
       else{select.value='__manual__';typeInput.readOnly=false;}
     };
     configInput.addEventListener('input',()=>{generatedTemplate='';templateManaged=false;detectType();});
-    const entityLabel=overlay.querySelector('#custom-entity-label');
     const getConfiguredEntity=()=>{
       try{const obj=JSON.parse(configInput.value);if(typeof obj?.entity==='string')return obj.entity;}catch(_e){}
       return configInput.value.match(/^entity:\\s*['"]?([a-z_]+\\.[a-z0-9_]+)['"]?\\s*$/m)?.[1]||'';
