@@ -6,7 +6,7 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 
 - Integration domain: `rotapfel_dashboard_manager`
 - Version in `manifest.json`: `0.2.0a13933`
-- Source archive: Alpha 13.9.36
+- Source archive: Alpha 13.9.37
 
 ## Installation via HACS
 
@@ -84,3 +84,7 @@ Behebt den JavaScript-Syntaxfehler, der das Laden des Manager-Panels verhinderte
 ### Alpha 13.9.36
 
 Längere Kartentitel lassen sich speichern. Meldungen zu ungültigen Kartendaten nennen Tab, Raum und Kartennummer.
+
+### Alpha 13.9.37
+
+Zeigt die Schnelleinstellungen für unterstützte Custom Cards auch bei Typen aus vorhandener YAML-Konfiguration und bei manueller Eingabe.
