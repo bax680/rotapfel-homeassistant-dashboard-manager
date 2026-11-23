@@ -5,8 +5,8 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 ## Version
 
 - Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a13930`
-- Source archive: Alpha 13.9.30
+- Version in `manifest.json`: `0.2.0a13931`
+- Source archive: Alpha 13.9.31
 
 ## Installation via HACS
 
@@ -65,6 +65,6 @@ The bundled **Rotapfel Simple ThermCard** is a modified and renamed derivative o
 
 The bundled JavaScript also includes third-party notices (including React and ReactDOM); these notices must remain intact. Rotapfel modifications are not endorsed by or affiliated with the original DashHaus author. The LICENSE file preserves the upstream MIT terms; it does not independently establish authorship or license status of unrelated project components.
 
-### Kartenbibliothek (Alpha 13.9.30)
+### Kartenbibliothek (Alpha 13.9.31)
 
-Im Raumeditor können fertig konfigurierte Karten über **In Kartenbibliothek speichern** als wiederverwendbare Vorlage in Home Assistants persistentem Speicher abgelegt werden. Über **Aus Kartenbibliothek** lassen sie sich in anderen Räumen und Dashboards einfügen. Position, Geräteprofile, Gruppenbindung und Karten-ID werden nicht aus der Vorlage übernommen; die neue Karte erhält einen freien Platz. Maximal 100 Vorlagen.
+Im Raumeditor können fertig konfigurierte Karten über **In Kartenbibliothek speichern** als wiederverwendbare Vorlage in Home Assistants persistentem Speicher abgelegt werden. Über **Aus Kartenbibliothek** mit einer Dropdownliste der gespeicherten Vorlagennamen lassen sie sich in anderen Räumen und Dashboards einfügen. Position, Geräteprofile, Gruppenbindung und Karten-ID werden nicht aus der Vorlage übernommen; die neue Karte erhält einen freien Platz. Maximal 100 Vorlagen.
