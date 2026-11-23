@@ -3120,35 +3120,83 @@ class RotapfelDashboardManager extends HTMLElement {
     let cards;
     try{cards=(await this.api('card_library')).cards||[];}
     catch(err){window.alert('Kartenbibliothek konnte nicht geladen werden: '+String(err?.message||err));return;}
-    if(!cards.length){window.alert('Die Kartenbibliothek ist noch leer. Wähle eine bestehende Karte und klicke auf „In Kartenbibliothek speichern“.');return;}
     this.shadowRoot.querySelector('#rotapfel-card-library-dialog')?.remove();
     const dialog=document.createElement('dialog');
     dialog.id='rotapfel-card-library-dialog';
-    dialog.style.cssText='width:min(520px,94vw);max-width:94vw;border:1px solid var(--divider-color,#999);border-radius:14px;padding:22px;box-sizing:border-box;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);box-shadow:0 12px 50px #0005';
-    const options=cards.map((item,index)=>'<option value="'+index+'">'+this.esc(item.name)+'</option>').join('');
-    dialog.innerHTML='<h3 style="margin:0 0 12px">Karte aus Bibliothek einfügen</h3>'
-      +'<p style="margin:0 0 16px">Gespeicherte Kartenvorlage auswählen. Die Karte erhält eine neue ID und wird im aktuellen Raum platziert.</p>'
-      +'<label for="rotapfel-library-select" style="display:block;margin-bottom:7px">Kartenvorlage</label>'
-      +'<select id="rotapfel-library-select" style="width:100%;box-sizing:border-box;padding:10px;margin-bottom:20px">'+options+'</select>'
-      +'<div style="display:flex;gap:10px;flex-wrap:wrap"><button id="rotapfel-library-insert" type="button">Karte einfügen</button><button id="rotapfel-library-cancel" type="button" class="secondary">Abbrechen</button></div>';
+    dialog.style.cssText='width:min(840px,96vw);max-width:96vw;max-height:88vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:14px;padding:20px;box-sizing:border-box;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);box-shadow:0 12px 50px #0005';
+    dialog.innerHTML='<h2 style="margin:0 0 10px">Rotapfel Kartenbibliothek</h2>'
+      +'<p class="muted">Vorlagen durchsuchen, bearbeiten und in den aktuellen Raum einfügen. Bereits eingefügte Karten bleiben bei Änderungen an Vorlagen unverändert.</p>'
+      +'<input id="rl-search" type="search" placeholder="Kartenname, Kartentyp oder Entität suchen …" style="width:100%;box-sizing:border-box;padding:10px;margin:8px 0 16px">'
+      +'<div id="rl-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;max-height:55vh;overflow:auto"></div>'
+      +'<div style="display:flex;justify-content:flex-end;margin-top:18px"><button type="button" id="rl-close" class="secondary">Schließen</button></div>';
     this.shadowRoot.append(dialog);
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
-    dialog.querySelector('#rotapfel-library-cancel').onclick=()=>dialog.close();
-    dialog.querySelector('#rotapfel-library-insert').onclick=()=>{
-      const index=Number(dialog.querySelector('#rotapfel-library-select').value);
-      if(!Number.isInteger(index)||index<0||index>=cards.length)return;
-      const card=JSON.parse(JSON.stringify(cards[index].card));
-      card.id=this.uid();
-      delete card.groupId;
-      delete card.position;
-      delete card.deviceLayouts;
-      this.placeNewCard(room,card);
-      room.cards.push(card);
-      this._selectedCards={...(this._selectedCards||{}),[room.id]:card.id};
-      dialog.close();
-      change();
+    dialog.querySelector('#rl-close').onclick=()=>dialog.close();
+    const list=dialog.querySelector('#rl-list'),search=dialog.querySelector('#rl-search');
+    const describe=card=>{
+      const cfg=card.custom_config||{};
+      const entity=cfg.entity||card.entity_id||cfg.entities?.[0]?.entity||cfg.entities?.[0]||'';
+      const type=cfg.type||card.variant||card.type||'Karte';
+      return {entity:String(entity),type:String(type)};
     };
-    dialog.showModal();
+    const persist=async(next)=>{
+      await this.api('save_card_library',{cards:next});
+      cards=next;
+      draw();
+    };
+    const draw=()=>{
+      const query=search.value.toLocaleLowerCase('de').trim();
+      const visible=cards.map((item,index)=>({item,index,...describe(item.card)}))
+        .filter(x=>[x.item.name,x.type,x.entity].some(value=>String(value).toLocaleLowerCase('de').includes(query)));
+      list.innerHTML=visible.length?visible.map(x=>'<section data-rl-index="'+x.index+'" style="border:1px solid var(--divider-color,#9996);border-radius:12px;padding:14px;min-width:0;display:grid;gap:9px">'
+        +'<strong style="overflow-wrap:anywhere">'+this.esc(x.item.name)+'</strong>'
+        +'<div class="muted" style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.type)+'</div>'
+        +'<div style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.entity||'Ohne direkte Entität')+'</div>'
+        +'<div style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" data-rl-action="insert">Einfügen</button><button type="button" class="secondary" data-rl-action="rename">Umbenennen</button><button type="button" class="secondary" data-rl-action="edit">Bearbeiten</button><button type="button" class="secondary" data-rl-action="delete">Löschen</button></div></section>').join('')
+        :'<p class="muted">'+(cards.length?'Keine passenden Vorlagen.':'Noch keine Kartenvorlagen gespeichert.')+'</p>';
+      list.querySelectorAll('[data-rl-action]').forEach(button=>button.onclick=async()=>{
+        const index=Number(button.closest('[data-rl-index]').dataset.rlIndex);
+        const item=cards[index];if(!item)return;
+        const action=button.dataset.rlAction;
+        if(action==='insert'){
+          const card=JSON.parse(JSON.stringify(item.card));
+          card.id=this.uid();delete card.groupId;delete card.position;delete card.deviceLayouts;
+          this.placeNewCard(room,card);room.cards.push(card);
+          this._selectedCards={...(this._selectedCards||{}),[room.id]:card.id};
+          dialog.close();change();
+        }else if(action==='rename'){
+          const name=window.prompt('Neuer Name der Kartenvorlage',item.name);
+          if(!name?.trim())return;
+          if(cards.some((other,i)=>i!==index&&other.name.toLocaleLowerCase('de')===name.trim().toLocaleLowerCase('de'))){window.alert('Der Name ist bereits vergeben.');return;}
+          const next=JSON.parse(JSON.stringify(cards));next[index].name=name.trim();
+          try{await persist(next);}catch(err){window.alert('Umbenennen fehlgeschlagen: '+String(err));}
+        }else if(action==='delete'){
+          if(!window.confirm('Kartenvorlage „'+item.name+'“ wirklich löschen? Bereits eingefügte Karten bleiben bestehen.'))return;
+          try{await persist(cards.filter((_entry,i)=>i!==index));}catch(err){window.alert('Löschen fehlgeschlagen: '+String(err));}
+        }else if(action==='edit'){
+          const draft=JSON.parse(JSON.stringify(item.card));
+          dialog.close();
+          const saveDraft=async()=>{
+            const next=JSON.parse(JSON.stringify(cards));
+            const position=next.findIndex(entry=>entry.id===item.id);
+            if(position<0)return;
+            next[position].card=this.libraryCardData(draft);
+            try{await this.api('save_card_library',{cards:next});}
+            catch(err){window.alert('Vorlage konnte nicht gespeichert werden: '+String(err));return;}
+            this.openCardLibrary(room,change);
+          };
+          if(draft.type==='custom'||draft.custom_config)this.configureCustomCard(draft,saveDraft);
+          else{
+            const title=window.prompt('Kartentitel bearbeiten',draft.title||item.name);
+            if(title===null){this.openCardLibrary(room,change);return;}
+            draft.title=title.trim()||draft.title;
+            saveDraft();
+          }
+        }
+      });
+    };
+    search.addEventListener('input',draw);
+    draw();dialog.showModal();
   }
   openCardTransferDialog(sourceTab,sourceRoom,sourceCard){
     const esc=v=>this.esc(String(v??''));
