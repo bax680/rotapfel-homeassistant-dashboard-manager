@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.46, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.47, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -13,7 +13,7 @@ from homeassistant.components import panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13946"
+VERSION = "0.2.0a13947"
 
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
 
@@ -364,7 +364,7 @@ class RotapfelView(HomeAssistantView):
                             location = f"{tab['name']} / {room['name']} / Karte {index}"
                             if not isinstance(card, dict):
                                 raise web.HTTPBadRequest(text=f"{location}: Ungültiges Kartenformat")
-                            if card.get("type") not in ("placeholder", "entity", "custom"):
+                            if card.get("type") not in ("placeholder", "entity", "custom", "label"):
                                 raise web.HTTPBadRequest(text=f"{location}: Ungültiger Kartentyp")
                             if not isinstance(card.get("id"), str):
                                 raise web.HTTPBadRequest(text=f"{location}: Ungültige Karten-ID")

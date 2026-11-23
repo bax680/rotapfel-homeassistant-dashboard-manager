@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Teststand:** Alpha 13.9.46 · **Integrationsversion:** `0.2.0a13946` · **Domain:** `rotapfel_dashboard_manager`
+**Entwicklungsstand:** Alpha 13.9.47 · **Integrationsversion:** `0.2.0a13947` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -32,6 +32,10 @@ Für eine manuelle Installation kopierst du `custom_components/rotapfel_dashboar
 5. Speichere das Layout. Öffne bei Bedarf die Positionierungsfläche über den aktiven Tab.
 
 Tabs gliedern das Dashboard, etwa nach Etagen. Räume organisieren die Karten innerhalb eines Tabs. Ein Geräteprofil bestimmt die Arbeitsfläche für das jeweilige Endgerät. Wähle das Profil vor der Bearbeitung, weil Positionen und Größen je Profil gespeichert werden.
+
+## Beschriftungen
+
+Wähle **Karte hinzufügen → Beschriftung horizontal** oder **Beschriftung vertikal** und gib den Text ein. Die Karte benötigt keine Entität. Die vertikale Beschriftung liest sich von unten nach oben. Text, Design und Position lassen sich über die üblichen Kartenaktionen bearbeiten.
 
 ## Karten positionieren und skalieren
 

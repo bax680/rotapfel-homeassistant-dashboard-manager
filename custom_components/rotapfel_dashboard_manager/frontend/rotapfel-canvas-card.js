@@ -52,6 +52,26 @@ class RotapfelEntityCard extends HTMLElement {
 }
 if(!customElements.get('rotapfel-entity-card'))customElements.define('rotapfel-entity-card',RotapfelEntityCard);
 
+class RotapfelLabelCard extends HTMLElement {
+  setConfig(config){
+    const root=this.shadowRoot||this.attachShadow({mode:'open'});
+    const d=config.design||{};
+    const bg=rotapfelHex(d.bg,'#e5e7eb');
+    const rgb=[1,3,5].map(i=>parseInt(bg.slice(i,i+2),16));
+    root.innerHTML=`<style>
+      :host{box-sizing:border-box;width:100%;height:100%;display:grid;place-items:center;padding:8px;overflow:hidden;
+        background:rgba(${rgb.join(',')},${rotapfelNumber(d.opacity,0,100,0)/100});color:${rotapfelHex(d.fg,'#202124')};
+        border:${rotapfelNumber(d.border_width,0,12,0)}px solid ${rotapfelHex(d.border_color,'#64748b')};
+        border-radius:${rotapfelNumber(d.radius,0,48,12)}px;font-size:${rotapfelNumber(d.font_size,10,32,18)}px;font-weight:700}
+      span{white-space:pre-wrap;overflow-wrap:anywhere;text-align:center;max-width:100%;max-height:100%}
+      .vertical{writing-mode:vertical-rl;transform:rotate(180deg)}
+    </style><span class="${config.vertical===true?'vertical':''}"></span>`;
+    root.querySelector('span').textContent=String(config.text??'');
+  }
+  getCardSize(){return 1;}
+}
+if(!customElements.get('rotapfel-label-card'))customElements.define('rotapfel-label-card',RotapfelLabelCard);
+
 class RotapfelCanvasCard extends HTMLElement {
   setConfig(config){
     if(!config||!Array.isArray(config.elements))throw new Error('Rotapfel Canvas: elements erforderlich');
@@ -158,7 +178,7 @@ class RotapfelCanvasCard extends HTMLElement {
         try{
           const card=helpers.createCardElement(item.card);
           if(this._hass)card.hass=this._hass;
-          if(item.card?.type==='custom:rotapfel-entity-card'){
+          if(['custom:rotapfel-entity-card','custom:rotapfel-label-card'].includes(item.card?.type)){
             tile.append(card);
           }else if(item.card?.type==='custom:equinox-card'){
             // Keep native typography and aspect ratio. Fit tall Equinox content

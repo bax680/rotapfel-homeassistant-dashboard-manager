@@ -84,6 +84,7 @@ class RotapfelDashboardManager extends HTMLElement {
   disconnectedCallback(){this._previewResizeObserver?.disconnect();}
   esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   cardKind(c){
+    if(c.type==='label')return 'Beschriftung';
     if(c.type==='custom')return 'custom';
     if(c.type!=='entity'||!c.entity_id)return 'placeholder';
     if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(c.variant))return 'climate';
@@ -619,6 +620,11 @@ class RotapfelDashboardManager extends HTMLElement {
     return `background-color:rgba(${rgb.join(',')},${alpha})!important;border:${clamp(v.border_width,0,12,0)}px solid ${/^#[0-9a-f]{6}$/i.test(v.border_color||'')?v.border_color:'#64748b'}!important;border-radius:${clamp(v.radius,0,48,12)}px!important;box-shadow:${shadow}!important;font-size:${clamp(v.font_size,10,32,14)}px;text-align:${['left','center','right'].includes(v.text_align)?v.text_align:'left'};`;
   }
   renderPreview(c){
+    if(c.type==='label'){
+      const vertical=c.variant==='label-vertical';
+      const design=this.design(c);
+      return `<div data-preview="${this.esc(c.id)}" style="${this.cardVisualStyle(c)}box-sizing:border-box;width:100%;height:100%;min-height:60px;display:grid;place-items:center;padding:8px;overflow:hidden;font-weight:700;color:${design.fg}"><span style="${vertical?'writing-mode:vertical-rl;transform:rotate(180deg);':''}white-space:pre-wrap;overflow-wrap:anywhere;text-align:center;max-width:100%;max-height:100%">${this.esc(c.title)}</span></div>`;
+    }
     const e=s=>this.esc(s),kind=this.cardKind(c),st=this.cardState(c),state=st?.state||'unavailable';
     if(this.externalVariant(c)||c.type==='custom'){
       const design=this.design(c);
@@ -634,7 +640,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const root=this.shadowRoot;if(!root||!this.layout)return;
     for(const tab of this.layout)for(const room of (tab.rooms||[]))for(const c of (room.cards||[])){
       for(const el of root.querySelectorAll('[data-preview]')){
-        if(el.dataset.preview!==c.id||this.externalVariant(c)||c.type==='custom')continue;
+        if(el.dataset.preview!==c.id||this.externalVariant(c)||c.type==='custom'||c.type==='label')continue;
         const next=document.createElement('template');next.innerHTML=this.renderPreview(c);
         el.replaceWith(next.content.firstElementChild);
       }
@@ -714,6 +720,8 @@ class RotapfelDashboardManager extends HTMLElement {
           card=this.externalConfig(c);
         }else if(c.type==='custom'&&c.custom_config&&typeof c.custom_config==='object'){
           card=structuredClone(c.custom_config);
+        }else if(c.type==='label'){
+          card={type:'custom:rotapfel-label-card',text:c.title,vertical:c.variant==='label-vertical',design:{...c.design,...this.design(c)}};
         }else if(c.type==='entity'&&c.entity_id){
           card={type:'custom:rotapfel-entity-card',entity:c.entity_id,name:c.title,design:structuredClone(c.design||{}),display:structuredClone(c.display||{})};
         }else{
@@ -1271,7 +1279,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13946</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13947</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1280,7 +1288,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     </section>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.46</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13946</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.47</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13947</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="rotapfel-update-info" aria-label="Update-Info"><span>Installiert <strong id="rotapfel-installed-version">${e(this._installedVersion||'Nicht ermittelt')}</strong></span><span>Verfügbares Update <strong id="rotapfel-offered-version">${e(this.availableUpdate()||'Kein konkretes Update gemeldet')}</strong></span></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
@@ -1483,8 +1491,8 @@ class RotapfelDashboardManager extends HTMLElement {
     const height=Math.max(240,Number(cv.height)||1080);
     const gap=Math.max(8,Number(cv.gap)||8);
     const kind=this.externalVariant(c);
-    const w=Math.min(width-gap*2,size?.w??(kind==='climate_cluster'?900:kind==='equinox'?440:kind==='rotapfel_simple_thermcard'?450:c.type==='custom'?320:Math.max(180,Math.round(this.design(c).width*width/4))));
-    const h=Math.min(height-gap*2,size?.h??(kind==='climate_cluster'?520:kind==='equinox'?280:kind==='rotapfel_simple_thermcard'?180:c.type==='custom'?80:Math.max(60,Number(this.design(c).height)||110)));
+    const w=Math.min(width-gap*2,size?.w??(c.type==='label'?(c.variant==='label-vertical'?76:320):kind==='climate_cluster'?900:kind==='equinox'?440:kind==='rotapfel_simple_thermcard'?450:c.type==='custom'?320:Math.max(180,Math.round(this.design(c).width*width/4))));
+    const h=Math.min(height-gap*2,size?.h??(c.type==='label'?(c.variant==='label-vertical'?200:60):kind==='climate_cluster'?520:kind==='equinox'?280:kind==='rotapfel_simple_thermcard'?180:c.type==='custom'?80:Math.max(60,Number(this.design(c).height)||110)));
     const occupied=this.cardPositions(tab,cv,room);
     const free=(x,y)=>x>=gap&&y>=gap&&x+w<=width-gap&&y+h<=height-gap&&
       occupied.every(p=>x+w+gap<=p.x||p.x+p.w+gap<=x||y+h+gap<=p.y||p.y+p.h+gap<=y);
@@ -2988,7 +2996,7 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#editor-lock').onchange=ev=>{if(!active)return;rememberChange();active.position={...(active.position||positions.get(active.id)),editorLocked:ev.target.checked};this.dirty=true;choose(active.id);};
     const idealSize=async (all,resultId='ideal-size-result')=>{
       const result=overlay.querySelector('#'+resultId);
-      const targets=cards.filter(({c})=>(all||selectedIds.has(c.id))&&!isEditorLocked(c)&&!c.position?.manualSize);
+      const targets=cards.filter(({c})=>(all||selectedIds.has(c.id))&&c.type!=='label'&&!isEditorLocked(c)&&!c.position?.manualSize);
       if(!targets.length){result.textContent='Wähle Karten ohne Größen- oder Layoutsperre aus.';return;}
       const buttons=['#ideal-size-selected','#ideal-size-all','#auto-ideal-size','#auto-layout-tab'].map(q=>overlay.querySelector(q));
       buttons.forEach(b=>b.disabled=true);
@@ -3511,6 +3519,8 @@ class RotapfelDashboardManager extends HTMLElement {
       ['climate_cluster','Climate Cluster – Original Custom Card','Heizung','Benötigt die Climate-Cluster-Ressource.'],
       ['rotapfel_simple_thermcard','Rotapfel Simple ThermCard','Heizung','Benötigt die ThermCard-Ressource.'],
       ['rotapfel_climate','Rotapfel Standard – Thermostatsteuerung','Heizung','Interne Thermostatkarte.'],
+      ['label-horizontal','Beschriftung horizontal','Sonstige','Leserichtung von links nach rechts.'],
+      ['label-vertical','Beschriftung vertikal','Sonstige','Leserichtung von unten nach oben.'],
       ['placeholder','Freie Platzhalterkarte','Sonstige','Karte ohne Entität.'],
       ['custom','Eigene Custom Card','Sonstige','Eigener Custom-Card-Typ.']
     ];
@@ -3535,6 +3545,16 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#type-cancel').onclick=()=>overlay.remove();
     overlay.querySelector('#type-add').onclick=()=>{
       const choice=selected;overlay.remove();
+      if(choice==='label-horizontal'||choice==='label-vertical'){
+        const title=prompt('Text der Beschriftung')?.trim();
+        if(!title)return;
+        const c={id:this.uid(),type:'label',variant:choice,title,design:{...this.design({}),opacity:0,font_size:18}};
+        if(!this.placeNewCard(room,c))return;
+        room.cards.push(c);
+        this._selectedCards={...this._selectedCards,[room.id]:c.id};
+        change();
+        return;
+      }
       if(choice==='placeholder'){
         const title=prompt('Titel der Platzhalterkarte','Neue Karte');if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
       }
