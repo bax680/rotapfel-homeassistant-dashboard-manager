@@ -5,8 +5,8 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 ## Version
 
 - Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a13933`
-- Source archive: Alpha 13.9.41
+- Version in `manifest.json`: `0.2.0a13942`
+- Source archive: Alpha 13.9.42
 
 ## Installation via HACS
 
@@ -104,3 +104,7 @@ Speichert Änderungen erst nach erfolgreicher Validierung, prüft die Kennung ve
 ### Alpha 13.9.41
 
 Gliedert den Layoutmanager in Tab, Raum und Karten. Die Update-Info zeigt die installierte Rotapfel-Version und meldet verfügbare Updates aus einer zugeordneten Home-Assistant-Update-Entität.
+
+### Alpha 13.9.42
+
+Kompaktere Tab-, Raum- und Kartenaktionen mit größeren primären Schaltflächen und aufklappbaren Aktionsmenüs.
