@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.29, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.30, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -24,7 +24,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13929"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13930"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
@@ -136,6 +136,8 @@ class RotapfelView(HomeAssistantView):
             if version is None:
                 raise web.HTTPNotFound(text="Version not found")
             return self.json({"snapshot": copy.deepcopy(version["snapshot"])})
+        if action == "card_library":
+            return self.json({"cards": self._state()["data"].get("card_library", [])})
         if action == "layout_templates":
             return self.json({"templates": self._state()["data"].get("layout_templates", [])})
         if action == "design_templates":
@@ -154,7 +156,7 @@ class RotapfelView(HomeAssistantView):
 
     async def post(self, request, action):
         self._check_admin(request)
-        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml"}:
+        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library"}:
             raise web.HTTPNotFound()
         try:
             body = await request.json()
@@ -177,6 +179,25 @@ class RotapfelView(HomeAssistantView):
             return self.json({"config": parsed})
         state = self._state()
         async with state["lock"]:
+            if action == "save_card_library":
+                cards = body.get("cards")
+                if not isinstance(cards, list) or len(cards) > 100:
+                    raise web.HTTPBadRequest(text="Ungültige Kartenbibliothek (maximal 100 Vorlagen)")
+                seen = set()
+                for item in cards:
+                    if not isinstance(item, dict) or set(item) != {"id", "name", "card"}:
+                        raise web.HTTPBadRequest(text="Ungültiger Bibliothekseintrag")
+                    ident, name, card = item["id"], item["name"], item["card"]
+                    if not isinstance(ident, str) or not 1 <= len(ident) <= 100 or ident in seen:
+                        raise web.HTTPBadRequest(text="Ungültige oder doppelte Vorlagen-ID")
+                    if not isinstance(name, str) or not 1 <= len(name.strip()) <= 100:
+                        raise web.HTTPBadRequest(text="Ungültiger Vorlagenname")
+                    if not isinstance(card, dict) or len(json.dumps(card, allow_nan=False)) > 100_000:
+                        raise web.HTTPBadRequest(text="Ungültige Kartenvorlage")
+                    seen.add(ident)
+                state["data"]["card_library"] = copy.deepcopy(cards)
+                await state["store"].async_save(state["data"])
+                return self.json({"cards": cards})
             if action == "save_layout_templates":
                 templates = body.get("templates")
                 if not isinstance(templates, list) or len(templates) > 100:
