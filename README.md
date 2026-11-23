@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.48 · **Integrationsversion:** `0.2.0a13948` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.49 · **Integrationsversion:** `0.2.0a13949` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -166,3 +166,7 @@ Fügt horizontale und vertikale Beschriftungskarten ohne Entität hinzu.
 ### Alpha 13.9.48
 
 Erweitert die Kartenauswahl um 69 native Home-Assistant-Kartentypen, darunter Stapel, bedingte Karten und Verbrauchskarten. Nutzt den nativen Karteneditor, sofern verfügbar, und bietet YAML oder JSON zur manuellen Konfiguration.
+
+### Alpha 13.9.49
+
+Lädt die Home-Assistant-Übersetzungen für die Kartenauswahl und den nativen Karteneditor direkt im Rotapfel-Panel. Dadurch erscheinen Feldbeschriftungen und Auswahltexte auch beim direkten Öffnen des Managers.
