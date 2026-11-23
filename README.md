@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Entwicklungsstand:** Alpha 13.9.47 · **Integrationsversion:** `0.2.0a13947` · **Domain:** `rotapfel_dashboard_manager`
+**Entwicklungsstand:** Alpha 13.9.48 · **Integrationsversion:** `0.2.0a13948` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -32,6 +32,12 @@ Für eine manuelle Installation kopierst du `custom_components/rotapfel_dashboar
 5. Speichere das Layout. Öffne bei Bedarf die Positionierungsfläche über den aktiven Tab.
 
 Tabs gliedern das Dashboard, etwa nach Etagen. Räume organisieren die Karten innerhalb eines Tabs. Ein Geräteprofil bestimmt die Arbeitsfläche für das jeweilige Endgerät. Wähle das Profil vor der Bearbeitung, weil Positionen und Größen je Profil gespeichert werden.
+
+## Home-Assistant-Standardkarten
+
+Unter **Karte hinzufügen → Kategorie → Home Assistant** findest du Standardkarten, Stapel, bedingte Karten und Karten für Energie, Wasser und Gas. Der Editor verwendet die native Kartenkonfiguration, soweit sie verfügbar ist. Jede Karte lässt sich auch mit YAML oder JSON konfigurieren.
+
+Die verfügbaren Kartentypen und Daten hängen von deiner Home-Assistant-Version und Einrichtung ab. Energie- und Verbrauchskarten benötigen die passenden Daten in Home Assistant. Für die Standardkarten selbst brauchst du keine zusätzliche Marketplace-Ressource.
 
 ## Beschriftungen
 

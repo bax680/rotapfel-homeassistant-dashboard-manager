@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.47, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.48, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -13,7 +13,7 @@ from homeassistant.components import panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13947"
+VERSION = "0.2.0a13948"
 
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
 
@@ -378,7 +378,11 @@ class RotapfelView(HomeAssistantView):
                                 config = card.get("custom_config")
                                 legacy = card.get("custom")
                                 if config is not None:
-                                    if not isinstance(config, dict) or not isinstance(config.get("type"), str) or not re.fullmatch(r"custom:[a-z0-9_-]+", config["type"], re.IGNORECASE):
+                                    pattern = (
+                                        r"[a-z][a-z0-9-]*" if card.get("variant") == "ha-native"
+                                        else r"custom:[a-z0-9_-]+"
+                                    )
+                                    if not isinstance(config, dict) or not isinstance(config.get("type"), str) or not re.fullmatch(pattern, config["type"], re.IGNORECASE):
                                         raise web.HTTPBadRequest(text="Invalid custom card configuration")
                                 elif not isinstance(legacy, dict):
                                     raise web.HTTPBadRequest(text="Missing custom card configuration")
