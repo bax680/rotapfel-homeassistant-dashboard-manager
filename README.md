@@ -6,7 +6,7 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 
 - Integration domain: `rotapfel_dashboard_manager`
 - Version in `manifest.json`: `0.2.0a13933`
-- Source archive: Alpha 13.9.38
+- Source archive: Alpha 13.9.39
 
 ## Installation via HACS
 
@@ -92,3 +92,7 @@ Zeigt die Schnelleinstellungen für unterstützte Custom Cards auch bei Typen au
 ### Alpha 13.9.38
 
 Einfügevorschau und Rückgängig für Bibliothekskarten und Duplikate. Die Schnelleinstellungen für Custom Cards bieten eine Icon-Auswahlliste.
+
+### Alpha 13.9.39
+
+Mehrere Kartenvorlagen mit gemeinsamer Vorschau einfügen und gemeinsam rückgängig machen.

@@ -1251,7 +1251,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13938</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13939</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1259,7 +1259,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.38</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13938</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.39</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13939</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -1594,13 +1594,8 @@ class RotapfelDashboardManager extends HTMLElement {
     dialog.querySelector('#insertion-cancel').onclick=()=>dialog.close();
     dialog.addEventListener('close',()=>{dialog.remove();if(!accepted)onCancel?.();},{once:true});
     apply.onclick=()=>{
-      const before=plan.moves.map(({c})=>({card:c,position:c.position}));
-      const selected=this._selectedCards?.[room.id];
-      this.applyCardPlacement(card,plan);
-      room.cards.push(card);
-      const after=room.cards.map(c=>[c,c.position]);
-      this._selectedCards={...this._selectedCards,[room.id]:card.id};
-      this._undoInsertion={room,card,before,after,selected};
+      card.position=plan.position;
+      this.commitCardInsertion(room,[card],plan.moves);
       accepted=true;
       dialog.close();
       change();
@@ -1608,19 +1603,74 @@ class RotapfelDashboardManager extends HTMLElement {
     draw();
     dialog.showModal();
   }
+  planBatchInsertion(room,cards){
+    if(!cards.length||room.cards.length+cards.length>100)return null;
+    const originalByDraft=new Map(room.cards.map(card=>[{...card},card]));
+    const draft={...room,cards:[...originalByDraft.keys()]};
+    let plan;
+    for(const card of cards){
+      plan=this.planCardPlacement(draft,card);
+      if(!plan)return null;
+      this.applyCardPlacement(card,plan);
+      draft.cards.push(card);
+    }
+    const moves=[...originalByDraft].filter(([copy,original])=>copy.position!==original.position)
+      .map(([copy,c])=>({c,...copy.position}));
+    return {width:plan.width,height:plan.height,moves,draft};
+  }
+  previewBatchInsertion(room,cards,change){
+    const plan=this.planBatchInsertion(room,cards);
+    if(!plan){
+      window.alert('Die Auswahl passt nicht vollständig in den Zielraum. Wähle weniger Karten oder einen anderen Raum.');
+      return;
+    }
+    const {width,height,draft,moves}=plan;
+    const tab=this.layout.find(t=>t.rooms.includes(room));
+    const positions=this.cardPositions(tab,this.effectiveCanvas(tab),draft);
+    const movedIds=new Set(moves.map(({c})=>c.id));
+    const inserted=new Set(cards);
+    const dialog=document.createElement('dialog');
+    dialog.style.cssText='width:min(900px,94vw);max-height:90vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
+    dialog.innerHTML=`<h2>Einfügevorschau</h2><p>${cards.length} Karten · ${this.esc(tab.name)} / ${this.esc(room.name)}</p>
+      <p>Gestrichelt: neue Karten.${moves.length?' Farblich umrandet: verschobene Karten.':''}</p>
+      <div style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)">
+      ${positions.map(({c,x,y,w,h})=>{
+        const border=inserted.has(c)?'2px dashed var(--primary-color,#168fc0)':movedIds.has(c.id)?'2px solid var(--primary-color,#168fc0)':'1px solid var(--divider-color,#999)';
+        return `<div style="position:absolute;box-sizing:border-box;overflow:hidden;left:${x/width*100}%;top:${y/height*100}%;width:${w/width*100}%;height:${h/height*100}%;border:${border};padding:4px;font-size:12px">${this.esc(c.title)}</div>`;
+      }).join('')}</div>
+      <div class="actions"><button data-confirm>Alle einfügen</button><button class="secondary" data-cancel>Abbrechen</button></div>`;
+    this.shadowRoot.append(dialog);
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+    dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+    dialog.querySelector('[data-confirm]').onclick=()=>{
+      this.commitCardInsertion(room,cards,moves);
+      dialog.close();
+      change();
+    };
+    dialog.showModal();
+  }
+  commitCardInsertion(room,cards,moves){
+    const before=moves.map(({c})=>({card:c,position:c.position}));
+    const selected=this._selectedCards?.[room.id];
+    for(const {c,x,y,w,h} of moves)c.position={...c.position,x,y,w,h};
+    room.cards.push(...cards);
+    this._selectedCards={...this._selectedCards,[room.id]:cards[0].id};
+    const after=room.cards.map(c=>[c,c.position]);
+    this._undoInsertion={room,cards,before,after,selected};
+  }
   undoCardInsertion(){
     const entry=this._undoInsertion;
     this._undoInsertion=null;
     if(!entry)return;
-    const {room,card,before,after,selected}=entry;
+    const {room,cards,before,after,selected}=entry;
     const roomExists=this.layout?.some(tab=>tab.rooms?.includes(room));
-    if(!roomExists||!room.cards.includes(card)||room.cards.length!==after.length||after.some(([c,position],index)=>
+    if(!roomExists||room.cards.length!==after.length||after.some(([c,position],index)=>
       room.cards[index]!==c||c.position!==position)){
       window.alert('Die Einfügung kann nach weiteren Layoutänderungen nicht rückgängig gemacht werden.');
       this.render();
       return;
     }
-    room.cards.splice(room.cards.indexOf(card),1);
+    room.cards=room.cards.filter(card=>!cards.includes(card));
     for(const item of before){
       if(item.position===undefined)delete item.card.position;
       else item.card.position=item.position;
@@ -3283,14 +3333,43 @@ class RotapfelDashboardManager extends HTMLElement {
     dialog.id='rotapfel-card-library-dialog';
     dialog.style.cssText='width:min(840px,96vw);max-width:96vw;max-height:88vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:14px;padding:20px;box-sizing:border-box;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);box-shadow:0 12px 50px #0005';
     dialog.innerHTML='<h2 style="margin:0 0 10px">Rotapfel Kartenbibliothek</h2>'
-      +'<p class="muted">Vorlagen durchsuchen, bearbeiten und in den aktuellen Raum einfügen. Bereits eingefügte Karten bleiben bei Änderungen an Vorlagen unverändert.</p>'
+      +'<p class="muted">Vorlagen durchsuchen, bearbeiten und in einen Zielraum einfügen. Bereits eingefügte Karten bleiben bei Änderungen an Vorlagen unverändert.</p>'
       +'<input id="rl-search" type="search" placeholder="Kartenname, Kartentyp oder Entität suchen …" style="width:100%;box-sizing:border-box;padding:10px;margin:8px 0 16px">'
       +'<div id="rl-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;max-height:55vh;overflow:auto"></div>'
-      +'<div style="display:flex;justify-content:flex-end;margin-top:18px"><button type="button" id="rl-close" class="secondary">Schließen</button></div>';
+      +'<div class="actions" style="margin-top:18px"><label>Zielraum<select id="rl-room"></select></label><button type="button" id="rl-batch" disabled>Auswahl einfügen</button><button type="button" id="rl-close" class="secondary">Schließen</button></div>';
     this.shadowRoot.append(dialog);
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     dialog.querySelector('#rl-close').onclick=()=>dialog.close();
     const list=dialog.querySelector('#rl-list'),search=dialog.querySelector('#rl-search');
+    const selected=new Set();
+    const targets=this.layout.flatMap(tab=>tab.rooms.map(target=>({tab,target})));
+    const targetSelect=dialog.querySelector('#rl-room');
+    targetSelect.replaceChildren(...targets.map(({tab,target},index)=>new Option(tab.name+' / '+target.name,index,false,target===room)));
+    const batch=dialog.querySelector('#rl-batch');
+    const updateSelection=()=>{
+      const count=cards.filter(item=>selected.has(item.id)).length;
+      batch.disabled=!count;
+      batch.textContent=count?`Auswahl einfügen (${count})`:'Auswahl einfügen';
+    };
+    const insert=(items)=>{
+      const destination=targets[Number(targetSelect.value)];
+      if(!destination)return;
+      const copies=items.map(item=>{
+        const card=this.libraryCardData(item.card);
+        card.id=this.uid();
+        this.applyCardTitle(card,item.name);
+        return card;
+      });
+      const complete=()=>{
+        this.tabId=destination.tab.id;
+        this._activeRoomByTab={...this._activeRoomByTab,[destination.tab.id]:destination.target.id};
+        dialog.close();
+        change();
+      };
+      if(copies.length===1)this.previewCardInsertion(destination.target,copies[0],complete);
+      else this.previewBatchInsertion(destination.target,copies,complete);
+    };
+    batch.onclick=()=>insert(cards.filter(item=>selected.has(item.id)));
     const describe=card=>{
       const cfg=card.custom_config||{};
       const entity=cfg.entity||card.entity_id||cfg.entities?.[0]?.entity||cfg.entities?.[0]||'';
@@ -3307,23 +3386,24 @@ class RotapfelDashboardManager extends HTMLElement {
       const visible=cards.map((item,index)=>({item,index,...describe(item.card)}))
         .filter(x=>[x.item.name,x.type,x.entity].some(value=>String(value).toLocaleLowerCase('de').includes(query)));
       list.innerHTML=visible.length?visible.map(x=>'<section data-rl-index="'+x.index+'" style="border:1px solid var(--divider-color,#9996);border-radius:12px;padding:14px;min-width:0;display:grid;gap:9px">'
-        +'<strong style="overflow-wrap:anywhere">'+this.esc(x.item.name)+'</strong>'
+        +'<label><input style="width:auto;display:inline" type="checkbox" data-rl-select '+(selected.has(x.item.id)?'checked':'')+'> '+this.esc(x.item.name)+'</label>'
         +'<div class="muted" style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.type)+'</div>'
         +'<div style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.entity||'Ohne direkte Entität')+'</div>'
         +'<div style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" data-rl-action="insert">Einfügen</button><button type="button" class="secondary" data-rl-action="rename">Umbenennen</button><button type="button" class="secondary" data-rl-action="edit">Bearbeiten</button><button type="button" class="secondary" data-rl-action="delete">Löschen</button></div></section>').join('')
         :'<p class="muted">'+(cards.length?'Keine passenden Vorlagen.':'Noch keine Kartenvorlagen gespeichert.')+'</p>';
+      updateSelection();
+      list.querySelectorAll('[data-rl-select]').forEach(input=>input.onchange=()=>{
+        const item=cards[Number(input.closest('[data-rl-index]').dataset.rlIndex)];
+        if(input.checked)selected.add(item.id);
+        else selected.delete(item.id);
+        updateSelection();
+      });
       list.querySelectorAll('[data-rl-action]').forEach(button=>button.onclick=async()=>{
         const index=Number(button.closest('[data-rl-index]').dataset.rlIndex);
         const item=cards[index];if(!item)return;
         const action=button.dataset.rlAction;
         if(action==='insert'){
-          const card=JSON.parse(JSON.stringify(item.card));
-          card.id=this.uid();delete card.groupId;delete card.position;delete card.deviceLayouts;
-          this.applyCardTitle(card,item.name);
-          this.previewCardInsertion(room,card,()=>{
-            dialog.close();
-            change();
-          });
+          insert([item]);
         }else if(action==='rename'){
           const name=window.prompt('Neuer Name der Kartenvorlage',item.name);
           if(!name?.trim())return;
