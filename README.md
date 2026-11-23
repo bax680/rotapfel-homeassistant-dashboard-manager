@@ -6,7 +6,7 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 
 - Integration domain: `rotapfel_dashboard_manager`
 - Version in `manifest.json`: `0.2.0a13933`
-- Source archive: Alpha 13.9.33
+- Source archive: Alpha 13.9.34
 
 ## Installation via HACS
 
@@ -72,3 +72,7 @@ Im Raumeditor können fertig konfigurierte Karten über **In Kartenbibliothek sp
 ### Alpha 13.9.33 – Kartenbibliothek V2, Platzierung, Schnelleinstellungen
 
 Die gespeicherten Kartenvorlagen werden in einer durchsuchbaren grafischen Bibliothek mit Kartentyp und Entität angezeigt. Vorlagen lassen sich einfügen, umbenennen, bearbeiten oder nach Bestätigung löschen. Die gespeicherten Vorlagen bleiben im Home-Assistant-Store; bestehende Karten werden nicht rückwirkend geändert. Bei fehlendem freiem Platz versucht die automatische Platzierung vorsichtig, ausschließlich ungesperrte, ungruppierte Karten desselben Raums ohne separate Geräte-Layouts als Ganzes zu verschieben. Andernfalls bleibt die bisherige Kollisionswarnung. Für ausgewählte Mushroom- und Button-Cards bietet der Custom-Card-Editor zusätzlich Schnellfelder für Name, Icon und Farbe, ohne den YAML-Editor zu ersetzen.
+
+### Alpha 13.9.34
+
+Behebt den JavaScript-Syntaxfehler, der das Laden des Manager-Panels verhinderte.
