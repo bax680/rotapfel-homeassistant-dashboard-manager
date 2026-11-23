@@ -1490,6 +1490,33 @@ class RotapfelDashboardManager extends HTMLElement {
         if(free(x,y)){c.position={x,y,w,h};return;}
       }
     }
+    // Conservative atomic push when no free slot exists. Only move cards in
+    // this room without locks, groups or device-specific layouts; never touch
+    // other rooms or device profiles. Try right, left and down, then roll back.
+    const own=other.filter(p=>room.cards.some(card=>card.id===p.c.id));
+    const foreign=other.filter(p=>!room.cards.some(card=>card.id===p.c.id));
+    const movable=own.length>0&&own.every(p=>p.c.position?.editorLocked!==true
+      &&!p.c.groupId&&!Object.keys(p.c.deviceLayouts||{}).length);
+    const intersects=(a,b)=>!(a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y);
+    if(movable){
+      const original=own.map(p=>({c:p.c,position:p.c.position?{...p.c.position}:null}));
+      for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
+        const shifted=own.map(p=>({...p,x:p.x+dx,y:p.y+dy}));
+        const candidate={x:gap,y:gap,w,h};
+        const within=p=>p.x>=gap&&p.y>=gap&&p.x+p.w<=width-gap&&p.y+p.h<=height-gap;
+        if(!shifted.every(within)||!within(candidate))continue;
+        if(shifted.some(p=>foreign.some(f=>intersects(p,f)))||
+           foreign.some(f=>intersects(candidate,f))||
+           shifted.some(p=>intersects(candidate,p)))continue;
+        for(const p of shifted){
+          p.c.position={...(p.c.position||{}),x:p.x,y:p.y,w:p.w,h:p.h};
+        }
+        c.position={x:gap,y:gap,w,h};
+        this._placementWarning='';
+        return;
+      }
+      // No mutation occurs unless an entire candidate arrangement fits.
+    }
     // Never silently overlap: leave the new card below the canvas and warn.
     c.position={x:gap,y:preferredY,w,h};
     this._placementWarning='Keine freie Position innerhalb der Dashboardfläche gefunden. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.';
