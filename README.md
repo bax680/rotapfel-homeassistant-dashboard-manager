@@ -5,8 +5,8 @@ A custom integration for Home Assistant to manage dashboards. **Alpha software �
 ## Version
 
 - Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a13944`
-- Source archive: Alpha 13.9.44
+- Version in `manifest.json`: `0.2.0a13945`
+- Source archive: Alpha 13.9.45
 
 ## Installation via HACS
 
@@ -116,3 +116,7 @@ Zeigt alle Aktionen der ausgewählten Karte direkt an.
 ### Alpha 13.9.44
 
 Ideale Kartengröße ist direkt neben der automatischen Anordnung erreichbar. Korrigiert die Touch-Erkennung in der mobilen Werkzeugleiste.
+
+### Alpha 13.9.45
+
+„Ideale Größe“ verbreitert zu schmale responsive Custom Cards und verwendet ihre unskalierte Inhaltshöhe.
