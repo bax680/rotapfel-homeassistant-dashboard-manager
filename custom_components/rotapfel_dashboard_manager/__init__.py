@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.40, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.41, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -13,6 +13,8 @@ from homeassistant.components import panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
+VERSION = "0.2.0a13941"
+
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
 
 async def async_setup(hass, config):
@@ -24,7 +26,7 @@ async def async_setup_entry(hass, entry):
     lock = asyncio.Lock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v=0.2.0a13940"
+    js_url = f"/{DOMAIN}/rotapfel-manager.js?v={VERSION}"
     await hass.http.async_register_static_paths([
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
@@ -144,7 +146,7 @@ class RotapfelView(HomeAssistantView):
             return self.json({"templates": self._state()["data"].get("design_templates", [])})
         if action != "dashboards":
             raise web.HTTPNotFound()
-        return self.json({"dashboards": self._state()["data"]["dashboards"]})
+        return self.json({"dashboards": self._state()["data"]["dashboards"], "version": VERSION})
 
     @staticmethod
     def _valid_canvas(value):
