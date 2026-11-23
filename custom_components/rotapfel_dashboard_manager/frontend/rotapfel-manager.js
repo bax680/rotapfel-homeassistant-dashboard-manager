@@ -1251,7 +1251,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13934</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13935</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1259,7 +1259,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.34</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13934</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.35</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13935</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -1439,10 +1439,10 @@ class RotapfelDashboardManager extends HTMLElement {
       overlay.remove();this.dirty=true;this.render();
     };
   }
-  cardPositions(tab,cv){
+  cardPositions(tab,cv,room=null){
     const width=Math.max(320,Number(cv.width)||1920),height=Math.max(240,Number(cv.height)||1080);
     const rooms=tab.rooms||[];
-    const activeRoom=rooms.find(r=>r.id===this._activeRoomByTab?.[tab.id])||rooms[0];
+    const activeRoom=room||rooms.find(r=>r.id===this._activeRoomByTab?.[tab.id])||rooms[0];
     const cards=(activeRoom?.cards||[]).map(c=>({c,room:activeRoom}));
     const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
     return cards.map(({c,room},i)=>{
@@ -1453,28 +1453,23 @@ class RotapfelDashboardManager extends HTMLElement {
       return {c,room,x,y,w,h};
     });
   }
-  placeNewCard(room,c){
-    // Alpha 13.5: place only the NEW card; never move saved cards.
+  placeNewCard(room,c,size=null){
     const tab=this.layout?.find(t=>(t.rooms||[]).some(r=>r.id===room.id));
-    if(!tab)return;
+    if(!tab)return false;
     const cv=this.effectiveCanvas(tab);
     const width=Math.max(320,Number(cv.width)||1920);
     const height=Math.max(240,Number(cv.height)||1080);
     const gap=Math.max(8,Number(cv.gap)||8);
     const kind=this.externalVariant(c);
-    const w=Math.min(width-gap*2,kind==='climate_cluster'?900:kind==='equinox'?440:kind==='rotapfel_simple_thermcard'?450:c.type==='custom'?320:Math.max(180,Math.round(this.design(c).width*width/4)));
-    const h=Math.min(height-gap*2,kind==='climate_cluster'?520:kind==='equinox'?280:kind==='rotapfel_simple_thermcard'?180:c.type==='custom'?80:Math.max(60,Number(this.design(c).height)||110));
-    const other=this.cardPositions(tab,cv).filter(p=>p.c.id!==c.id);
-    const occupied=other.map(p=>({
-      x:p.x,y:p.y,w:p.w,
-      h:Math.max(p.h,this.externalVariant(p.c)==='climate_cluster'?520:this.externalVariant(p.c)==='equinox'?360:this.externalVariant(p.c)==='rotapfel_simple_thermcard'?180:0)
-    }));
+    const w=Math.min(width-gap*2,size?.w??(kind==='climate_cluster'?900:kind==='equinox'?440:kind==='rotapfel_simple_thermcard'?450:c.type==='custom'?320:Math.max(180,Math.round(this.design(c).width*width/4))));
+    const h=Math.min(height-gap*2,size?.h??(kind==='climate_cluster'?520:kind==='equinox'?280:kind==='rotapfel_simple_thermcard'?180:c.type==='custom'?80:Math.max(60,Number(this.design(c).height)||110)));
+    const occupied=this.cardPositions(tab,cv,room);
     const free=(x,y)=>x>=gap&&y>=gap&&x+w<=width-gap&&y+h<=height-gap&&
       occupied.every(p=>x+w+gap<=p.x||p.x+p.w+gap<=x||y+h+gap<=p.y||p.y+p.h+gap<=y);
     // First try the established left-aligned position below the last card.
     const bottom=occupied.reduce((m,p)=>Math.max(m,p.y+p.h),0);
     const preferredY=occupied.length?bottom+gap:gap;
-    if(free(gap,preferredY)){c.position={x:gap,y:preferredY,w,h};return;}
+    if(free(gap,preferredY)){c.position={x:gap,y:preferredY,w,h};return true;}
     // Scan candidate columns left-to-right; within each column, top-to-bottom.
     // Edges of existing cards are included to use irregular free spaces.
     const xs=new Set([gap]);
@@ -1487,38 +1482,31 @@ class RotapfelDashboardManager extends HTMLElement {
     for(const x of [...xs].sort((a,b)=>a-b)){
       if(x+w>width-gap)continue;
       for(const y of sortedY){
-        if(free(x,y)){c.position={x,y,w,h};return;}
+        if(free(x,y)){c.position={x,y,w,h};return true;}
       }
     }
-    // Conservative atomic push when no free slot exists. Only move cards in
-    // this room without locks, groups or device-specific layouts; never touch
-    // other rooms or device profiles. Try right, left and down, then roll back.
-    const own=other.filter(p=>room.cards.some(card=>card.id===p.c.id));
-    const foreign=other.filter(p=>!room.cards.some(card=>card.id===p.c.id));
-    const movable=own.length>0&&own.every(p=>p.c.position?.editorLocked!==true
-      &&!p.c.groupId&&!Object.keys(p.c.deviceLayouts||{}).length);
-    const intersects=(a,b)=>!(a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y);
+    // Move the existing arrangement only when every card can move and the
+    // entire result fits. Keep protected layouts intact.
+    const movable=occupied.length>0&&occupied.every(({c:card})=>
+      !card.position?.editorLocked&&!card.position?.manualPosition
+      &&!card.groupId&&!Object.keys(card.deviceLayouts||{}).length);
     if(movable){
-        for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
-        const shifted=own.map(p=>({...p,x:p.x+dx,y:p.y+dy}));
-        const candidate={x:gap,y:gap,w,h};
-        const within=p=>p.x>=gap&&p.y>=gap&&p.x+p.w<=width-gap&&p.y+p.h<=height-gap;
-        if(!shifted.every(within)||!within(candidate))continue;
-        if(shifted.some(p=>foreign.some(f=>intersects(p,f)))||
-           foreign.some(f=>intersects(candidate,f))||
-           shifted.some(p=>intersects(candidate,p)))continue;
+      const candidate={x:gap,y:gap,w,h};
+      for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
+        const shifted=occupied.map(p=>({...p,x:p.x+dx,y:p.y+dy}));
+        const within=p=>p.x>=0&&p.y>=0&&p.x+p.w<=width&&p.y+p.h<=height;
+        const clearsCandidate=p=>candidate.x+w+gap<=p.x||p.x+p.w+gap<=candidate.x
+          ||candidate.y+h+gap<=p.y||p.y+p.h+gap<=candidate.y;
+        if(!shifted.every(p=>within(p)&&clearsCandidate(p)))continue;
         for(const p of shifted){
           p.c.position={...(p.c.position||{}),x:p.x,y:p.y,w:p.w,h:p.h};
         }
-        c.position={x:gap,y:gap,w,h};
-        this._placementWarning='';
-        return;
+        c.position=candidate;
+        return true;
       }
-      // No mutation occurs unless an entire candidate arrangement fits.
     }
-    // Never silently overlap: leave the new card below the canvas and warn.
-    c.position={x:gap,y:preferredY,w,h};
-    this._placementWarning='Keine freie Position innerhalb der Dashboardfläche gefunden. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.';
+    window.alert('Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.');
+    return false;
   }
   // Fit the external content INSIDE the frame; never resize the frame based on
   // card measurements. Both editors therefore display identical saved bounds.
@@ -3110,14 +3098,30 @@ class RotapfelDashboardManager extends HTMLElement {
       else if(a==='position')this.openPositionEditor(t);
       else if(a==='custom')this.configureCustomCard(c,change);
       else if(a==='thermostat')this.configureThermostat(c,change);
-      else if(a==='rename'){const title=ask('Kartentitel',c.title);if(title){c.title=title;change();}}
+      else if(a==='rename'){const title=ask('Kartentitel',c.title);if(title){this.applyCardTitle(c,title);change();}}
       else if(a==='entity')this.pickEntity(c.entity_id,eid=>{c.entity_id=eid;change();});
       else if(a==='transfer'){this.openCardTransferDialog(t,r,c);}
       else if(a==='save-library'){this.saveCardToLibrary(c);}
       else if(a==='copy'){this._cardClipboard=JSON.parse(JSON.stringify(c));this.render();}
-      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;this.placeNewCard(r,copy);r.cards.splice(r.cards.indexOf(c)+1,0,copy);this._selectedCards={...(this._selectedCards||{}),[r.id]:copy.id};change();}else if(a==='remove'){if(confirm(`Karte „${c.title}“ entfernen?`)){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
+      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);if(!this.placeNewCard(r,copy,size))return;r.cards.push(copy);this._selectedCards={...(this._selectedCards||{}),[r.id]:copy.id};change();}else if(a==='remove'){if(confirm(`Karte „${c.title}“ entfernen?`)){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
       else if(a==='left'||a==='right'){const i=r.cards.indexOf(c),j=i+(a==='left'?-1:1);if(j>=0&&j<r.cards.length){r.cards.splice(i,1);r.cards.splice(j,0,c);change();}}
     });
+  }
+  applyCardTitle(card,title){
+    card.title=title;
+    if(card.variant==='rotapfel_simple_thermcard'){
+      card.external_options={...card.external_options,card_name:title};
+    }else if(this.externalVariant(card)&&card.external_options?.name!==undefined){
+      card.external_options.name=title;
+    }
+    const config=card.custom_config;
+    if(!config)return;
+    if(config.type==='custom:mushroom-template-card')config.primary=title;
+    else if(config.name!==undefined||[
+      'custom:mushroom-entity-card','custom:mushroom-light-card',
+      'custom:mushroom-climate-card','custom:mushroom-cover-card','custom:button-card'
+    ].includes(config.type))config.name=title;
+    else if(config.title!==undefined)config.title=title;
   }
   libraryCardData(card){
     const result=JSON.parse(JSON.stringify(card));
@@ -3187,7 +3191,9 @@ class RotapfelDashboardManager extends HTMLElement {
         if(action==='insert'){
           const card=JSON.parse(JSON.stringify(item.card));
           card.id=this.uid();delete card.groupId;delete card.position;delete card.deviceLayouts;
-          this.placeNewCard(room,card);room.cards.push(card);
+          this.applyCardTitle(card,item.name);
+          if(!this.placeNewCard(room,card))return;
+          room.cards.push(card);
           this._selectedCards={...(this._selectedCards||{}),[room.id]:card.id};
           dialog.close();change();
         }else if(action==='rename'){
@@ -3287,11 +3293,11 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#type-add').onclick=()=>{
       const choice=selected;overlay.remove();
       if(choice==='placeholder'){
-        const title=prompt('Titel der Platzhalterkarte','Neue Karte');if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};this.placeNewCard(room,c);room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
+        const title=prompt('Titel der Platzhalterkarte','Neue Karte');if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
       }
       if(choice==='custom'){
         const c={id:this.uid(),type:'custom',title:'Neue Custom Card',custom:{card_type:'',configuration:''}};
-        this.configureCustomCard(c,()=>{this.placeNewCard(room,c);room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();},true);return;
+        this.configureCustomCard(c,()=>{if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();},true);return;
       }
       const domains={light:['light'],switch:['switch','input_boolean'],sensor:['sensor'],window:['binary_sensor'],equinox:['climate'],climate_cluster:['climate'],rotapfel_simple_thermcard:['climate'],rotapfel_climate:['climate']};
       this.pickEntity(null,eid=>{
@@ -3299,7 +3305,7 @@ class RotapfelDashboardManager extends HTMLElement {
         const c={id:this.uid(),type:'entity',entity_id:eid,title:this._hass.states[eid]?.attributes?.friendly_name||eid};
         if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(choice))c.variant=choice;else if(choice!=='nexus')c.variant='nexus-'+choice;
         if(choice==='equinox'&&eid==='climate.wohn_esszimmer_vtherm_wz_ez')c.external_options={power_entity:'sensor.wohn_esszimmer_vtherm_wz_ez_energie',humidity_entity:'sensor.tempsensor_wz_ez_humidity',temperature_entity:'sensor.tempsensor_wz_ez_temperature'};
-        this.placeNewCard(room,c);room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();
+        if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();
         if(choice==='rotapfel_simple_thermcard')this.configureThermostat(c,change);
       });
     };
