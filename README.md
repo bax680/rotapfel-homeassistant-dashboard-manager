@@ -1,69 +1,83 @@
 # Rotapfel Homeassistant Dashboard Control Manager
 
-A custom integration for Home Assistant to manage dashboards. **Alpha software — under development.**
+Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-## Version
+**Teststand:** Alpha 13.9.46 · **Integrationsversion:** `0.2.0a13946` · **Domain:** `rotapfel_dashboard_manager`
 
-- Integration domain: `rotapfel_dashboard_manager`
-- Version in `manifest.json`: `0.2.0a13946`
-- Source archive: Alpha 13.9.46
+## Installation und erster Start
 
-## Installation via HACS
+Vorausgesetzt werden ein Home-Assistant-Administratorkonto und der integrierte Marketplace. Die Entwicklung wurde mit Home Assistant Core 2026.11.0 erprobt. Diese Angabe beschreibt den getesteten Stand.
 
-1. Open HACS in Home Assistant.
-2. Add `https://github.com/bax680/rotapfel-homeassistant-dashboard-manager` as a custom repository of type **Integration**.
-3. Install the integration, restart Home Assistant, then open **Settings → Devices & services → Add integration**.
-4. Search for **Rotapfel Dashboard Control Manager**.
+<!-- ha-marketplace:exclude-start -->
+[![Rotapfel im Home Assistant Marketplace öffnen](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=bax680&repository=rotapfel-homeassistant-dashboard-manager&category=integration)
 
-The repository must include `custom_components/rotapfel_dashboard_manager/` with the integration files. The frontend JavaScript and logo assets belong in its `frontend/` subfolder.
+Der Link öffnet das Repository im Marketplace deiner Instanz. Bestätige das Hinzufügen als benutzerdefiniertes Repository vom Typ **Integration**. Für benutzerdefinierte Repositories benötigt der Marketplace eine GitHub-Verbindung. Alternativ kannst du im Marketplace die folgende Repository-URL eintragen:
 
-**Note:** Installation and updates through the Home Assistant Marketplace have been successfully tested on the development system. This remains alpha software; back up Home Assistant before installation or updates.
+`https://github.com/bax680/rotapfel-homeassistant-dashboard-manager`
+<!-- ha-marketplace:exclude-end -->
 
-## Manual installation
+1. Installiere **Rotapfel Dashboard Control Manager** im Marketplace.
+2. Starte Home Assistant neu.
+3. Öffne **Einstellungen → Geräte & Dienste → Integration hinzufügen** und suche nach **Rotapfel Dashboard Control Manager**.
+4. Öffne danach **Rotapfel Control** in der Seitenleiste. Wenn der Tab bereits geöffnet war, lade die Browserseite neu.
 
-Copy `custom_components/rotapfel_dashboard_manager` into the Home Assistant `/config/custom_components/` directory, then restart Home Assistant.
+Für eine manuelle Installation kopierst du `custom_components/rotapfel_dashboard_manager` aus dem Quellarchiv unter `/config/custom_components/`. Danach gelten dieselben Schritte für Neustart und Einrichtung.
 
-## Repository layout
+## Erstes Dashboard erstellen
 
-```text
-custom_components/
-└── rotapfel_dashboard_manager/
-    ├── __init__.py
-    ├── config_flow.py
-    ├── const.py
-    ├── manifest.json
-    ├── brand/
-    │   ├── icon.png
-    │   └── logo.png
-    └── frontend/
-        ├── red-apple-logo.png
-        ├── rotapfel-manager.js
-        ├── rotapfel-canvas-card.js
-        └── rotapfel-simple-thermcard.js
-hacs.json
-README.md
-.gitignore
-```
+1. Wähle in der Übersicht **Dashboard erstellen** und vergib einen Namen.
+2. Öffne den **Layoutmanager**. Lege einen Tab und darin einen Raum an.
+3. Wähle **Karte hinzufügen**. Wähle den Kartentyp und gegebenenfalls die Home-Assistant-Entität. Für eigene Custom Cards kannst du eine YAML- oder JSON-Konfiguration hinterlegen.
+4. Wähle eine Karte in der Raumübersicht aus. **Design**, **Position** und die übrigen Kartenaktionen sind direkt sichtbar. Kartenspezifische Einstellungen erscheinen abhängig vom Typ.
+5. Speichere das Layout. Öffne bei Bedarf die Positionierungsfläche über den aktiven Tab.
 
-## Development status
+Tabs gliedern das Dashboard, etwa nach Etagen. Räume organisieren die Karten innerhalb eines Tabs. Ein Geräteprofil bestimmt die Arbeitsfläche für das jeweilige Endgerät. Wähle das Profil vor der Bearbeitung, weil Positionen und Größen je Profil gespeichert werden.
 
-The integration is currently an alpha release. Compatibility with existing dashboard/card configurations should be verified before production use.
+## Karten positionieren und skalieren
 
-## Bundled Rotapfel Simple ThermCard
+- **Positionierungsfläche öffnen:** Ziehe Karten an ihre Position. Raster, Magnet und Hilfslinien helfen beim Ausrichten. Auf dem Smartphone findest du die Werkzeuge unter **Navigation**.
+- **Mehrfachauswahl:** Wähle einzelne Karten oder **Alle Karten auswählen**. Für die Tab-Anordnung gibt es Einstellungen für Gruppen und Flächennutzung.
+- **Ideale Größe:** Berechnet Zielmaße für ausgewählte Karten anhand des Kartentyps und der verfügbaren Profilbreite. Mushroom Entity Cards verwenden eine Rotapfel-Zielbreite von bis zu 320 CSS-Pixeln. Andere Typen verwenden ihre jeweiligen Regeln.
+- **Rahmen automatisch anpassen:** Passt den Rahmen an den sichtbaren Karteninhalt an. Die Rahmenanpassung greift auch beim Ändern einer Kartengröße über **Ideale Größe**, per Eingabefeld oder durch Ziehen.
+- **Sperren:** Prüfe Größen-, Positions- und Layoutsperren, falls eine Karte bei einer Sammelaktion unverändert bleibt.
+- **Automatisch anordnen:** Ordnet Karten mit ihren aktuellen Maßen an. Wenn du zuerst die Größen ändern möchtest, führe **Ideale Größe** vor der Anordnung aus.
 
-The tested Rotapfel Simple ThermCard V1.0 is bundled at `frontend/rotapfel-simple-thermcard.js` and served from `/rotapfel_dashboard_manager/rotapfel-simple-thermcard.js`.
+## Vorlagen und Kartenbibliothek
 
-In Lovelace storage mode, the integration attempts to register this URL as a JavaScript module resource on setup. If automatic registration is unavailable (e.g. YAML resource mode), add this module URL manually under dashboard resources. The card type is `custom:rotapfel-simple-thermcard`.
+Über **In Kartenbibliothek speichern** legst du eine Kartenkonfiguration als Vorlage ab. Öffne im gewünschten Raum **Gespeicherte Vorlagen**, markiere eine oder mehrere Karten und wähle den Zielraum. Die Einfügevorschau zeigt die geplante Platzierung. Bei Platzmangel bleibt der Stapel unverändert. Mit **Einfügen rückgängig** kannst du die letzte Einfügung im Editor zurücknehmen.
 
-The legacy DashHaus ORB card and its resource are not modified. Existing manual Rotapfel resource URLs are also not deleted or rewritten; avoid loading two copies of the same custom element at once. Equinox and Climate Cluster remain separate third-party dependencies.
+Beim Duplizieren einer Karte zeigt Rotapfel ebenfalls eine Einfügevorschau. **Layout-Vorlagen** sind für den Aufbau eines ganzen Dashboards vorgesehen. Das Anwenden einer Layout-Vorlage ersetzt den aktuellen Layoutentwurf.
 
-**Status:** Marketplace installation and automatic resource registration have been tested on the development system. No tagged GitHub release has been published yet.
+## Custom Cards und Lovelace-Ressourcen
 
-## License and upstream attribution
+Die native Rotapfel-Entitätskarte und die mitgelieferte **Rotapfel Simple ThermCard** kannst du direkt im Manager auswählen. Bei Lovelace-Ressourcen im Storage-Modus versucht die Integration, die ThermCard-Ressource beim Start zu registrieren. Falls sie fehlt, füge `/rotapfel_dashboard_manager/rotapfel-simple-thermcard.js` als JavaScript-Modul hinzu. Ihr Kartentyp lautet `custom:rotapfel-simple-thermcard`.
 
-The bundled **Rotapfel Simple ThermCard** is a modified and renamed derivative of **DashHaus ORB** by **Krystian Czesak** (Copyright (c) 2026), distributed under the **MIT License**. The original MIT license text and copyright notice are retained in [LICENSE](LICENSE). Original project: https://github.com/krystosterone/dashhaus (https://krystosterone.github.io/dashhaus/orb/).
+**Equinox**, **Climate Cluster** und **Mushroom** sind optionale, separat installierte Erweiterungen. Sie benötigen ihre jeweiligen Lovelace-Ressourcen. Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen. Der Custom-Card-Editor bietet für unterstützte Typen Schnelleinstellungen für Anzeigename, Icon und Iconfarbe. Individuelle Optionen stehen in der YAML- oder JSON-Konfiguration.
 
-The bundled JavaScript also includes third-party notices (including React and ReactDOM); these notices must remain intact. Rotapfel modifications are not endorsed by or affiliated with the original DashHaus author. The LICENSE file preserves the upstream MIT terms; it does not independently establish authorship or license status of unrelated project components.
+## Dashboard veröffentlichen
+
+1. Prüfe unter **Einstellungen → Dashboards → Ressourcen**, ob `/rotapfel_dashboard_manager/rotapfel-canvas-card.js` als JavaScript-Modul eingetragen ist. Ergänze die Ressource, falls sie fehlt.
+2. Speichere den Layoutentwurf und wähle in der Rotapfel-Übersicht **Veröffentlichen**.
+3. Wähle **Angemeldete Nutzer** oder **Nur Administratoren**. Öffne das veröffentlichte Dashboard anschließend über die Home-Assistant-Seitenleiste.
+4. Nach späteren Layoutänderungen speicherst du den Entwurf und wählst **Aktualisieren**, um die veröffentlichte Fassung zu übernehmen.
+
+Der Rotapfel-Editor selbst ist Administratoren vorbehalten. Der Zugriff auf das veröffentlichte Dashboard richtet sich nach der gewählten Einstellung. Ältere Veröffentlichungen ohne Rotapfel-Kennung müssen für die weitere Verwaltung neu veröffentlicht werden. Über **Veröffentlichung entfernen** kannst du die alte Verknüpfung lösen. Prüfe anschließend den vorhandenen Home-Assistant-Eintrag, bevor du am selben Pfad neu veröffentlichst.
+
+## Sicherungen, Updates und Rückmeldungen
+
+- **Versionen** zeigt den Layoutverlauf und bietet manuelle Sicherungspunkte. Nach einer Wiederherstellung kannst du das veröffentlichte Dashboard separat aktualisieren.
+- Ein **JSON-Export** sichert den Rotapfel-Entwurf. Der JSON-Import legt eine eigenständige Kopie an. Prüfe bei einem Import auf einer anderen Instanz die Entitäts-IDs und die Ressourcen der Custom Cards.
+- Der **Lovelace-YAML-Export** ist für die Nutzung in Home Assistant gedacht. Er ersetzt die Manager-Sicherung nicht.
+- Erstelle vor einem Update eine Sicherung. Installiere das Update über den Marketplace, starte Home Assistant neu und lade den geöffneten Browser-Tab neu.
+- Melde Fehler über die [GitHub-Issues](https://github.com/bax680/rotapfel-homeassistant-dashboard-manager/issues). Hilfreich sind die Rotapfel- und Home-Assistant-Version, Gerät und Browser, die Schritte zur Wiederholung und das erwartete und beobachtete Ergebnis. Entferne private Entitätsnamen, URLs und Zugangsdaten aus Screenshots oder Protokollen.
+
+## Lizenz und Herkunft
+
+Die gebündelte **Rotapfel Simple ThermCard** basiert auf **DashHaus ORB** von **Krystian Czesak** (Copyright © 2026). Der MIT-Lizenztext und der ursprüngliche Copyright-Hinweis stehen in [LICENSE](LICENSE). Die Hinweise auf gebündelte Drittkomponenten, etwa React und ReactDOM, bleiben im JavaScript erhalten. [Upstream-Projekt](https://github.com/krystosterone/dashhaus)
+
+Für die eigenständigen Teile des Rotapfel Dashboard Managers ist im Repository derzeit keine gesonderte Lizenz ausgewiesen. Der MIT-Hinweis für die ThermCard erteilt keine Lizenz für diese eigenständigen Teile.
+
+## Entwicklungshistorie
 
 ### Kartenbibliothek (Alpha 13.9.33)
 
