@@ -1251,7 +1251,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13937</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13938</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>Layout speichern</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">Dashboard-Maße / Raster</button><strong>Designprofil</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>Hell</option><option value="dark" ${this.theme==='dark'?'selected':''}>Dunkel</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>Geräteprofil</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">Profile verwalten</button><button class="secondary" id="manage-layout-templates">Layout-Vorlagen</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1259,7 +1259,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="toolbar" style="margin-top:18px"><h2>Tabs</h2><button id="add-tab">+ Tab</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     ${this.layout?.length?this.renderTab():`<p class="muted">Noch keine Tabs. Lege den ersten Tab an.</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.37</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13937</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.38</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13938</span><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">Custom-Card-Ressourcen</button><button class="secondary" id="import-dashboard-backup">JSON importieren</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">+ Dashboard erstellen</button></div></div>
     <div class="dashboard-summary"><span>Gesamt: <strong>${(this.items||[]).length}</strong></span><span>Veröffentlicht: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span><span>Unveröffentlicht: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>Prüfen: <strong>${(this.items||[]).filter(x=>x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())).length}</strong></span></div>
     <div class="dashboard-filters"><label>Dashboard suchen<input id="dashboard-search" type="search" placeholder="Name oder Gerät" value="${e(this._dashboardSearch||'')}"></label><label>Veröffentlichung<select id="dashboard-filter"><option value="all">Alle Dashboards</option><option value="published">Veröffentlicht</option><option value="unpublished">Unveröffentlicht</option><option value="repair">Verknüpfung prüfen</option></select></label><label>Sortieren<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">Veröffentlichungsstatus</option></select></label><div class="dashboard-view-switch" role="group" aria-label="Ansicht wählen"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">▦ Kacheln</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">☷ Tabelle</button></div></div>
     <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':x.publication.url_path===('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">YAML exportieren</button><button data-action="backup" class="secondary">JSON sichern</button><button data-action="history" class="secondary">Versionen</button>${x.publication&&x.publication.url_path!==('rotapfel-'+x.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase())?`<button data-action="repair-publish">Kopie veröffentlichen</button>`:x.publication?`<button data-action="update">Veröffentlichung aktualisieren</button><button data-action="open" class="secondary">Öffnen</button><button data-action="remove" class="secondary">Veröffentlichung entfernen</button>`:`<button data-action="publish">Veröffentlichen</button>`}<button data-action="edit" class="secondary">Bearbeiten</button><button data-action="duplicate" class="secondary">Duplizieren</button><button data-action="delete" class="secondary">Dashboard endgültig löschen</button></div></article>`).join('')}</div>${this.items?.length===0?'<p class="muted">Noch keine Dashboards angelegt.</p>':''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>Keine Dashboards entsprechen der Auswahl.</p>`}
@@ -1453,9 +1453,9 @@ class RotapfelDashboardManager extends HTMLElement {
       return {c,room,x,y,w,h};
     });
   }
-  placeNewCard(room,c,size=null){
+  planCardPlacement(room,c,size=null,target=null){
     const tab=this.layout?.find(t=>(t.rooms||[]).some(r=>r.id===room.id));
-    if(!tab)return false;
+    if(!tab)return null;
     const cv=this.effectiveCanvas(tab);
     const width=Math.max(320,Number(cv.width)||1920);
     const height=Math.max(240,Number(cv.height)||1080);
@@ -1466,10 +1466,12 @@ class RotapfelDashboardManager extends HTMLElement {
     const occupied=this.cardPositions(tab,cv,room);
     const free=(x,y)=>x>=gap&&y>=gap&&x+w<=width-gap&&y+h<=height-gap&&
       occupied.every(p=>x+w+gap<=p.x||p.x+p.w+gap<=x||y+h+gap<=p.y||p.y+p.h+gap<=y);
+    const makePlan=(x,y,moves=[])=>({width,height,occupied,position:{x,y,w,h},moves});
+    if(target)return free(target.x,target.y)?makePlan(target.x,target.y):null;
     // First try the established left-aligned position below the last card.
     const bottom=occupied.reduce((m,p)=>Math.max(m,p.y+p.h),0);
     const preferredY=occupied.length?bottom+gap:gap;
-    if(free(gap,preferredY)){c.position={x:gap,y:preferredY,w,h};return true;}
+    if(free(gap,preferredY)){return makePlan(gap,preferredY);}
     // Scan candidate columns left-to-right; within each column, top-to-bottom.
     // Edges of existing cards are included to use irregular free spaces.
     const xs=new Set([gap]);
@@ -1482,7 +1484,7 @@ class RotapfelDashboardManager extends HTMLElement {
     for(const x of [...xs].sort((a,b)=>a-b)){
       if(x+w>width-gap)continue;
       for(const y of sortedY){
-        if(free(x,y)){c.position={x,y,w,h};return true;}
+        if(free(x,y)){return makePlan(x,y);}
       }
     }
     // Move the existing arrangement only when every card can move and the
@@ -1498,15 +1500,134 @@ class RotapfelDashboardManager extends HTMLElement {
         const clearsCandidate=p=>candidate.x+w+gap<=p.x||p.x+p.w+gap<=candidate.x
           ||candidate.y+h+gap<=p.y||p.y+p.h+gap<=candidate.y;
         if(!shifted.every(p=>within(p)&&clearsCandidate(p)))continue;
-        for(const p of shifted){
-          p.c.position={...(p.c.position||{}),x:p.x,y:p.y,w:p.w,h:p.h};
-        }
-        c.position=candidate;
-        return true;
+        return makePlan(gap,gap,shifted);
       }
     }
-    window.alert('Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.');
-    return false;
+    return null;
+  }
+  applyCardPlacement(card,plan){
+    for(const {c,x,y,w,h} of plan.moves)c.position={...c.position,x,y,w,h};
+    card.position=plan.position;
+  }
+  placeNewCard(room,card){
+    const plan=this.planCardPlacement(room,card);
+    if(!plan){
+      window.alert('Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.');
+      return false;
+    }
+    this.applyCardPlacement(card,plan);
+    return true;
+  }
+  previewCardInsertion(room,card,change,size=null,onCancel=null){
+    const initial=this.planCardPlacement(room,card,size);
+    if(!initial){
+      window.alert('Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.');
+      onCancel?.();
+      return;
+    }
+    const {width,height}=initial;
+    let plan=initial,drag=null,accepted=false;
+    const dialog=document.createElement('dialog');
+    dialog.style.cssText='width:min(900px,94vw);max-height:90vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
+    dialog.innerHTML=`<h2>Einfügevorschau</h2><p>${this.esc(card.title)} · ${this.esc(room.name)}</p>
+      <div id="insertion-map" tabindex="0" aria-label="Kartenposition mit den Pfeiltasten einstellen" style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)"></div>
+      <p id="insertion-status" role="status"></p>
+      <div class="actions"><button id="insertion-apply">Einfügen</button><button id="insertion-reset" class="secondary">Vorschlag zurücksetzen</button><button id="insertion-cancel" class="secondary">Abbrechen</button></div>`;
+    this.shadowRoot.append(dialog);
+    const map=dialog.querySelector('#insertion-map'),status=dialog.querySelector('#insertion-status');
+    const apply=dialog.querySelector('#insertion-apply');
+    const box=(position,label,style,ghost=false)=>`<div ${ghost?'data-insertion-ghost':''} style="position:absolute;box-sizing:border-box;overflow:hidden;left:${position.x/width*100}%;top:${position.y/height*100}%;width:${position.w/width*100}%;height:${position.h/height*100}%;padding:4px;font-size:12px;${style}">${this.esc(label)}</div>`;
+    const draw=(candidate=plan.position,valid=true)=>{
+      const existing=valid&&plan.moves.length?plan.moves:initial.occupied;
+      map.innerHTML=existing.map(p=>box(p,p.c.title,'border:1px solid var(--divider-color,#999);background:var(--secondary-background-color,#eee);pointer-events:none')).join('')
+        +box(candidate,card.title,'touch-action:none;cursor:grab;background:var(--card-background-color,#fff);border:2px dashed '+(valid?'var(--primary-color,#168fc0)':'var(--error-color,#c33)'),true);
+      status.textContent=valid?(plan.moves.length?`${plan.moves.length} vorhandene Karten würden verschoben.`:'Rahmen ziehen oder mit den Pfeiltasten verschieben.'):'An dieser Stelle ist kein Platz.';
+      apply.disabled=!valid||!!drag;
+    };
+    const point=ev=>{
+      const rect=map.getBoundingClientRect();
+      return {x:(ev.clientX-rect.left)*width/rect.width,y:(ev.clientY-rect.top)*height/rect.height};
+    };
+    map.onpointerdown=ev=>{
+      if(!ev.target.closest('[data-insertion-ghost]')||ev.button!==0||drag)return;
+      const p=point(ev);
+      drag={id:ev.pointerId,dx:p.x-plan.position.x,dy:p.y-plan.position.y,start:p,plan};
+      map.setPointerCapture(ev.pointerId);
+      apply.disabled=true;
+    };
+    const move=ev=>{
+      if(drag?.id!==ev.pointerId)return;
+      const p=point(ev);
+      if(!drag.moved&&Math.hypot(p.x-drag.start.x,p.y-drag.start.y)<3)return;
+      drag.moved=true;
+      const target={x:Math.round(p.x-drag.dx),y:Math.round(p.y-drag.dy)};
+      drag.next=this.planCardPlacement(room,card,initial.position,target);
+      if(drag.next)plan=drag.next;
+      draw({...initial.position,...target},!!drag.next);
+    };
+    map.onkeydown=ev=>{
+      const offsets={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+      const offset=offsets[ev.key];
+      if(!offset||drag)return;
+      ev.preventDefault();
+      const step=ev.shiftKey?1:8;
+      const target={x:plan.position.x+offset[0]*step,y:plan.position.y+offset[1]*step};
+      const next=this.planCardPlacement(room,card,initial.position,target);
+      if(next){plan=next;draw();}
+      else status.textContent='An dieser Stelle ist kein Platz.';
+    };
+    map.onpointermove=move;
+    map.onpointerup=ev=>{
+      if(drag?.id!==ev.pointerId)return;
+      move(ev);
+      plan=drag.next||drag.plan;
+      drag=null;
+      draw();
+    };
+    map.onlostpointercapture=()=>{
+      if(!drag)return;
+      plan=drag.plan;
+      drag=null;
+      draw();
+    };
+    dialog.querySelector('#insertion-reset').onclick=()=>{plan=initial;draw();};
+    dialog.querySelector('#insertion-cancel').onclick=()=>dialog.close();
+    dialog.addEventListener('close',()=>{dialog.remove();if(!accepted)onCancel?.();},{once:true});
+    apply.onclick=()=>{
+      const before=plan.moves.map(({c})=>({card:c,position:c.position}));
+      const selected=this._selectedCards?.[room.id];
+      this.applyCardPlacement(card,plan);
+      room.cards.push(card);
+      const after=room.cards.map(c=>[c,c.position]);
+      this._selectedCards={...this._selectedCards,[room.id]:card.id};
+      this._undoInsertion={room,card,before,after,selected};
+      accepted=true;
+      dialog.close();
+      change();
+    };
+    draw();
+    dialog.showModal();
+  }
+  undoCardInsertion(){
+    const entry=this._undoInsertion;
+    this._undoInsertion=null;
+    if(!entry)return;
+    const {room,card,before,after,selected}=entry;
+    const roomExists=this.layout?.some(tab=>tab.rooms?.includes(room));
+    if(!roomExists||!room.cards.includes(card)||room.cards.length!==after.length||after.some(([c,position],index)=>
+      room.cards[index]!==c||c.position!==position)){
+      window.alert('Die Einfügung kann nach weiteren Layoutänderungen nicht rückgängig gemacht werden.');
+      this.render();
+      return;
+    }
+    room.cards.splice(room.cards.indexOf(card),1);
+    for(const item of before){
+      if(item.position===undefined)delete item.card.position;
+      else item.card.position=item.position;
+    }
+    this._selectedCards={...this._selectedCards,[room.id]:room.cards.find(c=>c.id===selected)?.id||room.cards[0]?.id};
+    this.dirty=true;
+    this.render();
   }
   // Fit the external content INSIDE the frame; never resize the frame based on
   // card measurements. Both editors therefore display identical saved bounds.
@@ -3064,6 +3185,13 @@ class RotapfelDashboardManager extends HTMLElement {
   bindEditor(){const root=this.shadowRoot,change=()=>{this.dirty=true;this.render();},ask=(title,value='')=>{const v=prompt(title,value);return v===null?null:v.trim().slice(0,80);};
     root.querySelector('#back').onclick=()=>this.closeLayoutEditor();
     root.querySelector('#save-layout').onclick=()=>this.saveLayout();
+    if(this._undoInsertion&&this.layout?.some(tab=>tab.rooms?.includes(this._undoInsertion.room))){
+      const undo=document.createElement('button');
+      undo.className='secondary';
+      undo.textContent='Einfügen rückgängig';
+      undo.onclick=()=>this.undoCardInsertion();
+      root.querySelector('#save-layout').after(undo);
+    }
 
     root.querySelector('#canvas-settings').onclick=()=>this.canvasDialog();
     root.querySelector('#theme-select').onchange=ev=>{this.theme=ev.target.value;change();};
@@ -3103,7 +3231,7 @@ class RotapfelDashboardManager extends HTMLElement {
       else if(a==='transfer'){this.openCardTransferDialog(t,r,c);}
       else if(a==='save-library'){this.saveCardToLibrary(c);}
       else if(a==='copy'){this._cardClipboard=JSON.parse(JSON.stringify(c));this.render();}
-      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);if(!this.placeNewCard(r,copy,size))return;r.cards.push(copy);this._selectedCards={...(this._selectedCards||{}),[r.id]:copy.id};change();}else if(a==='remove'){if(confirm(`Karte „${c.title}“ entfernen?`)){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
+      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);this.previewCardInsertion(r,copy,change,size);}else if(a==='remove'){if(confirm(`Karte „${c.title}“ entfernen?`)){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
       else if(a==='left'||a==='right'){const i=r.cards.indexOf(c),j=i+(a==='left'?-1:1);if(j>=0&&j<r.cards.length){r.cards.splice(i,1);r.cards.splice(j,0,c);change();}}
     });
   }
@@ -3192,10 +3320,10 @@ class RotapfelDashboardManager extends HTMLElement {
           const card=JSON.parse(JSON.stringify(item.card));
           card.id=this.uid();delete card.groupId;delete card.position;delete card.deviceLayouts;
           this.applyCardTitle(card,item.name);
-          if(!this.placeNewCard(room,card))return;
-          room.cards.push(card);
-          this._selectedCards={...(this._selectedCards||{}),[room.id]:card.id};
-          dialog.close();change();
+          this.previewCardInsertion(room,card,()=>{
+            dialog.close();
+            change();
+          });
         }else if(action==='rename'){
           const name=window.prompt('Neuer Name der Kartenvorlage',item.name);
           if(!name?.trim())return;
@@ -3320,7 +3448,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const knownTypes=[...new Set([...catalog,initialType].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
     const typeOptions=knownTypes.map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('');
     const initialText=stored?JSON.stringify(stored,null,2):legacy.configuration||'{}';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>Eigene Custom Card</h2><p class="muted">Kartentyp auswählen, um eine YAML-Vorlage einzufügen, oder eine vollständige YAML-/JSON-Konfiguration übernehmen. Beispiel-Entitäten bitte durch vorhandene Entitäten ersetzen.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><p id="custom-marketplace-status" class="muted" style="font-size:12px;margin:6px 0">Kartenabgleich läuft automatisch im Hintergrund.</p><label>Home-Assistant-Entität <button class="secondary" type="button" id="custom-pick-entity">Entität auswählen …</button> <span id="custom-entity-label" class="muted"></span></label><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><div id="custom-quick-fields" style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:10px 0"><strong>Schnelleinstellungen</strong><p class="muted" style="font-size:12px;margin:6px 0">Nur für unterstützte Kartentypen. YAML bleibt frei bearbeitbar.</p><label>Anzeigename<input id="custom-quick-name" placeholder="Kartenname"></label><label>Icon (mdi:...)<input id="custom-quick-icon" placeholder="mdi:home"></label><label>Iconfarbe<select id="custom-quick-color"><option value="">Nicht festlegen</option><option value="blue">Blau</option><option value="green">Grün</option><option value="red">Rot</option><option value="orange">Orange</option><option value="purple">Violett</option></select></label></div><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">Übernehmen</button><button class="secondary" id="custom-cancel">Abbrechen</button></div></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>Eigene Custom Card</h2><p class="muted">Kartentyp auswählen, um eine YAML-Vorlage einzufügen, oder eine vollständige YAML-/JSON-Konfiguration übernehmen. Beispiel-Entitäten bitte durch vorhandene Entitäten ersetzen.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><p id="custom-marketplace-status" class="muted" style="font-size:12px;margin:6px 0">Kartenabgleich läuft automatisch im Hintergrund.</p><label>Home-Assistant-Entität <button class="secondary" type="button" id="custom-pick-entity">Entität auswählen …</button> <span id="custom-entity-label" class="muted"></span></label><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><div id="custom-quick-fields" style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:10px 0"><strong>Schnelleinstellungen</strong><p class="muted" style="font-size:12px;margin:6px 0">Nur für unterstützte Kartentypen. YAML bleibt frei bearbeitbar.</p><label>Anzeigename<input id="custom-quick-name" placeholder="Kartenname"></label><label>Icon<select id="custom-quick-icon"></select></label><label>Iconfarbe<select id="custom-quick-color"><option value="">Nicht festlegen</option><option value="blue">Blau</option><option value="green">Grün</option><option value="red">Rot</option><option value="orange">Orange</option><option value="purple">Violett</option></select></label></div><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">Übernehmen</button><button class="secondary" id="custom-cancel">Abbrechen</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const select=overlay.querySelector('#custom-type-select'),typeInput=overlay.querySelector('#custom-type');
     if(knownTypes.includes(initialType))select.value=initialType;
@@ -3446,6 +3574,25 @@ class RotapfelDashboardManager extends HTMLElement {
     const quickName=overlay.querySelector('#custom-quick-name');
     const quickIcon=overlay.querySelector('#custom-quick-icon');
     const quickColor=overlay.querySelector('#custom-quick-color');
+    const iconChoices=[
+      ['mdi:home','Haus'],['mdi:lightbulb','Licht'],['mdi:power','Ein/Aus'],
+      ['mdi:thermometer','Temperatur'],['mdi:radiator','Heizung'],
+      ['mdi:water-percent','Luftfeuchtigkeit'],['mdi:window-closed','Fenster'],
+      ['mdi:door','Tür'],['mdi:motion-sensor','Bewegung'],
+      ['mdi:flash','Energie'],['mdi:battery','Batterie'],['mdi:fan','Lüfter']
+    ];
+    const showQuickIcon=current=>{
+      const options=[new Option('Standard der Karte','')];
+      for(const [value,label] of iconChoices){
+        options.push(new Option(label+' ('+value+')',value));
+      }
+      if(current&&!iconChoices.some(([value])=>value===current)){
+        options.push(new Option(current,current));
+      }
+      options.push(new Option('Anderes MDI-Icon eingeben …','__manual__'));
+      quickIcon.replaceChildren(...options);
+      quickIcon.value=current;
+    };
     const quickProfiles={
       'custom:mushroom-entity-card':{name:'name',icon:'icon',color:'icon_color'},
       'custom:mushroom-light-card':{name:'name',icon:'icon',color:'icon_color'},
@@ -3474,7 +3621,7 @@ class RotapfelDashboardManager extends HTMLElement {
       quickFields.hidden=!profile;
       if(!profile)return;
       quickName.value=yamlScalar(profile.name);
-      quickIcon.value=yamlScalar(profile.icon);
+      showQuickIcon(yamlScalar(profile.icon));
       quickColor.value=yamlScalar(profile.color);
     };
     const setYamlField=(key,value)=>{
@@ -3495,7 +3642,24 @@ class RotapfelDashboardManager extends HTMLElement {
       templateManaged=false;
       generatedTemplate='';
     };
-    for(const [element,field] of [[quickName,'name'],[quickIcon,'icon'],[quickColor,'color']]){
+    quickIcon.addEventListener('change',()=>{
+      const profile=quickProfile();
+      if(!profile)return;
+      const current=yamlScalar(profile.icon);
+      let value=quickIcon.value;
+      if(value==='__manual__'){
+        value=window.prompt('MDI-Icon eingeben (z. B. mdi:home)',current)?.trim();
+        if(!value){showQuickIcon(current);return;}
+        if(!/^mdi:[a-z0-9-]+$/.test(value)){
+          window.alert('Bitte einen gültigen MDI-Namen eingeben, z. B. mdi:home.');
+          showQuickIcon(current);
+          return;
+        }
+      }
+      setYamlField(profile.icon,value);
+      showQuickIcon(value);
+    });
+    for(const [element,field] of [[quickName,'name'],[quickColor,'color']]){
       element.addEventListener('change',()=>{
         const profile=quickProfile();
         if(profile?.[field])setYamlField(profile[field],element.value.trim());
