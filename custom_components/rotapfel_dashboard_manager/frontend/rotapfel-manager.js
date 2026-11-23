@@ -1499,8 +1499,7 @@ class RotapfelDashboardManager extends HTMLElement {
       &&!p.c.groupId&&!Object.keys(p.c.deviceLayouts||{}).length);
     const intersects=(a,b)=>!(a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y);
     if(movable){
-      const original=own.map(p=>({c:p.c,position:p.c.position?{...p.c.position}:null}));
-      for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
+        for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
         const shifted=own.map(p=>({...p,x:p.x+dx,y:p.y+dy}));
         const candidate={x:gap,y:gap,w,h};
         const within=p=>p.x>=gap&&p.y>=gap&&p.x+p.w<=width-gap&&p.y+p.h<=height-gap;
@@ -3315,7 +3314,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const knownTypes=[...new Set([...catalog,initialType].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
     const typeOptions=knownTypes.map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('');
     const initialText=stored?JSON.stringify(stored,null,2):legacy.configuration||'{}';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>Eigene Custom Card</h2><p class="muted">Kartentyp auswählen, um eine YAML-Vorlage einzufügen, oder eine vollständige YAML-/JSON-Konfiguration übernehmen. Beispiel-Entitäten bitte durch vorhandene Entitäten ersetzen.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><p id="custom-marketplace-status" class="muted" style="font-size:12px;margin:6px 0">Kartenabgleich läuft automatisch im Hintergrund.</p><label>Home-Assistant-Entität <button class="secondary" type="button" id="custom-pick-entity">Entität auswählen …</button> <span id="custom-entity-label" class="muted"></span></label><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">Übernehmen</button><button class="secondary" id="custom-cancel">Abbrechen</button></div></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>Eigene Custom Card</h2><p class="muted">Kartentyp auswählen, um eine YAML-Vorlage einzufügen, oder eine vollständige YAML-/JSON-Konfiguration übernehmen. Beispiel-Entitäten bitte durch vorhandene Entitäten ersetzen.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><p id="custom-marketplace-status" class="muted" style="font-size:12px;margin:6px 0">Kartenabgleich läuft automatisch im Hintergrund.</p><label>Home-Assistant-Entität <button class="secondary" type="button" id="custom-pick-entity">Entität auswählen …</button> <span id="custom-entity-label" class="muted"></span></label><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><div id="custom-quick-fields" style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:10px 0"><strong>Schnelleinstellungen</strong><p class="muted" style="font-size:12px;margin:6px 0">Nur für unterstützte Kartentypen. YAML bleibt frei bearbeitbar.</p><label>Anzeigename<input id="custom-quick-name" placeholder="Kartenname"></label><label>Icon (mdi:...)<input id="custom-quick-icon" placeholder="mdi:home"></label><label>Iconfarbe<select id="custom-quick-color"><option value="">Nicht festlegen</option><option value="blue">Blau</option><option value="green">Grün</option><option value="red">Rot</option><option value="orange">Orange</option><option value="purple">Violett</option></select></label></div><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">Übernehmen</button><button class="secondary" id="custom-cancel">Abbrechen</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const select=overlay.querySelector('#custom-type-select'),typeInput=overlay.querySelector('#custom-type');
     if(knownTypes.includes(initialType))select.value=initialType;
@@ -3437,6 +3436,395 @@ class RotapfelDashboardManager extends HTMLElement {
       });
     };
 
+    const quickFields=overlay.querySelector('#custom-quick-fields');
+    const quickName=overlay.querySelector('#custom-quick-name');
+    const quickIcon=overlay.querySelector('#custom-quick-icon');
+    const quickColor=overlay.querySelector('#custom-quick-color');
+    const supportedQuickFields={
+      'custom:mushroom-entity-card':{name:'name',icon:'icon',color:'icon_color'},
+      'custom:mushroom-light-card':{name:'name',icon:'icon',color:'icon_color'},
+      'custom:mushroom-climate-card':{name:'name',icon:'icon',color:'icon_color'},
+      'custom:mushroom-cover-card':{name:'name',icon:'icon',color:'icon_color'},
+      'custom:mushroom-template-card':{name:'primary',icon:'icon',color:'icon_color'},
+      'custom:button-card':{name:'name',icon:'icon',color:'color'}
+    };
+    const yamlScalar=(key)=>{
+      try{const value=JSON.parse(configInput.value)?.[key];return typeof value==='string'?value:'';}
+      catch(_err){
+        const match=configInput.value.match(new RegExp('^'+key+':\\s*(.*)
+    this.refreshCustomCardCatalog().then(types=>{
+      if(overlay.isConnected){
+        fillTypes(types);
+        const report=this._marketplaceCardReport;
+        overlay.querySelector('#custom-marketplace-status').textContent=report
+          ?'Marketplace: '+report.installed+' installierte Dashboard-Erweiterungen, '+report.matched+' anhand der Ressourcen zugeordnet. Eine Erweiterung kann mehrere Kartentypen enthalten.'
+          :'Kartentypen automatisch aus Lovelace-Ressourcen und Browserregistrierung erkannt; Marketplace-Abgleich nicht verfügbar.';
+      }
+    });
+    detectType();
+    overlay.querySelector('#custom-cancel').onclick=()=>overlay.remove();
+    overlay.querySelector('#custom-save').onclick=async()=>{
+      const title=overlay.querySelector('#custom-title').value.trim(),selectedType=overlay.querySelector('#custom-type').value.trim(),configuration=overlay.querySelector('#custom-config').value.trim();
+      const error=overlay.querySelector('#custom-error');
+      if(!title){error.textContent='Bitte einen Kartentitel eingeben.';return;}
+      const button=overlay.querySelector('#custom-save');button.disabled=true;error.textContent='';
+      try{
+        let options={};
+        if(configuration){
+          try{options=JSON.parse(configuration);}
+          catch(_jsonError){
+            const result=await this.api('parse_card_yaml',{yaml:configuration});
+            options=result.config;
+          }
+        }
+        if(!options||typeof options!=='object'||Array.isArray(options))throw Error('Die Konfiguration muss ein YAML-/JSON-Objekt sein.');
+        const card_type=typeof options.type==='string'&&options.type.trim()?options.type.trim():selectedType;
+        if(!/^custom:[a-z0-9_-]+$/i.test(card_type))throw Error('Kein gültiger Kartentyp gefunden. Bitte type: custom:... im YAML angeben oder einen Kartentyp auswählen.');
+        c.title=title.slice(0,80);
+        c.custom_config={...options,type:card_type};
+        delete c.custom;
+        overlay.remove();change();
+      }catch(e){
+        error.textContent='Konfiguration konnte nicht übernommen werden: '+((typeof e?.body?.message==='string'?e.body.message:typeof e?.message==='string'?e.message:JSON.stringify(e?.body||e)));
+      }finally{button.disabled=false;}
+    };
+  }
+  customDesignProfile(c){
+    // Profiles describe only parameters known to be supported by a card.
+    // Unknown custom cards must never be assigned guessed properties.
+    const profiles={
+      equinox:{label:'Equinox',fields:[
+        {key:'card_background_color',label:'Hintergrundfarbe',kind:'color',fallback:'light-blue',presets:['light-blue','indigo','blue','cyan','teal','green','amber','orange','red','purple','white','black']},
+        {key:'card_background_opacity',label:'Hintergrund-Deckkraft',kind:'number',min:0,max:100,step:1,fallback:8}
+      ]},
+      climate_cluster:{label:'Climate Cluster',fields:[
+        {key:'appearance',label:'Darstellung',kind:'enum',values:['theme','glass-dark'],fallback:'glass-dark'},
+        {key:'glass_opacity',label:'Glas-Deckkraft',kind:'number',min:0,max:1,step:0.05,fallback:0.5}
+      ]},
+      rotapfel_simple_thermcard:{label:'Rotapfel Simple ThermCard',fields:[
+        {key:'theme',label:'Kartenthema',kind:'enum',values:['home-assistant','auto','light','dark'],fallback:'light'},
+        {key:'viewing',label:'Betrachtungsabstand',kind:'enum',values:['near','far'],fallback:'near'}
+      ]}
+    };
+    return profiles[c.variant]||null;
+  }
+  editDesign(c,change){
+    const original=JSON.parse(JSON.stringify(c.design||{}));
+    const originalDisplay=JSON.parse(JSON.stringify(c.display||{}));
+    const x=this.design(c),profile=this.customDesignProfile(c),external=!!(profile||c.type==='custom'||this.externalVariant(c));
+    const externalMode=c.design?.external_mode||'original';
+    const cardConfig=profile?this.externalConfig(c):null;
+    const thermColors=c.variant==='rotapfel_simple_thermcard'?'<fieldset style="border:1px solid #8885;border-radius:10px;padding:12px;margin:12px 0"><legend>Individuelle Kartenfarben</legend>'+[['therm_background','Kartenhintergrund','#faf9f5'],['therm_text','Schriftfarbe','#1c1a17']].map(([key,label,fallback])=>'<label style="display:flex;align-items:center;gap:10px;margin:10px 0">'+label+' <input type="color" data-design-color="'+key+'" value="'+(/^#[0-9a-fA-F]{6}$/.test(c.external_options?.[key]||'')?c.external_options[key]:fallback)+'" style="width:56px;height:34px"><input type="checkbox" data-design-color-on="'+key+'" '+(c.external_options?.[key]?'checked':'')+'> Eigene Farbe</label>').join('')+'</fieldset>':'';
+    const thermAccent=c.variant==='rotapfel_simple_thermcard'?'<label>Akzentfarbe<select id="d-therm-accent"><option value="">Standard der Karte</option>'+['yellow','sage','coral','sky','lilac'].map(v=>'<option value="'+v+'" '+(c.external_options?.accent===v?'selected':'')+'>'+({yellow:'Gelb',sage:'Salbeigrün',coral:'Koralle',sky:'Himmelblau',lilac:'Flieder'})[v]+'</option>').join('')+'</select></label>':'';
+    const profileFields=profile?.fields||[];
+    const profileFieldMarkup=profileFields.map(f=>{
+      const value=c.external_options?.[f.key]??cardConfig?.[f.key]??f.fallback;
+      const id='d-profile-'+f.key;
+      if(f.kind==='color'){
+        const raw=String(value),hex=/^#[0-9a-f]{6}$/i.test(raw);
+        const presets=[...new Set([raw,...(f.presets||[])])];
+        return `<div class="profile-color-field"><label>${this.esc(f.label)}<select id="${id}-preset"><option value="__hex__" ${hex?'selected':''}>Eigene Farbe (HEX)</option>${presets.filter(v=>!/^#[0-9a-f]{6}$/i.test(v)).map(v=>`<option value="${this.esc(v)}" ${!hex&&raw===v?'selected':''}>${this.esc(v)}</option>`).join('')}</select></label><div style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="color" id="${id}-picker" value="${hex?this.esc(raw):'#008000'}" style="width:62px;min-width:62px;height:40px;padding:2px;${hex?'':'display:none;'}"><input type="text" id="${id}" value="${this.esc(raw)}" aria-label="HEX-Farbwert oder Farbname" style="flex:1;min-width:0"></div><small class="muted">Voreingestellte Farbnamen sind Beispiele, keine abschließende Liste. Für frei wählbare Farben HEX verwenden.</small></div>`;
+      }
+      if(f.kind==='enum')return `<label>${this.esc(f.label)}<select id="${id}">${[...new Set([String(value),...f.values])].map(v=>`<option value="${this.esc(v)}" ${String(value)===v?'selected':''}>${this.esc(v)}</option>`).join('')}</select></label>`;
+      if(f.kind==='number')return `<label>${this.esc(f.label)}<input id="${id}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${this.esc(value)}"></label>`;
+      return `<label>${this.esc(f.label)}<input id="${id}" type="text" maxlength="64" value="${this.esc(value)}"></label>`;
+    }).join('');
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:#000a;z-index:9999;display:grid;place-items:center;padding:16px';
+    const num=(v,lo,hi,def)=>Math.min(hi,Math.max(lo,Number.isFinite(Number(v))?Number(v):def));
+    const color=(v,def)=>/^#[0-9a-f]{6}$/i.test(v||'')?v:def;
+    const selected=(v,expected)=>v===expected?'selected':'';
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:16px;width:min(800px,96vw);max-height:92vh;overflow:auto;box-sizing:border-box">
+      <h2 style="margin:0 0 8px">Design bearbeiten · ${this.esc(c.title)}</h2>
+      <p class="muted">${external?'Externe Custom Card: Rahmen- und Vorschau-Effekte; die interne Darstellung wird weiterhin von der Custom Card gesteuert.':'Rotapfel-Karte: Farben, Text und Kartenrahmen können angepasst werden.'}</p>
+      ${external?`<div style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:12px 0"><strong>${profile?this.esc(profile.label)+' · karteneigene Designparameter':'Externe Custom Card · Design'}</strong>
+        ${profile?`<div id="d-profile-fields">${profileFieldMarkup}</div><p class="muted">Diese Felder ändern ausschließlich bekannte Parameter der Custom Card. Farbwerte werden nicht ungeprüft in andere Formate umgerechnet.</p>`:'<p class="muted">Für diesen Kartentyp ist kein verifiziertes Designprofil hinterlegt. Interne Farbparameter werden nicht geraten. Du kannst optional den äußeren Container gestalten.</p>'}
+        <label>Äußerer Kartencontainer<select id="d-external-mode"><option value="original" ${selected(externalMode,'original')}>Originalkarte ohne zusätzliche Rotapfel-Farben</option><option value="wrapper" ${selected(externalMode,'wrapper')}>Rotapfel-Rahmen separat gestalten</option></select></label>
+      </div>`:''}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
+      <div>
+      <div id="d-wrapper-options" style="display:${external&&externalMode!=='wrapper'?'none':'block'}"><details open><summary><strong>${external?'Äußerer Rahmen & Farben':'Hintergrund & Farben'}</strong></summary>
+        ${[['bg','Hintergrund',x.bg],['fg','Schrift',x.fg],['accent','Akzent',x.accent],['border_color','Rahmen',color(original.border_color,'#64748b')]].map(([key,label,val])=>`<label class="color-row"><span>${label}</span><input type="color" id="d-${key}" value="${val}"><span id="v-${key}">${val}</span></label>`).join('')}
+        <label>Transparenz des Hintergrunds <input type="range" id="d-opacity" min="0" max="100" value="${num(original.opacity,0,100,100)}"><span id="v-opacity"></span></label>
+      </details>
+      <details open><summary><strong>Rahmen & Effekte</strong></summary>
+        <label>Rahmenstärke (px)<input type="number" id="d-border_width" min="0" max="12" value="${num(original.border_width,0,12,0)}"></label>
+        <label>Eckenrundung (px)<input type="number" id="d-radius" min="0" max="48" value="${num(original.radius,0,48,12)}"></label>
+        <label>Schatten<select id="d-shadow"><option value="none" ${selected(original.shadow||'none','none')}>Kein Schatten</option><option value="soft" ${selected(original.shadow,'soft')}>Dezent</option><option value="strong" ${selected(original.shadow,'strong')}>Stark</option></select></label>
+      </details>
+      </div><details style="display:${external?'none':''}"><summary><strong>Text & Anzeige</strong></summary>
+        <label>Schriftgröße (px)<input type="number" id="d-font_size" min="10" max="32" value="${num(original.font_size,10,32,14)}"></label>
+        <label>Textausrichtung<select id="d-text_align"><option value="left" ${selected(original.text_align||'left','left')}>Links</option><option value="center" ${selected(original.text_align,'center')}>Zentriert</option><option value="right" ${selected(original.text_align,'right')}>Rechts</option></select></label>
+        <label><input id="d-show-name" type="checkbox" style="width:auto" ${c.display?.show_name!==false?'checked':''}> Kartenname anzeigen</label>
+        <label><input id="d-show-id" type="checkbox" style="width:auto" ${c.display?.show_entity_id===true?'checked':''}> Entitäts-ID anzeigen</label>
+      </details>
+      <details open><summary><strong>Größe</strong></summary>
+        <label>Breite (1–4 Spalten)<select id="d-width">${[1,2,3,4].map(n=>`<option value="${n}" ${n===x.width?'selected':''}>${n} von 4</option>`).join('')}</select></label>
+        ${external?`<label><input id="d-auto-height" type="checkbox" style="width:auto" ${this.autoCardHeight(c)?'checked':''}> Automatische Kartenhöhe</label>`:''}
+        <label>Höhe (px)<input id="d-height" type="number" min="76" max="${external?1200:320}" value="${num(original.height,76,external?1200:320,x.height)}"></label>
+      </details>
+      </div>
+      <div style="min-width:0">
+        ${thermColors}${thermAccent}<strong>Live-Vorschau</strong>
+        <div id="d-preview" style="margin-top:12px;padding:18px;border:1px dashed var(--divider-color,#888);border-radius:12px;min-height:140px;overflow:hidden"></div>
+        <p class="muted">Die Vorschau verändert noch keine gespeicherten Einstellungen. Bei der Rotapfel Simple ThermCard wird die echte Karte ohne Bedienfunktion angezeigt. Andere externe Karten nutzen weiterhin eine stilisierte Vorschau.</p>
+        <button class="secondary" id="d-reset" type="button">Auf Standard zurücksetzen</button>
+        <div style="${external?'display:none;':''}margin-top:16px;border-top:1px solid #8885;padding-top:12px"><strong>Designvorlagen</strong>
+          <label>Vorlage<select id="d-template"><option value="">Vorlage auswählen …</option></select></label>
+          <div class="actions" style="flex-wrap:wrap"><button class="secondary" id="d-template-load" type="button">Vorlage laden</button><button class="secondary" id="d-template-save" type="button">Als Vorlage speichern</button><button class="secondary" id="d-template-delete" type="button">Vorlage löschen</button></div>
+          <p class="muted">Vorlagen enthalten nur Design und Anzeigeoptionen. Kartengröße, Entität und Position bleiben unverändert.</p><p id="d-template-status" class="muted" role="status"></p>
+        </div>
+      </div></div>
+      <div class="actions" style="margin-top:18px"><button id="d-save">Übernehmen</button><button class="secondary" id="d-cancel">Abbrechen</button></div></div>`;
+    this.shadowRoot.appendChild(overlay);
+    const el=id=>overlay.querySelector('#d-'+id);
+    for(const f of profileFields.filter(f=>f.kind==='color')){
+      const input=el('profile-'+f.key),select=el('profile-'+f.key+'-preset'),picker=el('profile-'+f.key+'-picker');
+      if(!input||!select||!picker)continue;
+      const swatch=document.createElement('span');
+      swatch.setAttribute('aria-label','Farbanzeige');
+      swatch.title='CSS-Farbnamen sind eine Annäherung; HEX zeigt den exakten Wert.';
+      swatch.style.cssText='width:30px;height:30px;flex:none;border:1px solid #888;border-radius:5px;display:inline-block';
+      picker.insertAdjacentElement('afterend',swatch);
+      const syncColor=()=>{
+        const raw=input.value.trim(),hex=/^#[0-9a-f]{6}$/i.test(raw);
+        picker.style.display=hex?'':'none';
+        if(hex){picker.value=raw;select.value='__hex__';swatch.style.backgroundColor=raw;}
+        else{
+          if([...select.options].some(o=>o.value===raw))select.value=raw;
+          swatch.style.backgroundColor=CSS.supports('color',raw)?raw:'transparent';
+        }
+      };
+      select.onchange=()=>{
+        if(select.value==='__hex__')input.value=/^#[0-9a-f]{6}$/i.test(input.value.trim())?input.value:picker.value;
+        else input.value=select.value;
+        syncColor();
+      };
+      picker.oninput=()=>{input.value=picker.value;syncColor();};
+      input.oninput=syncColor;
+      syncColor();
+    }
+
+    const keys=['bg','fg','accent','border_color','opacity','border_width','radius','shadow','font_size','text_align','width','height'];
+    const read=()=>({
+      ...original,
+      width:Number(el('width').value),height:num(el('height').value,76,external?1200:320,110),
+      ...(external?{auto_height:el('auto-height').checked,external_mode:el('external-mode').value}:{}),
+      bg:el('bg').value,fg:el('fg').value,accent:el('accent').value,
+      border_color:el('border_color').value,opacity:num(el('opacity').value,0,100,100),
+      border_width:num(el('border_width').value,0,12,0),radius:num(el('radius').value,0,48,12),
+      shadow:el('shadow').value,font_size:num(el('font_size').value,10,32,14),text_align:el('text_align').value
+    });
+    const preview=()=>{
+      const d=read(),rgb=[1,3,5].map(i=>parseInt(d.bg.slice(i,i+2),16));
+      const shadow=d.shadow==='strong'?'0 12px 26px #0006':d.shadow==='soft'?'0 4px 12px #0003':'none';
+      const box=overlay.querySelector('#d-preview');
+      const style=`background:rgba(${rgb.join(',')},${d.opacity/100});color:${d.fg};border:${d.border_width}px solid ${d.border_color};border-radius:${d.radius}px;box-shadow:${shadow};font-size:${d.font_size}px;text-align:${d.text_align};padding:16px;min-height:90px;box-sizing:border-box;`;
+      const name=el('show-name').checked?`<strong>${this.esc(c.title)}</strong>`:'';
+      const id=el('show-id').checked?`<small style="display:block">${this.esc(c.entity_id||'Keine Entität')}</small>`:'';
+      box.innerHTML=external&&el('external-mode').value!=='wrapper'?`<div style="padding:16px;border:1px dashed #888;border-radius:8px">${this.esc(profile?.label||'Custom Card')} – Originaldarstellung wird von der Karte selbst erzeugt.<div class="muted">Farbvorschau oben ist eine Browser-Näherung. Die echte Karte wird nach Übernehmen neu geladen.</div></div>`:`<div style="${style}">${name}${id}<div style="margin-top:12px;color:${d.fg}">${external?'Äußerer Kartencontainer – Vorschau':this.esc(this.stateLabel(c))}</div><span style="display:inline-block;margin-top:10px;background:${d.accent};color:white;padding:5px 12px;border-radius:8px">Akzent</span></div>`;
+      if(c.variant==='rotapfel_simple_thermcard'){
+        // Preview is read-only: never attach the live Home Assistant service client.
+        const config=this.externalConfig(c);
+        if(c.variant==='rotapfel_simple_thermcard'){const accent=overlay.querySelector('#d-therm-accent')?.value;if(accent)config.accent=accent;else delete config.accent;}
+        for(const field of profileFields){
+          const input=el('profile-'+field.key);
+          if(input&&input.value)config[field.key]=input.value;
+        }
+        const renderLive=()=>{
+          if(!overlay.isConnected||!box.isConnected)return;
+          const tag=config.type.replace(/^custom:/,'');
+          if(!customElements.get(tag))return;
+          try{
+            const card=document.createElement(tag);
+            card.setConfig(config);
+            const readonlyHass=this._hass?new Proxy(this._hass,{get(target,key){
+              if(key==='callService'||key==='callApi'||key==='callWS')return ()=>Promise.reject(new Error('Designvorschau: Steuerung deaktiviert'));
+              const value=Reflect.get(target,key,target);
+              return typeof value==='function'?value.bind(target):value;
+            }}):null;
+            if(readonlyHass)card.hass=readonlyHass;
+            const liveColorOpts={...c.external_options};
+            for(const input of overlay.querySelectorAll('[data-design-color]')){
+              const key=input.dataset.designColor;
+              if(overlay.querySelector('[data-design-color-on="'+key+'"]')?.checked)liveColorOpts[key]=input.value;
+              else delete liveColorOpts[key];
+            }
+            this.applyThermColors(card,liveColorOpts);
+            this.mountThermPreview(box,card);
+          }catch(err){box.textContent='Live-Vorschau nicht verfügbar: '+String(err);}
+        };
+        renderLive();
+        if(!customElements.get(config.type.replace(/^custom:/,'')))
+          this.ensureExternalResource(c).then(renderLive).catch(()=>{});
+      }
+      for(const key of ['bg','fg','accent','border_color'])overlay.querySelector('#v-'+key).textContent=el(key).value;
+      overlay.querySelector('#v-opacity').textContent=d.opacity+' %';
+      if(el('auto-height'))el('height').disabled=el('auto-height').checked;
+    };
+    if(external)el('external-mode').addEventListener('change',()=>{el('wrapper-options').style.display=el('external-mode').value==='wrapper'?'block':'none';});
+    overlay.querySelectorAll('input,select').forEach(input=>{input.addEventListener('input',preview);input.addEventListener('change',preview);});
+    overlay.querySelector('#d-therm-accent')?.addEventListener('change',preview);
+    overlay.querySelectorAll('[data-design-color],[data-design-color-on]').forEach(input=>{input.addEventListener('input',preview);input.addEventListener('change',preview);});
+    el('cancel').onclick=()=>overlay.remove();
+    el('reset').onclick=()=>{
+      const defaults={bg:this.theme==='dark'?'#293241':'#e5e7eb',fg:this.theme==='dark'?'#f4f5f7':'#202124',accent:'#009ac4',border_color:'#64748b',opacity:100,border_width:0,radius:12,shadow:'none',font_size:14,text_align:'left'};
+      for(const [key,val] of Object.entries(defaults))if(el(key))el(key).value=val;
+      // Custom cards own their internal colors. Restore their declared
+      // original defaults in the same form fields that the Save action reads.
+      for(const field of profileFields){
+        const input=el('profile-'+field.key);
+        if(!input)continue;
+        input.value=String(field.fallback??'');
+        input.dispatchEvent(new Event('input',{bubbles:true}));
+        input.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      if(external&&el('external-mode')){
+        el('external-mode').value='original';
+        el('external-mode').dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      preview();
+    };
+    // Design templates are stored centrally in Home Assistant, not only in this browser.
+    // Apply appearance fields only: never overwrite dimensions, placement or identity.
+    const visualKeys=['bg','fg','accent','border_color','opacity','border_width','radius','shadow','font_size','text_align'];
+    const templateSelect=el('template'),templateStatus=el('template-status');
+    let templates=[];
+    const setStatus=msg=>{templateStatus.textContent=msg;};
+    const populate=()=>{const current=templateSelect.value;templateSelect.replaceChildren(new Option('Vorlage auswählen …',''),...templates.map((t,i)=>new Option(t.name,String(i))));if(templates[Number(current)]&&current!=='')templateSelect.value=current;};
+    // Use the authenticated Home Assistant API client already used for dashboards.
+    // This avoids accessing undocumented auth internals and prevents silent failures.
+    const storeTemplates=async(next)=>{
+      const data=await this.api('save_design_templates',{templates:next});
+      if(!data||!Array.isArray(data.templates))throw Error('Ungültige Serverantwort beim Speichern');
+      templates=data.templates;
+      populate();
+    };
+    const loadTemplates=async()=>{
+      try{
+        const data=await this.api('design_templates');
+        if(!data||!Array.isArray(data.templates))throw Error('Ungültige Serverantwort');
+        templates=data.templates;populate();
+        if(templates.length)setStatus(templates.length+' Designvorlage(n) verfügbar.');
+      }catch(err){setStatus('Vorlagen konnten nicht geladen werden: '+(err.message||err));}
+    };
+    loadTemplates();
+    el('template-save').onclick=async()=>{
+      const name=prompt('Name der neuen Designvorlage:');if(name===null)return;
+      const clean=name.trim().slice(0,60);if(!clean){setStatus('Bitte einen Namen angeben.');return;}
+      const existing=templates.findIndex(t=>t.name.toLocaleLowerCase()===clean.toLocaleLowerCase());
+      if(existing>=0&&!confirm('Vorlage „'+clean+'“ überschreiben?'))return;
+      const current=read(),design=Object.fromEntries(visualKeys.map(k=>[k,current[k]]));
+      const display={show_name:el('show-name').checked,show_entity_id:el('show-id').checked};
+      const next=[...templates],item={name:clean,design,display};if(existing>=0)next[existing]=item;else next.push(item);
+      try{await storeTemplates(next);templateSelect.value=String(existing>=0?existing:templates.length-1);setStatus('Vorlage „'+clean+'“ gespeichert und in der Liste verfügbar.');}catch(err){setStatus('Fehler: '+(err.message||err));}
+    };
+    el('template-load').onclick=()=>{
+      const t=templates[Number(templateSelect.value)];if(templateSelect.value===''||!t){setStatus('Bitte eine Vorlage auswählen.');return;}
+      for(const key of visualKeys){if(t.design[key]!==undefined&&el(key))el(key).value=t.design[key];}
+      el('show-name').checked=t.display?.show_name!==false;
+      el('show-id').checked=t.display?.show_entity_id===true;
+      preview();setStatus('Vorlage geladen. Mit „Übernehmen“ auf diese Karte anwenden.');
+    };
+    el('template-delete').onclick=async()=>{
+      const idx=Number(templateSelect.value),t=templates[idx];if(templateSelect.value===''||!t)return;
+      if(!confirm('Designvorlage „'+t.name+'“ dauerhaft löschen?'))return;
+      try{await storeTemplates(templates.filter((_,i)=>i!==idx));templateSelect.value='';setStatus('Vorlage gelöscht.');}catch(err){setStatus('Fehler: '+(err.message||err));}
+    };
+    el('save').onclick=()=>{
+      c.design=read();
+      if(profile){
+        const updates={};
+        for(const field of profileFields){
+          const input=el('profile-'+field.key);
+          if(!input)continue;
+          const raw=input.value.trim();
+          if(field.kind==='number'){
+            const n=Number(raw);
+            if(!raw||!Number.isFinite(n)||n<field.min||n>field.max){alert('Ungültiger Wert für '+field.label);return;}
+            updates[field.key]=n;
+          }else if(field.kind==='color'){
+            if(!(/^#[0-9a-f]{6}$/i.test(raw)||/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(raw))){alert('Bitte einen gültigen HEX-Wert (#RRGGBB) oder Farbnamen eingeben.');return;}
+            updates[field.key]=raw;
+          }else if(field.kind==='enum'){
+            if(!field.values.includes(raw)&&raw!==String(c.external_options?.[field.key]??cardConfig?.[field.key]??'')){alert('Nicht unterstützter Wert für '+field.label);return;}
+            updates[field.key]=raw;
+          }else{
+            if(!/^[a-zA-Z0-9_-]{1,64}$/.test(raw)){alert('Bitte einen gültigen Farbnamen für '+field.label+' eingeben.');return;}
+            updates[field.key]=raw;
+          }
+        }
+        c.external_options={...(c.external_options||{}),...updates};
+        if(c.variant==='rotapfel_simple_thermcard'){const accent=overlay.querySelector('#d-therm-accent')?.value;if(accent)c.external_options.accent=accent;else delete c.external_options.accent;}
+        for(const input of overlay.querySelectorAll('[data-design-color]')){
+          const key=input.dataset.designColor;
+          if(overlay.querySelector('[data-design-color-on="'+key+'"]')?.checked)c.external_options[key]=input.value;
+          else delete c.external_options[key];
+        }
+      }
+      if(!external)c.display={...originalDisplay,show_name:el('show-name').checked,show_entity_id:el('show-id').checked};
+      overlay.remove();change();
+    };
+    preview();
+  }
+  pickEntity(current,callback){
+    const allowed=['light','switch','sensor','binary_sensor','climate','cover','input_boolean'];
+    const states=this._hass?.states||{};
+    const entries=Object.keys(states).filter(id=>allowed.includes(id.split('.')[0])).sort();
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>Home Assistant Entität auswählen</h2><label>Suche<input id="entity-search" placeholder="Name oder entity_id" autocomplete="off"></label><label>Entitätstyp<select id="entity-domain"><option value="">Alle Typen</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Entität<select id="entity-select" size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">Übernehmen</button><button class="secondary" id="entity-cancel">Abbrechen</button></div><p class="muted">Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.</p></div>`;
+    this.shadowRoot.appendChild(overlay);
+    const search=overlay.querySelector('#entity-search'),domain=overlay.querySelector('#entity-domain'),select=overlay.querySelector('#entity-select');
+    const refresh=()=>{const q=search.value.toLocaleLowerCase(),d=domain.value;const filtered=entries.filter(id=>(!d||id.startsWith(d+'.'))&&(id.toLowerCase().includes(q)||String(states[id]?.attributes?.friendly_name||'').toLowerCase().includes(q))).slice(0,500);select.replaceChildren(...filtered.map(id=>{const o=document.createElement('option');o.value=id;o.textContent=`${states[id]?.attributes?.friendly_name||id} · ${id}`;if(id===current)o.selected=true;return o;}));};
+    search.oninput=refresh;domain.onchange=refresh;refresh();
+    overlay.querySelector('#entity-cancel').onclick=()=>overlay.remove();
+    overlay.querySelector('#entity-accept').onclick=()=>{if(select.value){callback(select.value);overlay.remove();}};
+    overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.remove();});search.focus();
+  }
+
+}
+customElements.define('rotapfel-dashboard-manager',RotapfelDashboardManager);
+,'m'));
+        if(!match)return '';
+        const raw=match[1].trim();
+        if(raw.startsWith('"')&&raw.endsWith('"')){try{return JSON.parse(raw);}catch(_e){}}
+        return raw.replace(/^'|'$/g,'');
+      }
+    };
+    const refreshQuick=()=>{
+      const profile=supportedQuickFields[typeInput.value.trim()];
+      quickFields.hidden=!profile;
+      if(!profile)return;
+      quickName.value=yamlScalar(profile.name);
+      quickIcon.value=yamlScalar(profile.icon);
+      quickColor.value=yamlScalar(profile.color);
+    };
+    const setYamlField=(key,value)=>{
+      let obj;
+      try{obj=JSON.parse(configInput.value);}catch(_err){}
+      if(obj&&typeof obj==='object'&&!Array.isArray(obj)){
+        if(value)obj[key]=value;else delete obj[key];
+        configInput.value=JSON.stringify(obj,null,2);
+      }else{
+        const lines=configInput.value.split(/\r?\n/);
+        const index=lines.findIndex(line=>line.startsWith(key+':'));
+        if(index>=0){if(value)lines[index]=key+': '+JSON.stringify(value);else lines.splice(index,1);}
+        else if(value)lines.push(key+': '+JSON.stringify(value));
+        configInput.value=lines.join('\n');
+      }
+      templateManaged=false;
+      generatedTemplate='';
+    };
+    for(const [element,field] of [[quickName,'name'],[quickIcon,'icon'],[quickColor,'color']]){
+      element.addEventListener('change',()=>{
+        const profile=supportedQuickFields[typeInput.value.trim()];
+        if(profile?.[field])setYamlField(profile[field],element.value.trim());
+      });
+    }
+    select.addEventListener('change',()=>queueMicrotask(refreshQuick));
+    configInput.addEventListener('input',refreshQuick);
+    refreshQuick();
     // Refresh automatically; the dropdown updates without blocking editing.
     this.refreshCustomCardCatalog().then(types=>{
       if(overlay.isConnected){
