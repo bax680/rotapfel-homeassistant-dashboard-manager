@@ -1,7 +1,7 @@
 import {renderRotapfelNavigation,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13957';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.57';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13958';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.58';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -784,13 +784,23 @@ class RotapfelDashboardManager extends HTMLElement {
         <label>${t('Tab-Navigation','Tab navigation')}<select id="presentation-nav">${options([
           ['manager',t('Manager-Leiste','Manager tab strip')],['bar',t('Navigationsleiste','Navigation bar')],
           ['buttons',t('Einzelne Schaltflächen','Individual buttons')],['none',t('Keine Tab-Navigation','No tab navigation')]
-        ],settings.navigation||'manager')}</select></label>`}
+        ],settings.navigation||'manager')}</select></label>
+        <label id="presentation-position-label">${t('Position der Navigationsleiste','Navigation bar placement')}<select id="presentation-position">${options([
+          ['center',t('Oben mittig','Top center')],['top',t('Oben links','Top left')],
+          ['bottom',t('Unten mittig','Bottom center')],['left',t('Links','Left')],['right',t('Rechts','Right')]
+        ],settings.navigationPosition||'center')}</select></label>`}
       <p class="muted">${t('Mit „Layout speichern“ werden die Darstellungsoptionen dauerhaft übernommen.','Use “Save layout” to keep the appearance settings.')}</p>
       <p data-error role="alert"></p>
       <div class="actions"><button type="submit" data-apply>${t('Übernehmen','Apply')}</button><button type="button" data-cancel class="secondary">${t('Abbrechen','Cancel')}</button></div>
     </form>`;
     this.shadowRoot.append(dialog);
     const get=id=>dialog.querySelector('#'+id);
+    const navigationMode=get('presentation-nav');
+    if(navigationMode){
+      const updatePosition=()=>{get('presentation-position-label').style.display=navigationMode.value==='bar'?'':'none';};
+      navigationMode.onchange=updatePosition;
+      updatePosition();
+    }
     const inherit=get('bg-inherit');
     if(inherit){
       get('background').disabled=inherit.checked;
@@ -866,7 +876,8 @@ class RotapfelDashboardManager extends HTMLElement {
           tab.navigationLabel=get('display-tab-name').value.trim();
         }else{
           this.canvas={...global,background,presentation:{
-            kiosk:get('presentation-kiosk').checked,navigation:get('presentation-nav').value
+            kiosk:get('presentation-kiosk').checked,navigation:navigationMode.value,
+            navigationPosition:get('presentation-position').value
           }};
         }
         this._appearancePending=this.editing;
@@ -2592,6 +2603,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const refreshCanvasHeight=()=>{
       const bottom=dynamicHeight||height<displayHeight?Math.max(height,...[...positions.values()].map(q=>q.y+q.h+(dynamicHeight?16:0))):height;
       canvasWorkspace.style.height=Math.ceil(bottom)+'px';
+      if(navigationSurface)navigationSurface.style.height=Math.ceil(bottom*workspaceScale)+'px';
       if(heightLabel)heightLabel.textContent=`${width} × ${Math.ceil(dynamicHeight?bottom:height)} CSS-px (${dynamicHeight?this.t("Höhe dynamisch","Expandable height"):this.t("feste Displaygröße","fixed display size")})`;
     };
     const canvasWorkspace=overlay.querySelector('.position-workspace');
@@ -2599,11 +2611,19 @@ class RotapfelDashboardManager extends HTMLElement {
     const navigation=renderRotapfelNavigation(presentation,{
       german:this.t('de','en')==='de',preview:true,wide:width>=870
     });
+    let navigationLayout,navigationSurface;
+    const sideNavigation=['left','right'].includes(navigation?.dataset.position);
     if(navigation){
       const navStyle=document.createElement('style');
       navStyle.textContent=rotapfelNavigationCss;
       overlay.append(navStyle);
-      canvasWorkspace.before(navigation);
+      navigationLayout=document.createElement('div');
+      navigationLayout.className='rotapfel-navigation-layout';
+      navigationSurface=document.createElement('div');
+      navigationSurface.className='rotapfel-navigation-surface';
+      canvasWorkspace.before(navigationLayout);
+      navigationLayout.append(navigation,navigationSurface);
+      navigationSurface.append(canvasWorkspace);
     }
     const guideX=document.createElement('div'),guideY=document.createElement('div');
     guideX.className='rotapfel-snap-guide-x';guideY.className='rotapfel-snap-guide-y';
@@ -2680,11 +2700,11 @@ class RotapfelDashboardManager extends HTMLElement {
     const scaleWorkspace=()=>{
       if(!overlay.isConnected)return;
       const usableW=Math.max(1,canvasPane.clientWidth-24);
-      workspaceScale=Math.min(usableW/width,1);
+      if(navigationLayout)navigationLayout.style.width=`${Math.min(usableW,width)}px`;
+      workspaceScale=Math.min((navigationSurface?.clientWidth||usableW)/width,1);
       canvasWorkspace.style.transform=`scale(${workspaceScale})`;
       if(navigation){
-        navigation.style.width=`${width*workspaceScale}px`;
-        const navHeight=Math.ceil(navigation.offsetHeight/workspaceScale);
+        const navHeight=sideNavigation?0:Math.ceil(navigation.offsetHeight/workspaceScale);
         height=Math.max(1,displayHeight-navHeight);
         refreshCanvasHeight();
       }

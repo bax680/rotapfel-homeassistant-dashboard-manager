@@ -87,6 +87,20 @@ class RotapfelLabelCard extends HTMLElement {
 if(!customElements.get('rotapfel-label-card'))customElements.define('rotapfel-label-card',RotapfelLabelCard);
 
 export const rotapfelNavigationCss=`
+      .rotapfel-navigation-layout{display:flex;flex-direction:column;min-width:0}
+      .rotapfel-navigation-layout:has(>.rotapfel-tabs[data-position="bottom"]){flex-direction:column-reverse}
+      .rotapfel-navigation-layout:has(>.rotapfel-tabs:is([data-position="left"],[data-position="right"])){flex-direction:row}
+      .rotapfel-navigation-layout:has(>.rotapfel-tabs[data-position="right"]){flex-direction:row-reverse}
+      .rotapfel-navigation-surface{flex:1 1 auto;width:100%;min-width:0;overflow:clip}
+      .rotapfel-tabs[data-mode="bar"]:is([data-position="left"],[data-position="right"]){
+        flex:0 0 clamp(76px,20%,180px);flex-direction:column;flex-wrap:nowrap;align-items:stretch;
+        justify-content:flex-start;border:0;border-inline-end:1px solid var(--divider-color)
+      }
+      .rotapfel-tabs[data-mode="bar"][data-position="right"]{border-inline-start:1px solid var(--divider-color);border-inline-end:0}
+      .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){justify-content:center}
+      .rotapfel-tabs{box-sizing:border-box}
+      .rotapfel-tabs :is(a,span){overflow-wrap:anywhere}
+
       .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
       .rotapfel-tabs :is(a,span),.rotapfel-menu{box-sizing:border-box;padding:8px 12px;color:var(--primary-text-color);text-decoration:none;font:inherit}
       .rotapfel-tabs[data-mode="manager"] :is(a,span),.rotapfel-menu{border:1px solid var(--divider-color);border-radius:4px;background:var(--card-background-color)}
@@ -107,6 +121,9 @@ export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,on
   nav.className='rotapfel-tabs';
   nav.toggleAttribute('data-wide',wide);
   nav.dataset.mode=['manager','bar','buttons','none'].includes(cfg.navigation)?cfg.navigation:'manager';
+  nav.dataset.position=nav.dataset.mode==='bar'
+    ?(['center','top','bottom','left','right'].includes(cfg.navigationPosition)?cfg.navigationPosition:'center')
+    :'top';
   nav.setAttribute('aria-label',german?'Dashboard-Tabs':'Dashboard tabs');
   if(!kiosk&&!cfg.shared){
     const menu=document.createElement('button');
@@ -119,7 +136,7 @@ export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,on
     nav.append(menu);
   }
   const tabs=Array.isArray(cfg.tabs)?cfg.tabs:[];
-  if(nav.dataset.mode!=='none'&&tabs.length>1){
+  if(nav.dataset.mode!=='none'){
     for(const tab of tabs){
       if(typeof tab?.path!=='string'||!/^[a-z0-9_-]+$/i.test(tab.path))continue;
       const link=document.createElement(preview?'span':'a');
@@ -253,8 +270,13 @@ class RotapfelCanvasCard extends HTMLElement {
     controls.append(profileLabel,profileSelect);
     this.style.background='transparent';this.style.backgroundImage='none';
     const viewport=document.createElement('div');viewport.className='viewport';
-    if(navigation)viewport.append(navigation);
     viewport.append(controls);
+    const navigationLayout=document.createElement('div');
+    navigationLayout.className='rotapfel-navigation-layout';
+    const surface=document.createElement('div');
+    surface.className='rotapfel-navigation-surface';
+    if(navigation)navigationLayout.append(navigation);
+    navigationLayout.append(surface);
     const background=this._config.presentation?.background;
     this._backgroundLayer=null;
     if(background){
@@ -268,7 +290,7 @@ class RotapfelCanvasCard extends HTMLElement {
       viewport.append(layer);
       this._backgroundLayer=layer;
     }
-    const canvas=document.createElement('div');canvas.className='canvas';canvas.style.width=width+'px';canvas.style.height=height+'px';viewport.append(canvas);root.append(viewport);
+    const canvas=document.createElement('div');canvas.className='canvas';canvas.style.width=width+'px';canvas.style.height=height+'px';surface.append(canvas);viewport.append(navigationLayout);root.append(viewport);
     if(this._backgroundLayer)this._setBackground(this._backgroundLayer,background);
     const fit=()=>{
       const profile=resolveProfile(),dims=dimensions(profile);
@@ -284,17 +306,17 @@ class RotapfelCanvasCard extends HTMLElement {
         tile.style.zIndex=String(rotapfelNumber(p.z,0,9999,0));
         maxBottom=Math.max(maxBottom,y+h);
       }
-      const availableWidth=viewport.clientWidth||width;
-      const scale=Math.min(1,availableWidth/width);
-      canvas.style.transform=`scale(${scale})`;
       navigation?.toggleAttribute('data-wide',width>=870);
-      const navigationHeight=navigation?.offsetHeight||0;
+      const sideNavigation=['left','right'].includes(navigation?.dataset.position);
+      const scale=Math.min(1,(surface.clientWidth||width)/width);
+      canvas.style.transform=`scale(${scale})`;
+      const navigationHeight=sideNavigation?0:navigation?.offsetHeight||0;
       const usableHeight=Math.max(1,height-Math.ceil(navigationHeight/scale));
       const expandable=profiles[profile]?.fixed===false||profile==='iphone';
       const effectiveHeight=expandable||navigationHeight
         ?Math.max(usableHeight,maxBottom+(expandable?16:0)):usableHeight;
       canvas.style.height=effectiveHeight+'px';
-      viewport.style.height=(Math.ceil(effectiveHeight*scale)+navigationHeight+controls.offsetHeight)+'px';
+      surface.style.height=Math.ceil(effectiveHeight*scale)+'px';
       this.style.minHeight='0';
       this.style.height='auto';
       viewport.style.overflowX='hidden';
