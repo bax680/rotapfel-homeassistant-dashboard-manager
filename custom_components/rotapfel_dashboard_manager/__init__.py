@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.51, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.52, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -13,11 +13,40 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13951"
+VERSION = "0.2.0a13952"
 
 SHARED_PANEL = "rotapfel-shared"
 
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
+
+def shared_dashboard_path(dashboard_id):
+    return f"{SHARED_PANEL}-{dashboard_id}"
+
+
+async def sync_shared_panel(hass, state, dashboard):
+    """Expose only the sidebar title and route. Layout access stays in the view."""
+    path = shared_dashboard_path(dashboard["id"])
+    publication = dashboard.get("publication") or {}
+    title = publication["layout"]["title"] if publication.get("access") == "selected" else None
+    registered = state["shared_panels"]
+    if registered.get(path) == title:
+        return
+    if path in registered:
+        frontend.async_remove_panel(hass, path)
+        registered.pop(path)
+    if title is not None:
+        await panel_custom.async_register_panel(
+            hass,
+            webcomponent_name="rotapfel-shared-dashboards",
+            frontend_url_path=path,
+            module_url=f"/{DOMAIN}/rotapfel-manager.js?v={VERSION}",
+            sidebar_title=title,
+            sidebar_icon="mdi:view-dashboard",
+            require_admin=False,
+            config={"dashboard_id": dashboard["id"]},
+        )
+        registered[path] = title
+
 
 async def async_setup(hass, config):
     return True
@@ -26,7 +55,8 @@ async def async_setup_entry(hass, entry):
     store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
     data = await store.async_load() or {"dashboards": []}
     lock = asyncio.Lock()
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {"store": store, "data": data, "lock": lock}
+    state = {"store": store, "data": data, "lock": lock, "shared_panels": {}}
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = state
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
     js_url = f"/{DOMAIN}/rotapfel-manager.js?v={VERSION}"
     await hass.http.async_register_static_paths([
@@ -87,18 +117,22 @@ async def async_setup_entry(hass, entry):
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name="rotapfel-shared-dashboards",
+        # Keep old URLs reachable without an extra sidebar entry.
         frontend_url_path=SHARED_PANEL,
         module_url=js_url,
-        sidebar_title="Rotapfel Dashboards",
-        sidebar_icon="mdi:view-dashboard",
         require_admin=False,
     )
+    for dashboard in data["dashboards"]:
+        await sync_shared_panel(hass, state, dashboard)
     return True
 
 async def async_unload_entry(hass, entry):
     frontend.async_remove_panel(hass, PANEL_PATH)
     frontend.async_remove_panel(hass, SHARED_PANEL)
-    hass.data[DOMAIN].pop(entry.entry_id, None)
+    state = hass.data[DOMAIN].pop(entry.entry_id, None)
+    if state:
+        for path in state["shared_panels"]:
+            frontend.async_remove_panel(hass, path)
     return True
 
 class RotapfelView(HomeAssistantView):
@@ -152,7 +186,7 @@ class RotapfelView(HomeAssistantView):
                 response.headers["Cache-Control"] = "private, no-store"
                 return response
             response = self.json({"dashboards": [
-                {"id": ident, "name": layout["title"]} for ident, layout in allowed
+                {"id": ident, "name": layout["title"], "url_path": shared_dashboard_path(ident)} for ident, layout in allowed
             ], "country": getattr(self.hass.config, "country", None)})
             response.headers["Cache-Control"] = "private, no-store"
             return response
@@ -328,11 +362,12 @@ class RotapfelView(HomeAssistantView):
                         raise web.HTTPBadRequest(text="Invalid shared dashboard")
                     target["publication"] = {
                         "access": "selected",
-                        "url_path": f"{SHARED_PANEL}/{target['id']}",
+                        "url_path": shared_dashboard_path(target["id"]),
                         "user_ids": list(dict.fromkeys(user_ids)),
                         "layout": {"title": target["name"], "views": views},
                     }
                 await save()
+                await sync_shared_panel(self.hass, state, target)
                 return self.json({"dashboards": dashboards})
 
             if action == "publication":
@@ -507,4 +542,6 @@ class RotapfelView(HomeAssistantView):
             else:
                 dashboards.remove(target)
             await save()
+            if action == "delete":
+                await sync_shared_panel(self.hass, state, {"id": target["id"]})
             return self.json({"dashboards": dashboards})

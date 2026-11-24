@@ -5,6 +5,8 @@ function rotapfelLanguage(hass, country) {
     try { choice = localStorage.getItem('rotapfel-language:' + hass.user.id); } catch {}
   }
   if (choice === 'de' || choice === 'en') return choice;
+  const profileLanguage = hass?.selectedLanguage;
+  if (profileLanguage) return /^de(?:[-_]|$)/i.test(profileLanguage) ? 'de' : 'en';
   const region = String(country || hass?.config?.country || '').trim().toUpperCase();
   if (region) return ['DE', 'AT', 'CH'].includes(region) ? 'de' : 'en';
   return /^de(?:[-_]|$)/i.test(navigator.language) ? 'de' : 'en';
@@ -997,7 +999,7 @@ class RotapfelDashboardManager extends HTMLElement {
         <option value="selected">${t('Ausgewählte Benutzer','Selected users')}</option>
       </select></label>
       <fieldset data-users hidden><legend>${t('Benutzer auswählen','Select users')}</legend>
-        <p>${t('Freigegebene Dashboards erscheinen unter Rotapfel Dashboards.','Shared dashboards appear under Rotapfel Dashboards.')}</p>
+        <p>${t('Freigegebene Dashboards öffnen sich direkt über die Seitenleiste.','Shared dashboards open directly from the sidebar.')}</p>
         ${users.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(user=>`<label style="display:block">
           <input type="checkbox" name="user" value="${e(user.id)}" ${previous?.user_ids?.includes(user.id)?'checked':''}>
           ${e(user.name)}${user.admin?' (Admin)':''}
@@ -1346,7 +1348,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13951</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13952</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1355,7 +1357,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     </section>
     ${this.layout?.length?this.renderTab():`<p class="muted">${this.t("Noch keine Tabs. Lege den ersten Tab an.","No tabs yet. Add a tab to get started.")}</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.51</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13951</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.52</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13952</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
       <option value="auto">${this.t('Automatisch','Automatic')}</option><option value="de">Deutsch</option><option value="en">English</option>
     </select></label><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">${this.t("Custom-Card-Ressourcen","Custom card resources")}</button><button class="secondary" id="import-dashboard-backup">${this.t("JSON importieren","Import JSON")}</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">${this.t("+ Dashboard erstellen","+ Create dashboard")}</button></div></div>
     <div class="rotapfel-update-info" aria-label="Update-Info"><span>${this.t("Installiert","Installed")} <strong id="rotapfel-installed-version">${e(this._installedVersion||this.t("Nicht ermittelt","Unknown"))}</strong></span><span>${this.t("Verfügbares Update","Available update")} <strong id="rotapfel-offered-version">${e(this.availableUpdate()||this.t("Kein konkretes Update gemeldet","No update reported"))}</strong></span></div>
@@ -1409,7 +1411,7 @@ class RotapfelDashboardManager extends HTMLElement {
     root.querySelector('#resource-manager')?.addEventListener('click',()=>this.resourceManager());
     root.querySelector('#import-dashboard-backup')?.addEventListener('click',()=>root.querySelector('#dashboard-backup-file')?.click());root.querySelector('#dashboard-backup-file')?.addEventListener('change',async ev=>{const file=ev.target.files?.[0];ev.target.value='';await this.importDashboardBackup(file);});
     root.querySelector('#create')?.addEventListener('click',()=>open());root.querySelector('#save').onclick=async()=>{const name=root.querySelector('[name=name]').value.trim(),profile=root.querySelector('[name=profile]').value;if(!name)return;dlg.close();await this.act(this.editId?'update':'create',{id:this.editId,name,profile});this.render();};
-    root.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const id=b.closest('article').dataset.id,x=this.items.find(y=>y.id===id),a=b.dataset.action;if(a==='history'){await this.manageDashboardHistory(x);}else if(a==='export'){this.downloadExport(x);}else if(a==='backup'){this.downloadDashboardBackup(x);}else if(['publish','update','remove','repair-publish'].includes(a)){await this.publicationAction(x,a==='repair-publish'?'publish':a);}else if(a==='open'){window.location.href='/'+x.publication.url_path;}else if(a==='layout'){this.editing=id;this._deviceLayoutProfile='fire_hd';this.layout=JSON.parse(JSON.stringify(x.tabs||[]));this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});this.tabId=this.layout[0]?.id;this._roomTestMode=false;this.dirty=false;this.theme=x.theme||'light';this.canvas=JSON.parse(JSON.stringify(x.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8}));this.deviceProfiles=JSON.parse(JSON.stringify(x.deviceProfiles||{}));const migrated=this.migrateLegacyThermCards(this.layout);this.dirty=migrated>0;this._migrationMessage='';this.render();if(migrated)await this.persistMigration(migrated);}else if(a==='edit')open(x);else if(a==='delete'){await this.deleteManagedDashboard(x);}else if(a==='duplicate'){if(await this.act('duplicate',{id})){this.render();window.location.reload();}}});
+    root.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const id=b.closest('article').dataset.id,x=this.items.find(y=>y.id===id),a=b.dataset.action;if(a==='history'){await this.manageDashboardHistory(x);}else if(a==='export'){this.downloadExport(x);}else if(a==='backup'){this.downloadDashboardBackup(x);}else if(['publish','update','remove','repair-publish'].includes(a)){await this.publicationAction(x,a==='repair-publish'?'publish':a);}else if(a==='open'){window.location.href=x.publication.access==='selected'?'/rotapfel-shared-'+encodeURIComponent(x.id):'/'+x.publication.url_path;}else if(a==='layout'){this.editing=id;this._deviceLayoutProfile='fire_hd';this.layout=JSON.parse(JSON.stringify(x.tabs||[]));this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});this.tabId=this.layout[0]?.id;this._roomTestMode=false;this.dirty=false;this.theme=x.theme||'light';this.canvas=JSON.parse(JSON.stringify(x.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8}));this.deviceProfiles=JSON.parse(JSON.stringify(x.deviceProfiles||{}));const migrated=this.migrateLegacyThermCards(this.layout);this.dirty=migrated>0;this._migrationMessage='';this.render();if(migrated)await this.persistMigration(migrated);}else if(a==='edit')open(x);else if(a==='delete'){await this.deleteManagedDashboard(x);}else if(a==='duplicate'){if(await this.act('duplicate',{id})){this.render();window.location.reload();}}});
     if(d){this.bindEditor();this.bindToggles();this.bindClimateControls();this.mountExternalCards();this.watchCanvasPreview();this.watchRoomCardPreviews();}
   }
   normalizedProfiles(profiles,canvas){
@@ -4357,6 +4359,7 @@ class RotapfelSharedDashboards extends HTMLElement {
   connectedCallback() { this.load(); }
   disconnectedCallback() { this.request = null; }
   set route(value) { this._route = value; this.load(); }
+  set panel(value) { this._panel = value; this.load(); }
   set hass(value) {
     this._hass = value;
     if (this._card) this._card.hass = value;
@@ -4365,7 +4368,8 @@ class RotapfelSharedDashboards extends HTMLElement {
 
   async load() {
     if (!this.isConnected || !this._hass?.user?.id) return;
-    const id = (this._route?.path ?? location.pathname.replace(/^\/rotapfel-shared/, '')).split('/').filter(Boolean)[0];
+    const directId = this._panel?.config?.dashboard_id || location.pathname.match(/^\/rotapfel-shared-([^/]+)/)?.[1];
+    const id = directId || (this._route?.path ?? location.pathname.replace(/^\/rotapfel-shared/, '')).split('/').filter(Boolean)[0];
     const key = JSON.stringify([this._hass.user.id, id]);
     if (this.request?.key === key) return;
     const request = {key};
@@ -4395,17 +4399,13 @@ class RotapfelSharedDashboards extends HTMLElement {
       if (!result.layout) {
         for (const dashboard of result.dashboards) {
           const link = document.createElement('a');
-          link.href = '/rotapfel-shared/' + encodeURIComponent(dashboard.id);
+          link.href = '/' + dashboard.url_path;
           link.textContent = dashboard.name;
           nav.append(link);
         }
         if (!nav.childElementCount) nav.textContent = t('Für dein Konto sind keine Dashboards freigegeben.','No dashboards are shared with your account.');
         return;
       }
-      const back = document.createElement('a');
-      back.href = '/rotapfel-shared';
-      back.textContent = t('Freigegebene Dashboards','Shared dashboards');
-      nav.append(back);
       const mount = view => {
         const card = document.createElement('rotapfel-canvas-card');
         card.hass = this._hass;
@@ -4423,10 +4423,7 @@ class RotapfelSharedDashboards extends HTMLElement {
       mount(result.layout.views[0]);
     } catch {
       if (this.request !== request) return;
-      const back = document.createElement('a');
-      back.href = '/rotapfel-shared';
-      back.textContent = t('Freigegebene Dashboards','Shared dashboards');
-      main.replaceChildren(t('Dashboard nicht verfügbar. ','Dashboard unavailable. '), back);
+      main.textContent = t('Dashboard nicht verfügbar.','Dashboard unavailable.');
     }
   }
 }

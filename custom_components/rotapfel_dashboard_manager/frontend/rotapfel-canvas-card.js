@@ -8,6 +8,8 @@ const rotapfelCardLanguage=(hass)=>{
     try{override=localStorage.getItem('rotapfel-language:'+hass.user.id);}catch{}
   }
   if(override==='en'||override==='de')return override;
+  const profileLanguage = hass?.selectedLanguage;
+  if (profileLanguage) return /^de(?:[-_]|$)/i.test(profileLanguage) ? 'de' : 'en';
   const country=String(hass?.config?.country||'').trim().toUpperCase();
   if(country)return ['DE','AT','CH'].includes(country)?'de':'en';
   return /^de(?:[-_]|$)/i.test(navigator.language)?'de':'en';
