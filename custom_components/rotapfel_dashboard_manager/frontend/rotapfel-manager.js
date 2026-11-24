@@ -99,7 +99,7 @@ class RotapfelDashboardManager extends HTMLElement {
   disconnectedCallback(){this._previewResizeObserver?.disconnect();}
   esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   cardKind(c){
-    if(c.type==='label')return 'Beschriftung';
+    if(c.type==='label')return this.t("Beschriftung","Label");
     if(c.type==='custom')return 'custom';
     if(c.type!=='entity'||!c.entity_id)return 'placeholder';
     if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(c.variant))return 'climate';
@@ -192,18 +192,18 @@ class RotapfelDashboardManager extends HTMLElement {
     const auto=this._haResources||{},manual=this.manualResources(),values=this.readResources();
     return Object.entries(this.resourceTags()).map(([key,tag])=>({key,tag,
       registered:!!customElements.get(tag),url:values[key],
-      source:manual[key]?'Manuell':auto[key]?'Home Assistant':'Nicht gefunden'}));
+      source:manual[key]?this.t("Manuell","Manual"):auto[key]?'Home Assistant':this.t("Nicht gefunden","Not found")}));
   }
   async resourceManager(){
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
     const esc=x=>this.esc(x),labels=this.resourceNames();
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(720px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">Lese Home-Assistant-Ressourcen …</p></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(720px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">${this.t("Lese Home-Assistant-Ressourcen …","Reading Home Assistant resources …")}</p></div>`;
     this.shadowRoot.appendChild(overlay);
     const draw=()=>{
       if(!overlay.isConnected)return;
       const values=this.readResources(),manual=this.manualResources(),status=this.resourceStatus();
-      overlay.firstElementChild.innerHTML=`<h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">Ressourcen aus Home Assistant werden automatisch erkannt. Ein manueller Pfad hat Vorrang. Ein leeres Feld nutzt die automatische Erkennung.</p>${status.map(({key,tag,registered,source})=>`<div style="padding:12px 0;border-bottom:1px solid #aaa5"><strong>${esc(labels[key])}</strong><span class="muted"> · ${esc(tag)} · ${registered?'Geladen':'Noch nicht geladen'} · ${esc(source)}</span><label>JavaScript-Ressource<input data-resource="${key}" value="${esc(manual[key]||'')}" placeholder="${esc(values[key]||'Automatisch erkennen')}"></label>${!manual[key]&&values[key]?`<p class="muted" style="overflow-wrap:anywhere">Erkannt: ${esc(values[key])}</p>`:''}</div>`).join('')}<p class="muted">Die automatische Erkennung erfolgt über die Home-Assistant-Ressourcenliste. Manuelle Überschreibungen gelten nur in diesem Browser.</p>${this._resourceDiscoveryError?`<p class="error">Ressourcenliste nicht abrufbar: ${esc(this._resourceDiscoveryError)}. Manuelle Eingabe bleibt möglich.</p>`:''}<div class="actions"><button id="resource-save">${this.t("Speichern","Save")}</button><button class="secondary" id="resource-refresh">Erneut suchen</button><button class="secondary" id="resource-close">${this.t("Schließen","Close")}</button></div><p id="resource-error" class="error"></p>`;
+      overlay.firstElementChild.innerHTML=`<h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">${this.t("Ressourcen aus Home Assistant werden automatisch erkannt. Ein manueller Pfad hat Vorrang. Ein leeres Feld nutzt die automatische Erkennung.","Home Assistant resources are detected automatically. A manual path takes precedence. Leave the field blank to use automatic detection.")}</p>${status.map(({key,tag,registered,source})=>`<div style="padding:12px 0;border-bottom:1px solid #aaa5"><strong>${esc(labels[key])}</strong><span class="muted"> · ${esc(tag)} · ${registered?this.t("Geladen","Loaded"):this.t("Noch nicht geladen","Not loaded yet")} · ${esc(source)}</span><label>${this.t("JavaScript-Ressource","JavaScript resource")}<input data-resource="${key}" value="${esc(manual[key]||'')}" placeholder="${esc(values[key]||this.t("Automatisch erkennen","Detect automatically"))}"></label>${!manual[key]&&values[key]?`<p class="muted" style="overflow-wrap:anywhere">${this.t("Erkannt:","Detected:")} ${esc(values[key])}</p>`:''}</div>`).join('')}<p class="muted">${this.t("Die automatische Erkennung erfolgt über die Home-Assistant-Ressourcenliste. Manuelle Überschreibungen gelten nur in diesem Browser.","Automatic detection uses the Home Assistant resource list. Manual overrides apply only in this browser.")}</p>${this._resourceDiscoveryError?`<p class="error">${this.t("Ressourcenliste nicht abrufbar:","Could not retrieve resource list:")} ${esc(this._resourceDiscoveryError)}${this.t(". Manuelle Eingabe bleibt möglich.",". You can still enter a path manually.")}</p>`:''}<div class="actions"><button id="resource-save">${this.t("Speichern","Save")}</button><button class="secondary" id="resource-refresh">${this.t("Erneut suchen","Search again")}</button><button class="secondary" id="resource-close">${this.t("Schließen","Close")}</button></div><p id="resource-error" class="error"></p>`;
       overlay.querySelector('#resource-close').onclick=()=>overlay.remove();
       overlay.querySelector('#resource-refresh').onclick=async()=>{await this.discoverResources(true);draw();};
       overlay.querySelector('#resource-save').onclick=()=>{
@@ -211,12 +211,12 @@ class RotapfelDashboardManager extends HTMLElement {
         for(const field of overlay.querySelectorAll('[data-resource]')){
           const value=field.value.trim();
           if(value&&!this.validResourceUrl(value)){
-            overlay.querySelector('#resource-error').textContent='Ungültiger lokaler Ressourcenpfad: '+value;return;
+            overlay.querySelector('#resource-error').textContent=this.t("Ungültiger lokaler Ressourcenpfad: ","Invalid local resource path: ")+value;return;
           }
           if(value)next[field.dataset.resource]=value;
         }
         try{localStorage.setItem('rotapfel_resources_alpha13',JSON.stringify(next));overlay.remove();this.render();}
-        catch(err){overlay.querySelector('#resource-error').textContent='Speichern nicht möglich: '+String(err);}
+        catch(err){overlay.querySelector('#resource-error').textContent=this.t("Speichern nicht möglich: ","Could not save: ")+String(err);}
       };
     };
     overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.remove();});
@@ -236,7 +236,7 @@ class RotapfelDashboardManager extends HTMLElement {
         const script=document.createElement('script');
         script.type='module';script.src=url;
         script.onload=()=>resolve();
-        script.onerror=()=>reject(new Error('Ressource nicht erreichbar: '+url));
+        script.onerror=()=>reject(new Error(this.t("Ressource nicht erreichbar: ","Resource unavailable: ")+url));
         document.head.appendChild(script);
       }));
     }
@@ -336,31 +336,31 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   async ensureGenericCustomResource(tag){
     if(customElements.get(tag))return true;
-    if(!/^[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(tag))throw Error('Ungültiger Custom-Card-Typ: '+tag);
+    if(!/^[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(tag))throw Error(this.t("Ungültiger Custom-Card-Typ: ","Invalid custom card type: ")+tag);
     // Generic cards do not belong to the three built-in resource mappings.
     // Locate their registered Lovelace module by family (e.g. mushroom-*).
     const family=tag.split('-')[0].toLowerCase();
     let response;
     try{response=await this._hass.callWS({type:'lovelace/resources'});}
-    catch(err){throw Error('Lovelace-Ressourcen konnten nicht gelesen werden: '+String(err));}
+    catch(err){throw Error(this.t("Lovelace-Ressourcen konnten nicht gelesen werden: ","Could not read Lovelace resources: ")+String(err));}
     const list=Array.isArray(response)?response:Array.isArray(response?.resources)?response.resources:[];
     const urls=list.map(item=>typeof item==='string'?item:item?.url)
       .filter(url=>this.validResourceUrl(url))
       .filter(url=>new RegExp('(?:^|[/_.-])'+family+'(?:[/_.-]|$)','i').test(url.split('?')[0]));
-    if(!urls.length)throw Error('Keine Lovelace-Ressource für '+tag+' gefunden. Bitte unter Einstellungen → Dashboards → Ressourcen prüfen.');
+    if(!urls.length)throw Error(this.t("Keine Lovelace-Ressource für ","No Lovelace resource for ")+tag+this.t(" gefunden. Bitte unter Einstellungen → Dashboards → Ressourcen prüfen."," found. Check Settings → Dashboards → Resources."));
     const cache=RotapfelDashboardManager._externalLoads ||= new Map();
     for(const url of urls){
       if(!cache.has(url)){
         cache.set(url,new Promise((resolve,reject)=>{
           const script=document.createElement('script');script.type='module';script.src=url;
-          script.onload=resolve;script.onerror=()=>reject(new Error('Ressource nicht erreichbar: '+url));
+          script.onload=resolve;script.onerror=()=>reject(new Error(this.t("Ressource nicht erreichbar: ","Resource unavailable: ")+url));
           document.head.appendChild(script);
         }));
       }
       try{await cache.get(url);}catch(err){cache.delete(url);throw err;}
       if(customElements.get(tag))return true;
     }
-    throw Error('Ressource geladen, aber '+tag+' wurde nicht registriert. Geprüfte Ressourcen: '+urls.join(', '));
+    throw Error(this.t("Ressource geladen, aber ","Resource loaded, but ")+tag+this.t(" wurde nicht registriert. Geprüfte Ressourcen: "," was not registered. Resources checked: ")+urls.join(', '));
   }
   mountThermPreview(box,card){
     if(!box||!card)return;
@@ -435,7 +435,7 @@ class RotapfelDashboardManager extends HTMLElement {
         return;
       }
       if(isCustom){
-        if(!cfg||typeof cfg.type!=='string'||!cfg.type.startsWith('custom:'))throw Error('Custom-Card-Konfiguration fehlt. Bitte Karte erneut konfigurieren.');
+        if(!cfg||typeof cfg.type!=='string'||!cfg.type.startsWith('custom:'))throw Error(this.t("Custom-Card-Konfiguration fehlt. Bitte Karte erneut konfigurieren.","Custom card configuration is missing. Configure the card again."));
         if(!slot.isConnected||slot.dataset.externalCard!==c.id)return;
         // Match the published Lovelace renderer: instantiate the registered
         // custom element directly instead of the editor-only card helper.
@@ -445,8 +445,8 @@ class RotapfelDashboardManager extends HTMLElement {
         if(typeof el.setConfig!=='function')throw Error('setConfig fehlt bei '+tag);
         el.setConfig(structuredClone(cfg));
         if(el.localName==='hui-error-card'||el.localName==='hui-warning'){
-          const message=el._error?.message||el.error?.message||el._config?.error||el._config?.message||'Home Assistant hat die Kartenkonfiguration abgelehnt.';
-          const resourceHint=!customElements.get(tag)?' Der Kartentyp '+tag+' ist im Browser nicht registriert. Bitte die Mushroom-Ressource in Home Assistant prüfen.':'';
+          const message=el._error?.message||el.error?.message||el._config?.error||el._config?.message||this.t("Home Assistant hat die Kartenkonfiguration abgelehnt.","Home Assistant rejected the card configuration.");
+          const resourceHint=!customElements.get(tag)?' Der Kartentyp '+tag+this.t(" ist im Browser nicht registriert. Bitte die Mushroom-Ressource in Home Assistant prüfen."," is not registered in the browser. Check the Mushroom resource in Home Assistant."):'';
           throw Error(String(message)+resourceHint);
         }
         el.hass=this._hass;
@@ -456,12 +456,12 @@ class RotapfelDashboardManager extends HTMLElement {
         return;
       }
       if(!await this.ensureExternalResource(c)){
-        slot.textContent=`${cfg.type} ist nicht geladen. Bitte HACS-Ressource prüfen.`;
+        slot.textContent=`${cfg.type} ${this.t("ist nicht geladen. Bitte HACS-Ressource prüfen.","is not loaded. Check the HACS resource.")}`;
         return;
       }
       if(!slot.isConnected||slot.dataset.externalCard!==c.id)return;
       const el=document.createElement(tag);
-      if(typeof el.setConfig!=='function')throw Error('setConfig nicht verfügbar');
+      if(typeof el.setConfig!=='function')throw Error(this.t("setConfig nicht verfügbar","setConfig is unavailable"));
       el.setConfig(cfg);
       if(c.variant==='rotapfel_simple_thermcard')this.applyThermColors(el,c.external_options);
       el.hass=this._hass;
@@ -469,7 +469,7 @@ class RotapfelDashboardManager extends HTMLElement {
       slot.dataset.mounted='1';
       if(slot.closest('.room-card-item'))requestAnimationFrame(()=>requestAnimationFrame(()=>this.fitRoomCardPreviews()));
     }catch(err){
-      if(slot.isConnected)slot.textContent=`Karte konnte nicht geladen werden: ${String(err)}`;
+      if(slot.isConnected)slot.textContent=`${this.t("Karte konnte nicht geladen werden:","Could not load card:")} ${String(err)}`;
     }finally{delete slot.dataset.loading;}
   }
   mountExternalCards(){
@@ -547,11 +547,11 @@ class RotapfelDashboardManager extends HTMLElement {
   configureThermostat(c,change){
     const overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
     const esc=x=>this.esc(x),opts=c.external_options||{};
-    const fields=c.variant==='equinox'?[['temperature_entity','Temperatursensor'],['humidity_entity','Feuchtigkeitssensor'],['power_entity','Energiesensor'],['name','Anzeigename in der Karte']]:
-      c.variant==='climate_cluster'?[['name','Anzeigename in der Karte']]:
-      c.variant==='rotapfel_simple_thermcard'?[['card_name','Kurzer Anzeigename (z. B. Heizung)']]:[];
-    const thermFields=c.variant==='rotapfel_simple_thermcard'?`<label>${this.t("Darstellung","Appearance")}<select data-opt="card_footprint"><option value="">${this.t("Standard der Karte","Card default")}</option>${['compact','standard','featured'].map(v=>`<option value="${v}" ${opts.card_footprint===v?'selected':''}>${v==='compact'?'Kompakt':v==='standard'?'Standard':'Hervorgehoben'}</option>`).join('')}</select></label><label>Temperatursteuerung<select data-opt="card_show_control"><option value="">${this.t("Standard der Karte","Card default")}</option><option value="true" ${opts.card_show_control===true?'selected':''}>Anzeigen</option><option value="false" ${opts.card_show_control===false?'selected':''}>Ausblenden</option></select></label><label>Verlauf<select data-opt="card_history"><option value="">${this.t("Standard der Karte","Card default")}</option><option value="true" ${opts.card_history===true?'selected':''}>Aktivieren</option><option value="false" ${opts.card_history===false?'selected':''}>Deaktivieren</option></select></label><label>Uhrzeit anzeigen<select data-opt="show_time"><option value="">${this.t("Standard der Karte","Card default")}</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.show_time)===v?"selected":""}>${v==="true"?"Ja":"Nein"}</option>`).join("")}</select></label><label>Reduzierte Darstellung<select data-opt="quiet"><option value="">${this.t("Standard der Karte","Card default")}</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.quiet)===v?"selected":""}>${v==="true"?"Aktivieren":"Deaktivieren"}</option>`).join("")}</select></label>`:'';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(550px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Thermostatkarte konfigurieren","Configure thermostat card")}</h2><p>${esc(this.resourceNames()[c.variant]||c.variant)} · ${esc(c.entity_id)}</p>${fields.map(([k,label])=>`<label>${label}<input data-opt="${k}" value="${esc(opts[k]||'')}" placeholder="sensor...."></label>`).join('')}${thermFields}${c.variant==='rotapfel_simple_thermcard'?'<strong>Live-Vorschau (70 %)</strong><div id="thermo-live-preview" style="margin:12px 0;min-height:110px;overflow:hidden"></div>':''}<p class="muted">Die Originalkarte wird über ihre Home-Assistant-Ressource geladen. Bei Rotapfel Simple ThermCard wirkt der kurze Anzeigename auf neu angelegte Karten ohne eigene rows-Konfiguration.</p><div class="actions"><button id="thermo-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="thermo-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
+    const fields=c.variant==='equinox'?[['temperature_entity',this.t("Temperatursensor","Temperature sensor")],['humidity_entity',this.t("Feuchtigkeitssensor","Humidity sensor")],['power_entity',this.t("Energiesensor","Energy sensor")],['name',this.t("Anzeigename in der Karte","Name displayed on the card")]]:
+      c.variant==='climate_cluster'?[['name',this.t("Anzeigename in der Karte","Name displayed on the card")]]:
+      c.variant==='rotapfel_simple_thermcard'?[['card_name',this.t("Kurzer Anzeigename (z. B. Heizung)","Short display name (e.g. Heating)")]]:[];
+    const thermFields=c.variant==='rotapfel_simple_thermcard'?`<label>${this.t("Darstellung","Appearance")}<select data-opt="card_footprint"><option value="">${this.t("Standard der Karte","Card default")}</option>${['compact','standard','featured'].map(v=>`<option value="${v}" ${opts.card_footprint===v?'selected':''}>${v==='compact'?this.t("Kompakt","Compact"):v==='standard'?this.t("Standard","Default"):this.t("Hervorgehoben","Prominent")}</option>`).join('')}</select></label><label>${this.t("Temperatursteuerung","Temperature control")}<select data-opt="card_show_control"><option value="">${this.t("Standard der Karte","Card default")}</option><option value="true" ${opts.card_show_control===true?'selected':''}>${this.t("Anzeigen","Show")}</option><option value="false" ${opts.card_show_control===false?'selected':''}>${this.t("Ausblenden","Hide")}</option></select></label><label>${this.t("Verlauf","History")}<select data-opt="card_history"><option value="">${this.t("Standard der Karte","Card default")}</option><option value="true" ${opts.card_history===true?'selected':''}>${this.t("Aktivieren","Enable")}</option><option value="false" ${opts.card_history===false?'selected':''}>${this.t("Deaktivieren","Disable")}</option></select></label><label>${this.t("Uhrzeit anzeigen","Show time")}<select data-opt="show_time"><option value="">${this.t("Standard der Karte","Card default")}</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.show_time)===v?"selected":""}>${v==="true"?this.t("Ja","Yes"):this.t("Nein","No")}</option>`).join("")}</select></label><label>${this.t("Reduzierte Darstellung","Compact display")}<select data-opt="quiet"><option value="">${this.t("Standard der Karte","Card default")}</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.quiet)===v?"selected":""}>${v==="true"?this.t("Aktivieren","Enable"):this.t("Deaktivieren","Disable")}</option>`).join("")}</select></label>`:'';
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(550px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Thermostatkarte konfigurieren","Configure thermostat card")}</h2><p>${esc(this.resourceNames()[c.variant]||c.variant)} · ${esc(c.entity_id)}</p>${fields.map(([k,label])=>`<label>${label}<input data-opt="${k}" value="${esc(opts[k]||'')}" placeholder="sensor...."></label>`).join('')}${thermFields}${c.variant==='rotapfel_simple_thermcard'?`<strong>${this.t("Live-Vorschau (70 %)","Live preview (70%)")}</strong><div id="thermo-live-preview" style="margin:12px 0;min-height:110px;overflow:hidden"></div>`:''}<p class="muted">${this.t("Die Originalkarte wird über ihre Home-Assistant-Ressource geladen. Bei Rotapfel Simple ThermCard wirkt der kurze Anzeigename auf neu angelegte Karten ohne eigene rows-Konfiguration.","The original card loads from its Home Assistant resource. For Rotapfel Simple ThermCard, the short display name applies to new cards without a custom rows configuration.")}</p><div class="actions"><button id="thermo-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="thermo-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const readOptions=()=>{
       const next={...opts};
@@ -572,14 +572,14 @@ class RotapfelDashboardManager extends HTMLElement {
       try{
         const card=document.createElement(tag);
         card.setConfig(config);
-        if(this._hass)card.hass=new Proxy(this._hass,{get(target,key){
-          if(['callService','callApi','callWS'].includes(key))return ()=>Promise.reject(new Error('Vorschau: Steuerung deaktiviert'));
+        if(this._hass)card.hass=new Proxy(this._hass,{get:(target,key)=>{
+          if(['callService','callApi','callWS'].includes(key))return ()=>Promise.reject(new Error(this.t("Vorschau: Steuerung deaktiviert","Preview: Controls disabled")));
           const value=Reflect.get(target,key,target);
           return typeof value==='function'?value.bind(target):value;
         }});
         this.applyThermColors(card,draft.external_options);
         this.mountThermPreview(box,card);
-      }catch(err){box.textContent='Vorschau nicht verfügbar: '+String(err);}
+      }catch(err){box.textContent=this.t("Vorschau nicht verfügbar: ","Preview unavailable: ")+String(err);}
     };
     overlay.querySelectorAll('[data-opt]').forEach(input=>{input.addEventListener('input',updateLive);input.addEventListener('change',updateLive);});
     overlay.querySelector('#thermo-cancel').onclick=()=>overlay.remove();
@@ -599,11 +599,11 @@ class RotapfelDashboardManager extends HTMLElement {
     const allowed=Array.isArray(a.hvac_modes)?a.hvac_modes:[];
     const operable=!!st&&!['unavailable','unknown'].includes(mode);
     return `<div class="climate-controls" data-climate-controls="${e(c.id)}">
-      <div class="climate-values"><span>Ist: <b>${hasCurrent?e(current.toFixed(1))+' °C':'–'}</b></span><span>Soll: <b>${hasTarget?e(target.toFixed(1))+' °C':'–'}</b></span></div>
+      <div class="climate-values"><span>${this.t("Ist:","Current:")} <b>${hasCurrent?e(current.toFixed(1))+' °C':'–'}</b></span><span>${this.t("Soll:","Target:")} <b>${hasTarget?e(target.toFixed(1))+' °C':'–'}</b></span></div>
       <div class="climate-actions">
-        <button type="button" class="climate-step" data-climate-step="-1" data-climate-id="${e(c.id)}" ${!operable||!hasTarget?'disabled':''} aria-label="Solltemperatur senken">−</button>
-        <button type="button" class="climate-step" data-climate-step="1" data-climate-id="${e(c.id)}" ${!operable||!hasTarget?'disabled':''} aria-label="Solltemperatur erhöhen">+</button>
-        ${['heat','off'].filter(m=>allowed.includes(m)).map(m=>`<button type="button" class="climate-mode ${mode===m?'active':''}" data-climate-mode="${m}" data-climate-id="${e(c.id)}" ${!operable?'disabled':''}>${m==='heat'?'Heizen':'Aus'}</button>`).join('')}
+        <button type="button" class="climate-step" data-climate-step="-1" data-climate-id="${e(c.id)}" ${!operable||!hasTarget?'disabled':''} aria-label="${this.t("Solltemperatur senken","Lower target temperature")}">−</button>
+        <button type="button" class="climate-step" data-climate-step="1" data-climate-id="${e(c.id)}" ${!operable||!hasTarget?'disabled':''} aria-label="${this.t("Solltemperatur erhöhen","Raise target temperature")}">+</button>
+        ${['heat','off'].filter(m=>allowed.includes(m)).map(m=>`<button type="button" class="climate-mode ${mode===m?'active':''}" data-climate-mode="${m}" data-climate-id="${e(c.id)}" ${!operable?'disabled':''}>${m==='heat'?this.t("Heizen","Heat"):this.t("Aus","Off")}</button>`).join('')}
       </div></div>`;
   }
   bindClimateControls(){
@@ -630,7 +630,7 @@ class RotapfelDashboardManager extends HTMLElement {
         }
         b.dataset.busy='1';b.disabled=true;
         try{await this._hass.callService('climate',service,data);}
-        catch(err){this.error='Thermostatsteuerung fehlgeschlagen: '+String(err);alert(this.error);}
+        catch(err){this.error=this.t("Thermostatsteuerung fehlgeschlagen: ","Thermostat control failed: ")+String(err);alert(this.error);}
         finally{delete b.dataset.busy;b.disabled=false;}
       };
     });
@@ -653,12 +653,12 @@ class RotapfelDashboardManager extends HTMLElement {
     const e=s=>this.esc(s),kind=this.cardKind(c),st=this.cardState(c),state=st?.state||'unavailable';
     if(this.externalVariant(c)||c.type==='custom'){
       const design=this.design(c);
-      return `<div class="nexus-preview external-card-preview ${this.autoCardHeight(c)?'auto-card-height':'manual-card-height'}" style="${this.cardVisualStyle(c)}--card-bg:${design.bg};--card-fg:${design.fg};min-height:${this.autoCardHeight(c)?160:design.height}px;--manual-height:${design.height}px" data-preview="${e(c.id)}" data-wrapper="${['wrapper','sync'].includes(c.design?.external_mode||'original')?'true':'false'}"><div class="external-card-slot" data-external-card="${e(c.id)}">Lade ${e(c.type==='custom'?(c.custom_config?.type||c.custom?.card_type||'Custom Card'):c.variant)} …</div></div>`;
+      return `<div class="nexus-preview external-card-preview ${this.autoCardHeight(c)?'auto-card-height':'manual-card-height'}" style="${this.cardVisualStyle(c)}--card-bg:${design.bg};--card-fg:${design.fg};min-height:${this.autoCardHeight(c)?160:design.height}px;--manual-height:${design.height}px" data-preview="${e(c.id)}" data-wrapper="${['wrapper','sync'].includes(c.design?.external_mode||'original')?'true':'false'}"><div class="external-card-slot" data-external-card="${e(c.id)}">${this.t("Lade","Loading")} ${e(c.type==='custom'?(c.custom_config?.type||c.custom?.card_type||'Custom Card'):c.variant)} …</div></div>`;
     }
     const cls=kind==='window'&&['window','door','opening','garage_door'].includes(st?.attributes?.device_class)?(state==='off'?'closed':state==='on'?'open':'unknown'):(state==='on'?'on':state==='off'?'off':'unknown');
     const icon={light:'💡',switch:'⏻',window:'▣',sensor:'◉',climate:'♨',cover:'▤',placeholder:'▧',custom:'◇',entity:'◈'}[kind];
     const design=this.design(c);const showName=c.display?.show_name!==false;const showId=c.display?.show_entity_id===true;const toggle=['light','switch'].includes(kind)&&['on','off'].includes(state);
-    return `<div class="nexus-preview ${e(kind)} ${e(cls)}" style="${this.cardVisualStyle(c)}--card-bg:${design.bg};--card-fg:${design.fg};--card-accent:${design.accent};min-height:${design.height}px" data-preview="${e(c.id)}"><div class="nexus-icon">${icon}</div><div class="nexus-details">${showName?`<strong>${e(c.title)}</strong>`:""}${showId?`<small>${e(c.entity_id||'Noch keine Entität')}</small>`:""}<span class="nexus-state" data-state="${e(c.id)}">${e(c.type==='custom'?'Custom Card – Import vorbereitet':this.stateLabel(c))}</span></div>${toggle?`<button class="nexus-toggle" data-toggle="${e(c.id)}" title="${state==='on'?'Ausschalten':'Einschalten'}">${state==='on'?'Ein':'Aus'}</button>`:''}${kind==='climate'?this.climateMarkup(c,st):''}</div>`;
+    return `<div class="nexus-preview ${e(kind)} ${e(cls)}" style="${this.cardVisualStyle(c)}--card-bg:${design.bg};--card-fg:${design.fg};--card-accent:${design.accent};min-height:${design.height}px" data-preview="${e(c.id)}"><div class="nexus-icon">${icon}</div><div class="nexus-details">${showName?`<strong>${e(c.title)}</strong>`:""}${showId?`<small>${e(c.entity_id||this.t("Noch keine Entität","No entity yet"))}</small>`:""}<span class="nexus-state" data-state="${e(c.id)}">${e(c.type==='custom'?this.t("Custom Card – Import vorbereitet","Custom card ready to import"):this.stateLabel(c))}</span></div>${toggle?`<button class="nexus-toggle" data-toggle="${e(c.id)}" title="${state==='on'?this.t("Ausschalten","Turn off"):this.t("Einschalten","Turn on")}">${state==='on'?this.t("Ein","On"):this.t("Aus","Off")}</button>`:''}${kind==='climate'?this.climateMarkup(c,st):''}</div>`;
   }
   refreshStates(){
     this.refreshUpdateInfo();
@@ -683,12 +683,12 @@ class RotapfelDashboardManager extends HTMLElement {
       if(!['light','switch'].includes(kind))return;
       b.disabled=true;
       try{await this._hass.callService(domain,'toggle',{entity_id:c.entity_id});}
-      catch(err){this.error='Schalten fehlgeschlagen: '+String(err);this.render();}
+      catch(err){this.error=this.t("Schalten fehlgeschlagen: ","Could not toggle: ")+String(err);this.render();}
       finally{b.disabled=false;delete b.dataset.busy;}
     });});
   }
   uid(){return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;}
-  async api(action,data){return this._hass.callApi(data?'POST':'GET',`rotapfel_dashboard_manager/${action}`,data);}
+  async api(action,data){return this._hass.callApi(data?'POST':'GET',`rotapfel_dashboard_manager/${action}?language=${rotapfelLanguage(this._hass,this._country)}`,data);}
   availableUpdate(){
     const repository='bax680/rotapfel-homeassistant-dashboard-manager';
     const updates=Object.entries(this._hass?.states||{}).filter(([id])=>id.startsWith('update.'));
@@ -722,8 +722,8 @@ class RotapfelDashboardManager extends HTMLElement {
   async persistMigration(count){
     if(!count)return;
     const ok=await this.act('save_layout',{id:this.editing,tabs:this.layout,theme:this.theme,canvas:this.canvas,deviceProfiles:this.deviceProfiles});
-    if(ok){this.dirty=false;this._migrationMessage=`${count} bisherige ThermCard-Karte(n) automatisch umgewandelt und gespeichert.`;}
-    else{this.dirty=true;this._migrationMessage='Umwandlung vorbereitet, aber Speichern fehlgeschlagen. Bitte „Layout speichern“ versuchen.';}
+    if(ok){this.dirty=false;this._migrationMessage=`${count} ${this.t("bisherige ThermCard-Karte(n) automatisch umgewandelt und gespeichert.","existing ThermCards converted and saved automatically.")}`;}
+    else{this.dirty=true;this._migrationMessage=this.t("Umwandlung vorbereitet, aber Speichern fehlgeschlagen. Bitte „Layout speichern“ versuchen.","Conversion is ready, but saving failed. Try “Save layout”.");}
     this.render();
   }
   exportDashboard(d){
@@ -750,10 +750,10 @@ class RotapfelDashboardManager extends HTMLElement {
         }else if(c.type==='entity'&&c.entity_id){
           card={type:'custom:rotapfel-entity-card',entity:c.entity_id,name:c.title,design:structuredClone(c.design||{}),display:structuredClone(c.display||{})};
         }else{
-          card={type:'markdown',content:c.title||'Platzhalter'};
+          card={type:'markdown',content:c.title||this.t("Platzhalter","Placeholder")};
         }
         if(!card||typeof card!=='object'||typeof card.type!=='string'){
-          warnings.push('Karte '+c.title+' hat keine gültige Konfiguration.');
+          warnings.push(this.t("Karte ","Card ")+c.title+this.t(" hat keine gültige Konfiguration."," has no valid configuration."));
           continue;
         }
         const layouts={};
@@ -780,23 +780,23 @@ class RotapfelDashboardManager extends HTMLElement {
         (s.tabs||[]).forEach((t,ti)=>{
           const tk=String(t.id||'tab_'+ti);tabs.set(tk,{name:t.name||'Tab',value:t});
           (t.rooms||[]).forEach((r,ri)=>{
-            const rk=String(r.id||tk+'_room_'+ri);rooms.set(rk,{name:(t.name||'Tab')+' / '+(r.name||'Raum'),value:r});
-            (r.cards||[]).forEach((c,ci)=>{const ck=String(c.id||rk+'_card_'+ci);cards.set(ck,{name:(c.name||c.title||c.card?.name||c.card?.type||'Karte')+' · '+(r.name||'Raum'),value:c});});
+            const rk=String(r.id||tk+'_room_'+ri);rooms.set(rk,{name:(t.name||'Tab')+' / '+(r.name||this.t("Raum","Room")),value:r});
+            (r.cards||[]).forEach((c,ci)=>{const ck=String(c.id||rk+'_card_'+ci);cards.set(ck,{name:(c.name||c.title||c.card?.name||c.card?.type||this.t("Karte","Card"))+' · '+(r.name||this.t("Raum","Room")),value:c});});
           });
         });
-        (s.cards||[]).forEach((c,i)=>{const ck=String(c.id||'root_card_'+i);if(!cards.has(ck))cards.set(ck,{name:c.name||c.title||'Karte',value:c});});
+        (s.cards||[]).forEach((c,i)=>{const ck=String(c.id||'root_card_'+i);if(!cards.has(ck))cards.set(ck,{name:c.name||c.title||this.t("Karte","Card"),value:c});});
         return {tabs,rooms,cards};
       };
       const A=collect(a),B=collect(b);
       const sections=[];
-      for(const [label,key] of [['Tabs','tabs'],['Räume','rooms'],['Karten','cards']]){
+      for(const [label,key] of [['Tabs','tabs'],[this.t("Räume","Rooms"),'rooms'],[this.t("Karten","Cards"),'cards']]){
         const before=A[key],after=B[key],added=[],removed=[],changed=[];
         for(const [id,item] of after){if(!before.has(id))added.push(item.name);else if(stable(before.get(id).value)!==stable(item.value))changed.push(item.name);}
         for(const [id,item] of before)if(!after.has(id))removed.push(item.name);
         sections.push({label,added,removed,changed});
       }
       const metadata=[];
-      for(const [key,label] of [['name','Dashboardname'],['profile','Profil'],['theme','Design'],['canvas','Arbeitsfläche'],['deviceProfiles','Geräteprofile']]){
+      for(const [key,label] of [['name',this.t("Dashboardname","Dashboard name")],['profile',this.t("Profil","Profile")],['theme','Design'],['canvas',this.t("Arbeitsfläche","Canvas")],['deviceProfiles',this.t("Geräteprofile","Device profiles")]]){
         if(stable(a[key])!==stable(b[key]))metadata.push(label);
       }
       const changedPositions=[];
@@ -816,81 +816,90 @@ class RotapfelDashboardManager extends HTMLElement {
           if(stable(before)!==stable(after))out.push({label:label+' · '+title,before:pretty(before),after:pretty(after)});
         }
       };
-      const geometry=[['x','X'],['y','Y'],['w','Breite'],['h','Höhe']];
+      const geometry=[['x','X'],['y','Y'],['w',this.t("Breite","Width")],['h',this.t("Höhe","Height")]];
       for(const [id,item] of B.cards){
         const old=A.cards.get(id);if(!old)continue;
         const before=old.value,after=item.value,changes=[];
-        compareFields(changes,'Aktive Position',before.position,after.position,geometry);
+        compareFields(changes,this.t("Aktive Position","Active position"),before.position,after.position,geometry);
         const layoutKeys=new Set([...Object.keys(before.deviceLayouts||{}),...Object.keys(after.deviceLayouts||{})]);
         for(const key of layoutKeys){
           const label=profiles[key]||key;
           const prev=before.deviceLayouts?.[key],next=after.deviceLayouts?.[key];
           if(prev===undefined||next===undefined){
-            if(stable(prev)!==stable(next))changes.push({label:label+' · Profil-Layout',before:prev===undefined?'Nicht vorhanden':'Vorhanden',after:next===undefined?'Nicht vorhanden':'Vorhanden'});
+            if(stable(prev)!==stable(next))changes.push({label:label+" · "+this.t("Profil-Layout","Profile layout"),before:prev===undefined?this.t("Nicht vorhanden","Missing"):this.t("Vorhanden","Present"),after:next===undefined?this.t("Nicht vorhanden","Missing"):this.t("Vorhanden","Present")});
           }else compareFields(changes,label,prev,next,geometry);
         }
         const ignored=new Set(['id','position','deviceLayouts']);
         const settings=new Set([...Object.keys(before),...Object.keys(after)].filter(key=>!ignored.has(key)));
         for(const key of settings){
-          if(stable(before[key])!==stable(after[key]))changes.push({label:'Konfiguration · '+key,before:pretty(before[key]),after:pretty(after[key])});
+          if(stable(before[key])!==stable(after[key]))changes.push({label:this.t("Konfiguration","Configuration")+" · "+key,before:pretty(before[key]),after:pretty(after[key])});
         }
         if(changes.length)details.push({name:item.name,changes});
       }
       const clip=v=>String(v).length>260?String(v).slice(0,257)+'…':String(v);
-      const detailsHtml=details.length?details.map(card=>`<details style="margin:9px 0;border:1px solid #9995;border-radius:8px;padding:10px"><summary style="cursor:pointer;font-weight:600">${esc(card.name)} · ${card.changes.length} Änderungen</summary><div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;padding:7px;border-bottom:1px solid #9995">Eigenschaft</th><th style="text-align:left;padding:7px;border-bottom:1px solid #9995">Vorher</th><th style="text-align:left;padding:7px;border-bottom:1px solid #9995">Nachher</th></tr></thead><tbody>${card.changes.map(ch=>`<tr><td style="padding:7px;border-bottom:1px solid #9993">${esc(ch.label)}</td><td style="padding:7px;border-bottom:1px solid #9993;overflow-wrap:anywhere">${esc(clip(ch.before))}</td><td style="padding:7px;border-bottom:1px solid #9993;overflow-wrap:anywhere">${esc(clip(ch.after))}</td></tr>`).join('')}</tbody></table></div></details>`).join(''):'<p style="opacity:.7">Keine Änderungen an bestehenden Karten.</p>';
-      const row=(name,items)=>`<div style="margin:7px 0"><strong>${esc(name)} (${items.length})</strong>${items.length?`<ul style="margin:5px 0 0;padding-left:20px">${items.slice(0,40).map(x=>`<li>${esc(x)}</li>`).join('')}${items.length>40?`<li>… weitere ${items.length-40}</li>`:''}</ul>`:'<span style="opacity:.7"> – keine</span>'}</div>`;
+      const detailsHtml=details.length?details.map(card=>`<details style="margin:9px 0;border:1px solid #9995;border-radius:8px;padding:10px"><summary style="cursor:pointer;font-weight:600">${esc(card.name)} · ${card.changes.length} ${this.t("Änderungen","Changes")}</summary><div style="overflow-x:auto;margin-top:8px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;padding:7px;border-bottom:1px solid #9995">${this.t("Eigenschaft","Property")}</th><th style="text-align:left;padding:7px;border-bottom:1px solid #9995">${this.t("Vorher","Before")}</th><th style="text-align:left;padding:7px;border-bottom:1px solid #9995">${this.t("Nachher","After")}</th></tr></thead><tbody>${card.changes.map(ch=>`<tr><td style="padding:7px;border-bottom:1px solid #9993">${esc(ch.label)}</td><td style="padding:7px;border-bottom:1px solid #9993;overflow-wrap:anywhere">${esc(clip(ch.before))}</td><td style="padding:7px;border-bottom:1px solid #9993;overflow-wrap:anywhere">${esc(clip(ch.after))}</td></tr>`).join('')}</tbody></table></div></details>`).join(''):`<p style="opacity:.7">${this.t("Keine Änderungen an bestehenden Karten.","No changes to existing cards.")}</p>`;
+      const row=(name,items)=>`<div style="margin:7px 0"><strong>${esc(name)} (${items.length})</strong>${items.length?`<ul style="margin:5px 0 0;padding-left:20px">${items.slice(0,40).map(x=>`<li>${esc(x)}</li>`).join('')}${items.length>40?`<li>${this.t("… weitere","… more")} ${items.length-40}</li>`:''}</ul>`:`<span style="opacity:.7"> ${this.t("– keine","– none")}</span>`}</div>`;
       this.shadowRoot.querySelector('#rotapfel-compare-dialog')?.remove();
       const dlg=document.createElement('dialog');dlg.id='rotapfel-compare-dialog';
       dlg.style.cssText='max-width:min(720px,95vw);width:100%;max-height:85vh;overflow:auto;border:1px solid #999;border-radius:14px;padding:22px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
-      dlg.innerHTML=`<h3>Versionsvergleich · ${esc(d.name)}</h3><p>Vergleich von <strong>${esc(leftId==='current'?'Aktueller Stand':'Version A')}</strong> mit <strong>${esc(rightId==='current'?'Aktueller Stand':'Version B')}</strong>. Änderungen werden von links nach rechts angezeigt.</p>${row('Allgemeine Einstellungen geändert',metadata)}${sections.map(sec=>`<section style="border-top:1px solid #9995;padding:10px 0"><strong>${esc(sec.label)}</strong>${row('Hinzugefügt',sec.added)}${row('Entfernt',sec.removed)}${row('Verändert',sec.changed)}</section>`).join('')}${row('Karten mit geänderten Positionen/Profil-Layouts',changedPositions)}<section style="border-top:1px solid #9995;padding:10px 0"><strong>Detaillierte Kartenänderungen</strong><p style="font-size:12px;opacity:.75">Karten aufklappen, um Vorher-/Nachher-Werte je Geräteprofil zu sehen.</p>${detailsHtml}</section><p style="font-size:12px;opacity:.75">Der Vergleich verändert keine Konfiguration. „Verändert“ umfasst auch Änderungen an verschachtelten Einstellungen.</p><div style="text-align:right"><button id="rc-close" type="button">${this.t("Schließen","Close")}</button></div>`;
+      dlg.innerHTML=`<h3>${this.t("Versionsvergleich","Version comparison")} · ${esc(d.name)}</h3><p>${this.t("Vergleich von","Comparing")} <strong>${esc(leftId==='current'?this.t("Aktueller Stand","Current state"):'Version A')}</strong> ${this.t("mit","with")} <strong>${esc(rightId==='current'?this.t("Aktueller Stand","Current state"):'Version B')}</strong>${this.t(". Änderungen werden von links nach rechts angezeigt.",". Changes are shown from left to right.")}</p>${row(this.t("Allgemeine Einstellungen geändert","General settings changed"),metadata)}${sections.map(sec=>`<section style="border-top:1px solid #9995;padding:10px 0"><strong>${esc(sec.label)}</strong>${row(this.t("Hinzugefügt","Added"),sec.added)}${row(this.t("Entfernt","Removed"),sec.removed)}${row(this.t("Verändert","Changed"),sec.changed)}</section>`).join('')}${row(this.t("Karten mit geänderten Positionen/Profil-Layouts","Cards with changed positions or profile layouts"),changedPositions)}<section style="border-top:1px solid #9995;padding:10px 0"><strong>${this.t("Detaillierte Kartenänderungen","Detailed card changes")}</strong><p style="font-size:12px;opacity:.75">${this.t("Karten aufklappen, um Vorher-/Nachher-Werte je Geräteprofil zu sehen.","Expand cards to see before and after values for each device profile.")}</p>${detailsHtml}</section><p style="font-size:12px;opacity:.75">${this.t("Der Vergleich verändert keine Konfiguration. „Verändert“ umfasst auch Änderungen an verschachtelten Einstellungen.","The comparison leaves the configuration intact. “Changed” includes changes to nested settings.")}</p><div style="text-align:right"><button id="rc-close" type="button">${this.t("Schließen","Close")}</button></div>`;
       this.shadowRoot.append(dlg);dlg.querySelector('#rc-close').onclick=()=>dlg.close();dlg.addEventListener('close',()=>dlg.remove(),{once:true});dlg.showModal();
-    }catch(err){alert('Versionsvergleich fehlgeschlagen: '+errText(err));}
+    }catch(err){alert(this.t("Versionsvergleich fehlgeschlagen: ","Could not compare versions: ")+errText(err));}
   }
   async manageDashboardHistory(d){
     const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const errorText=err=>String(err?.message||err?.body?.message||err?.error?.message||JSON.stringify(err)||err);
     let history=[];
     try{const response=await this._hass.callApi('GET','rotapfel_dashboard_manager/dashboard_history?id='+encodeURIComponent(d.id));history=response.history||[];}
-    catch(err){alert('Versionen konnten nicht geladen werden: '+errorText(err));return;}
+    catch(err){alert(this.t("Versionen konnten nicht geladen werden: ","Could not load versions: ")+errorText(err));return;}
     this.shadowRoot.querySelector('#rotapfel-history-dialog')?.remove();
     const dialog=document.createElement('dialog');dialog.id='rotapfel-history-dialog';
     dialog.style.cssText='max-width:min(620px,94vw);width:100%;border:1px solid #999;border-radius:14px;padding:22px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
     const choices=[...history].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-    dialog.innerHTML=`<h3>Versionen · ${esc(d.name)}</h3><p>Automatische Versionen: maximal 15. Manuelle Sicherungspunkte bleiben dauerhaft erhalten, bis du sie selbst löschst.</p>
-      <label>Neuer manueller Sicherungspunkt<input id="rh-label" maxlength="80" placeholder="z. B. iPhone-Layout fertig" style="display:block;width:100%;box-sizing:border-box;padding:9px;margin-top:6px"></label>
-      <button type="button" id="rh-create" style="margin:10px 0 18px">Sicherungspunkt erstellen</button>
-      ${choices.length?`<label>Gespeicherte Version<select id="rotapfel-history-select" style="display:block;width:100%;padding:9px;margin-top:6px">${choices.map(v=>`<option value="${esc(v.id)}">${v.manual?'★ Manuell':'Automatisch'} · ${esc(new Date(v.timestamp).toLocaleString('de-DE'))} – ${esc(v.reason)}</option>`).join('')}</select></label><p style="font-size:12px">Wiederherstellen ändert nur die Manager-Konfiguration. Veröffentlichte Dashboards danach über „Veröffentlichung aktualisieren“ synchronisieren.</p>`:'<p>Noch keine Versionen vorhanden.</p>'}
-      ${choices.length?`<fieldset style="border:1px solid #9996;border-radius:9px;margin-top:14px;padding:10px"><legend>Versionen vergleichen</legend><label>Version A<select id="rh-compare-a" style="display:block;width:100%;padding:8px"><option value="current">Aktueller Stand</option>${choices.map(v=>`<option value="${esc(v.id)}">${v.manual?'★ Manuell':'Automatisch'} · ${esc(new Date(v.timestamp).toLocaleString('de-DE'))} – ${esc(v.reason)}</option>`).join('')}</select></label><label style="display:block;margin-top:8px">Version B<select id="rh-compare-b" style="display:block;width:100%;padding:8px">${choices.map(v=>`<option value="${esc(v.id)}">${v.manual?'★ Manuell':'Automatisch'} · ${esc(new Date(v.timestamp).toLocaleString('de-DE'))} – ${esc(v.reason)}</option>`).join('')}<option value="current">Aktueller Stand</option></select></label><button id="rh-compare" type="button" class="secondary" style="margin-top:10px">Unterschiede anzeigen</button></fieldset>`:''}
-      <div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:16px"><button type="button" id="rh-close" class="secondary">${this.t("Schließen","Close")}</button>${choices.length?'<button type="button" id="rh-delete" class="secondary">Sicherungspunkt löschen</button><button type="button" id="rh-restore">Wiederherstellen</button>':''}</div>`;
+    const historyReason=entry=>{
+      if(entry.manual)return entry.reason;
+      const labels={
+        'Vor Wiederherstellung':this.t('Vor Wiederherstellung','Before restore'),
+        'Vor Umbenennen/Bearbeiten':this.t('Vor Umbenennen/Bearbeiten','Before rename or edit'),
+        'Vor Layout speichern':this.t('Vor Layout speichern','Before saving layout')
+      };
+      return Object.hasOwn(labels,entry.reason)?labels[entry.reason]:entry.reason;
+    };
+    dialog.innerHTML=`<h3>${this.t("Versionen","Versions")} · ${esc(d.name)}</h3><p>${this.t("Automatische Versionen: maximal 15. Manuelle Sicherungspunkte bleiben dauerhaft erhalten, bis du sie selbst löschst.","Up to 15 automatic versions are kept. Manual restore points remain until you delete them.")}</p>
+      <label>${this.t("Neuer manueller Sicherungspunkt","New manual restore point")}<input id="rh-label" maxlength="80" placeholder="${this.t("z. B. iPhone-Layout fertig","e.g. iPhone layout finished")}" style="display:block;width:100%;box-sizing:border-box;padding:9px;margin-top:6px"></label>
+      <button type="button" id="rh-create" style="margin:10px 0 18px">${this.t("Sicherungspunkt erstellen","Create restore point")}</button>
+      ${choices.length?`<label>${this.t("Gespeicherte Version","Saved version")}<select id="rotapfel-history-select" style="display:block;width:100%;padding:9px;margin-top:6px">${choices.map(v=>`<option value="${esc(v.id)}">${v.manual?this.t("★ Manuell","★ Manual"):this.t("Automatisch","Automatic")} · ${esc(new Date(v.timestamp).toLocaleString(rotapfelLanguage(this._hass,this._country)))} – ${esc(historyReason(v))}</option>`).join('')}</select></label><p style="font-size:12px">${this.t("Wiederherstellen ändert nur die Manager-Konfiguration. Veröffentlichte Dashboards danach über „Veröffentlichung aktualisieren“ synchronisieren.","Restoring changes the manager configuration. To sync a published dashboard, choose “Update publication”.")}</p>`:`<p>${this.t("Noch keine Versionen vorhanden.","No versions yet.")}</p>`}
+      ${choices.length?`<fieldset style="border:1px solid #9996;border-radius:9px;margin-top:14px;padding:10px"><legend>${this.t("Versionen vergleichen","Compare versions")}</legend><label>Version A<select id="rh-compare-a" style="display:block;width:100%;padding:8px"><option value="current">${this.t("Aktueller Stand","Current state")}</option>${choices.map(v=>`<option value="${esc(v.id)}">${v.manual?this.t("★ Manuell","★ Manual"):this.t("Automatisch","Automatic")} · ${esc(new Date(v.timestamp).toLocaleString(rotapfelLanguage(this._hass,this._country)))} – ${esc(historyReason(v))}</option>`).join('')}</select></label><label style="display:block;margin-top:8px">Version B<select id="rh-compare-b" style="display:block;width:100%;padding:8px">${choices.map(v=>`<option value="${esc(v.id)}">${v.manual?this.t("★ Manuell","★ Manual"):this.t("Automatisch","Automatic")} · ${esc(new Date(v.timestamp).toLocaleString(rotapfelLanguage(this._hass,this._country)))} – ${esc(historyReason(v))}</option>`).join('')}<option value="current">${this.t("Aktueller Stand","Current state")}</option></select></label><button id="rh-compare" type="button" class="secondary" style="margin-top:10px">${this.t("Unterschiede anzeigen","Show differences")}</button></fieldset>`:''}
+      <div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:16px"><button type="button" id="rh-close" class="secondary">${this.t("Schließen","Close")}</button>${choices.length?`<button type="button" id="rh-delete" class="secondary">${this.t("Sicherungspunkt löschen","Delete restore point")}</button><button type="button" id="rh-restore">${this.t("Wiederherstellen","Restore")}</button>`:''}</div>`;
     this.shadowRoot.append(dialog);
     dialog.querySelector('#rh-close').onclick=()=>dialog.close();
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     const sel=dialog.querySelector('#rotapfel-history-select');
     const selected=()=>choices.find(v=>v.id===sel?.value);
-    const refreshDelete=()=>{const btn=dialog.querySelector('#rh-delete');if(btn){btn.disabled=!selected()?.manual;btn.title=btn.disabled?'Nur manuelle Sicherungspunkte können gelöscht werden':'';}};
+    const refreshDelete=()=>{const btn=dialog.querySelector('#rh-delete');if(btn){btn.disabled=!selected()?.manual;btn.title=btn.disabled?this.t("Nur manuelle Sicherungspunkte können gelöscht werden","You can delete manual restore points only"):'';}};
     sel?.addEventListener('change',refreshDelete);refreshDelete();
     dialog.querySelector('#rh-compare')?.addEventListener('click',()=>{
       const a=dialog.querySelector('#rh-compare-a').value,b=dialog.querySelector('#rh-compare-b').value;
-      if(a===b){alert('Bitte zwei unterschiedliche Stände auswählen.');return;}
+      if(a===b){alert(this.t("Bitte zwei unterschiedliche Stände auswählen.","Select two different versions."));return;}
       this.compareDashboardVersions(d,a,b);
     });
     dialog.querySelector('#rh-create').onclick=async()=>{
       const label=dialog.querySelector('#rh-label').value.trim();
-      if(!label){alert('Bitte einen Namen für den Sicherungspunkt eingeben.');return;}
+      if(!label){alert(this.t("Bitte einen Namen für den Sicherungspunkt eingeben.","Enter a name for the restore point."));return;}
       try{await this.api('create_manual_version',{id:d.id,label});dialog.close();await this.manageDashboardHistory(d);}
-      catch(err){alert('Sicherungspunkt konnte nicht erstellt werden: '+errorText(err));}
+      catch(err){alert(this.t("Sicherungspunkt konnte nicht erstellt werden: ","Could not create the restore point: ")+errorText(err));}
     };
     dialog.querySelector('#rh-delete')?.addEventListener('click',async()=>{
       const v=selected();if(!v?.manual)return;
-      if(!confirm('Manuellen Sicherungspunkt „'+v.reason+'“ endgültig löschen?'))return;
+      if(!confirm(this.t("Manuellen Sicherungspunkt „","Delete manual restore point “")+v.reason+this.t("“ endgültig löschen?","” permanently?")))return;
       try{await this.api('delete_manual_version',{id:d.id,version_id:v.id});dialog.close();await this.manageDashboardHistory(d);}
-      catch(err){alert('Sicherungspunkt konnte nicht gelöscht werden: '+errorText(err));}
+      catch(err){alert(this.t("Sicherungspunkt konnte nicht gelöscht werden: ","Could not delete the restore point: ")+errorText(err));}
     });
     dialog.querySelector('#rh-restore')?.addEventListener('click',async()=>{
       const version_id=sel.value;
-      if(!confirm('Die ausgewählte Version von „'+d.name+'“ wiederherstellen?\n\nDer aktuelle Stand wird zuvor automatisch gesichert. Eine Veröffentlichung bleibt unverändert, bis du sie aktualisierst.'))return;
-      try{const result=await this.api('restore_version',{id:d.id,version_id});this.items=result.dashboards;dialog.close();this.render();alert('Version wiederhergestellt. Falls veröffentlicht, bitte die Veröffentlichung aktualisieren.');}
-      catch(err){alert('Wiederherstellung fehlgeschlagen: '+errorText(err));}
+      if(!confirm(this.t("Die ausgewählte Version von „","Restore the selected version of “")+d.name+this.t("“ wiederherstellen?\n\nDer aktuelle Stand wird zuvor automatisch gesichert. Eine Veröffentlichung bleibt unverändert, bis du sie aktualisierst.","”?\n\nThe current version is backed up first. A publication changes when you update it.")))return;
+      try{const result=await this.api('restore_version',{id:d.id,version_id});this.items=result.dashboards;dialog.close();this.render();alert(this.t("Version wiederhergestellt. Falls veröffentlicht, bitte die Veröffentlichung aktualisieren.","Version restored. If the dashboard is published, update the publication."));}
+      catch(err){alert(this.t("Wiederherstellung fehlgeschlagen: ","Restore failed: ")+errorText(err));}
     });
     dialog.showModal();
   }
@@ -907,41 +916,41 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   async importDashboardBackup(file){
     if(!file)return;
-    if(file.size>8*1024*1024){alert('Die JSON-Datei ist zu groß (maximal 8 MB).');return;}
+    if(file.size>8*1024*1024){alert(this.t("Die JSON-Datei ist zu groß (maximal 8 MB).","The JSON file is too large (maximum 8 MB)."));return;}
     let payload,d;
     try{
       payload=JSON.parse(await file.text());d=payload?.dashboard;
-      if(payload?.format!=='rotapfel-dashboard-backup'||payload.schema_version!==1||!d||typeof d!=='object'||Array.isArray(d))throw Error('Kein unterstütztes Rotapfel-Dashboard-Backup (Version 1).');
-      if(typeof d.name!=='string'||!d.name.trim()||d.name.length>80||!['fire_hd','smartphone','tablet','desktop'].includes(d.profile))throw Error('Ungültiger Dashboard-Name oder Profiltyp.');
-      if(!Array.isArray(d.tabs)||d.tabs.length>30||!d.canvas||typeof d.canvas!=='object'||!d.deviceProfiles||typeof d.deviceProfiles!=='object')throw Error('Ungültige Dashboard-Struktur.');
-    }catch(err){alert('Import abgebrochen: '+String(err.message||err));return;}
+      if(payload?.format!=='rotapfel-dashboard-backup'||payload.schema_version!==1||!d||typeof d!=='object'||Array.isArray(d))throw Error(this.t("Kein unterstütztes Rotapfel-Dashboard-Backup (Version 1).","This file is not a supported Rotapfel dashboard backup (version 1)."));
+      if(typeof d.name!=='string'||!d.name.trim()||d.name.length>80||!['fire_hd','smartphone','tablet','desktop'].includes(d.profile))throw Error(this.t("Ungültiger Dashboard-Name oder Profiltyp.","Invalid dashboard name or profile type."));
+      if(!Array.isArray(d.tabs)||d.tabs.length>30||!d.canvas||typeof d.canvas!=='object'||!d.deviceProfiles||typeof d.deviceProfiles!=='object')throw Error(this.t("Ungültige Dashboard-Struktur.","Invalid dashboard structure."));
+    }catch(err){alert(this.t("Import abgebrochen: ","Import cancelled: ")+String(err.message||err));return;}
     const name=(d.name+' (Import)').slice(0,80);
-    if(!confirm('Dashboard „'+d.name+'“ als eigenständige Kopie „'+name+'“ importieren?\n\nBestehende Dashboards bleiben unverändert. Veröffentlichungen werden nicht übernommen.'))return;
+    if(!confirm(this.t("Dashboard „","Dashboard “")+d.name+this.t("“ als eigenständige Kopie „","” as a separate copy named “")+name+this.t("“ importieren?\n\nBestehende Dashboards bleiben unverändert. Veröffentlichungen werden nicht übernommen.","”?\n\nExisting dashboards are preserved. Publications are excluded.")))return;
     let newId=null;
     try{
       const existing=new Set((this.items||[]).map(x=>x.id));
       const created=await this.api('create',{name,profile:d.profile});
       const newDashboard=created.dashboards.find(x=>!existing.has(x.id));
-      if(!newDashboard)throw Error('Neues Dashboard konnte nicht zugeordnet werden.');
+      if(!newDashboard)throw Error(this.t("Neues Dashboard konnte nicht zugeordnet werden.","Could not identify the new dashboard."));
       newId=newDashboard.id;
       const result=await this.api('save_layout',{id:newId,tabs:d.tabs,theme:d.theme||'light',canvas:d.canvas,deviceProfiles:d.deviceProfiles});
       this.items=result.dashboards;this.error='';this.render();
-      alert('Dashboard „'+name+'“ wurde importiert. Bitte Entitäten und Custom-Card-Ressourcen prüfen, bevor du es veröffentlichst.');
+      alert(this.t("Dashboard „","Dashboard “")+name+this.t("“ wurde importiert. Bitte Entitäten und Custom-Card-Ressourcen prüfen, bevor du es veröffentlichst.","” was imported. Check its entities and custom card resources before publishing."));
     }catch(err){
       if(newId){try{await this.api('delete',{id:newId});}catch(_){/* Retain the failure message. */}}
       await this.load();
-      alert('Import fehlgeschlagen; die angelegte Kopie wurde nach Möglichkeit entfernt.\n'+String(err.message||err));
+      alert(this.t("Import fehlgeschlagen; die angelegte Kopie wurde nach Möglichkeit entfernt.\n","Import failed. Rotapfel attempted to remove the copy.\n")+String(err.message||err));
     }
   }
   downloadExport(d){
     const {yaml,warnings}=this.exportDashboard(d);
-    if(!yaml.views.length){alert('Dieses Dashboard enthält noch keine Tabs.');return;}
+    if(!yaml.views.length){alert(this.t("Dieses Dashboard enthält noch keine Tabs.","This dashboard has no tabs yet."));return;}
     const payload=JSON.stringify(yaml,null,2);
     const blob=new Blob([payload+'\n'],{type:'application/x-yaml;charset=utf-8'});
     const url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='rotapfel-'+d.name.toLowerCase().replace(/[^a-z0-9äöüß-]+/gi,'-')+'.yaml';
     this.shadowRoot.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
-    alert('Lovelace-YAML wurde heruntergeladen.\n\nErforderliche Ressource: /rotapfel_dashboard_manager/rotapfel-canvas-card.js (JavaScript-Modul).\n\nDer Export registriert noch kein Dashboard in der Seitenleiste.'+(warnings.length?'\n\nHinweise:\n'+warnings.join('\n'):''));
+    alert(this.t("Lovelace-YAML wurde heruntergeladen.\n\nErforderliche Ressource: /rotapfel_dashboard_manager/rotapfel-canvas-card.js (JavaScript-Modul).\n\nDer Export registriert noch kein Dashboard in der Seitenleiste.","Lovelace YAML downloaded.\n\nRequired resource: /rotapfel_dashboard_manager/rotapfel-canvas-card.js (JavaScript module).\n\nRegister the dashboard separately to add it to the sidebar.")+(warnings.length?'\n\nHinweise:\n'+warnings.join('\n'):''));
   }
   publicationPath(d){
     return 'rotapfel-'+d.id.replace(/[^a-z0-9]/gi,'').slice(0,20).toLowerCase();
@@ -955,11 +964,11 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   async verifyPublication(publication,target){
     if(!publication?.owner_key||target.id!==publication.dashboard_id){
-      throw Error('Die Veröffentlichung gehört nicht eindeutig zu diesem Rotapfel-Dashboard.');
+      throw Error(this.t("Die Veröffentlichung gehört nicht eindeutig zu diesem Rotapfel-Dashboard.","Could not verify that the publication belongs to this Rotapfel dashboard."));
     }
     const config=await this._hass.callWS({type:'lovelace/config',url_path:publication.url_path});
     if(config?.rotapfel_publication_id!==publication.owner_key){
-      throw Error('Die Veröffentlichungskennung stimmt nicht überein.');
+      throw Error(this.t("Die Veröffentlichungskennung stimmt nicht überein.","The publication identifier does not match."));
     }
   }
   async deletePublishedDashboard(publication){
@@ -971,10 +980,10 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   async deleteManagedDashboard(d){
     const publication=d.publication;
-    if(!confirm('Dashboard „'+d.name+'“ und seine Veröffentlichung endgültig löschen?'))return;
+    if(!confirm(this.t("Dashboard „","Dashboard “")+d.name+this.t("“ und seine Veröffentlichung endgültig löschen?","” and its publication permanently?")))return;
     try{
       if(publication&&!this.isCurrentPublication(d)){
-        throw Error('Der Veröffentlichungspfad stimmt nicht mit dem Rotapfel-Dashboard überein.');
+        throw Error(this.t("Der Veröffentlichungspfad stimmt nicht mit dem Rotapfel-Dashboard überein.","The publication path does not match the Rotapfel dashboard."));
       }
       const removed=publication&&publication.access!=='selected'&&await this.deletePublishedDashboard(publication);
       const result=await this.api('delete',{id:d.id});
@@ -983,7 +992,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(removed)window.location.reload();
     }catch(err){
       await this.load();
-      alert('Dashboard konnte nicht vollständig gelöscht werden:\n'+String(err?.message||err));
+      alert(this.t("Dashboard konnte nicht vollständig gelöscht werden:\n","Could not completely delete the dashboard:\n")+String(err?.message||err));
     }
   }
   async choosePublicationAccess(name, previous){
@@ -1051,15 +1060,15 @@ class RotapfelDashboardManager extends HTMLElement {
       }
       const target=await this.findPublication(path);
       if(stored&&(stored.url_path!==path||!stored.owner_key)){
-        if(action==='remove'&&confirm('Nur die alte Rotapfel-Verknüpfung lösen? Das Home-Assistant-Dashboard bleibt bestehen.')){
+        if(action==='remove'&&confirm(this.t("Nur die alte Rotapfel-Verknüpfung lösen? Das Home-Assistant-Dashboard bleibt bestehen.","Remove the old Rotapfel link? The Home Assistant dashboard is preserved."))){
           this.items=(await this.api('publication',{id:d.id,publication:null})).dashboards;
           this.render();
           return;
         }
-        throw Error('Alte Veröffentlichung ohne geprüfte Kennung. Über „Veröffentlichung entfernen“ kannst du die alte Verknüpfung lösen.');
+        throw Error(this.t("Alte Veröffentlichung ohne geprüfte Kennung. Über „Veröffentlichung entfernen“ kannst du die alte Verknüpfung lösen.","This older publication has no verified identifier. Choose “Remove publication” to unlink it."));
       }
       if(action==='remove'){
-        if(!stored||!confirm('Veröffentlichung von „'+d.name+'“ entfernen?'))return;
+        if(!stored||!confirm(this.t("Veröffentlichung von „","Publication for “")+d.name+this.t("“ entfernen?","” remove?")))return;
         await this.deletePublishedDashboard(stored);
         this.items=(await this.api('publication',{id:d.id,publication:null})).dashboards;
       }else{
@@ -1067,7 +1076,7 @@ class RotapfelDashboardManager extends HTMLElement {
         if(!yaml.views.length)throw Error(this.t('Dashboard hat noch keine Tabs.','This dashboard has no tabs yet.'));
         if(action==='update'&&target){
           await this.verifyPublication(stored,target);
-          if(!confirm('Veröffentlichtes Dashboard „'+d.name+'“ aktualisieren?'))return;
+          if(!confirm(this.t("Veröffentlichtes Dashboard „","Published dashboard “")+d.name+'“ aktualisieren?'))return;
           await this.verifyPublication(stored,target);
           await this._hass.callWS({type:'lovelace/config/save',url_path:path,
             config:{...yaml,rotapfel_publication_id:stored.owner_key}});
@@ -1096,14 +1105,14 @@ class RotapfelDashboardManager extends HTMLElement {
             await this.verifyPublication(publication,created);
             this.items=(await this.api('publication',{id:d.id,publication})).dashboards;
           }catch(err){
-            throw Error('Veröffentlichung konnte nicht vollständig gespeichert werden. Prüfe das neu angelegte Dashboard in Home Assistant. '+String(err?.message||err));
+            throw Error(this.t("Veröffentlichung konnte nicht vollständig gespeichert werden. Prüfe das neu angelegte Dashboard in Home Assistant. ","Could not finish saving the publication. Check the newly created dashboard in Home Assistant. ")+String(err?.message||err));
           }
         }
-        if(warnings.length)alert('Exporthinweise:\n'+warnings.join('\n'));
+        if(warnings.length)alert(this.t("Exporthinweise:\n","Export notes:\n")+warnings.join('\n'));
       }
       window.location.reload();
     }catch(err){
-      alert('Veröffentlichung fehlgeschlagen:\n'+String(err?.message||err));
+      alert(this.t("Veröffentlichung fehlgeschlagen:\n","Publication failed:\n")+String(err?.message||err));
       console.error('Rotapfel publication failed',err);
     }finally{
       this._publicationPending=false;
@@ -1137,7 +1146,7 @@ class RotapfelDashboardManager extends HTMLElement {
         close();this.render();
       }catch(err){
         const message=backdrop.querySelector('#close-error');
-        message.textContent='Speichern fehlgeschlagen: '+(err?.body?.message||err?.body?.error||err?.message||(typeof err==='object'?JSON.stringify(err):String(err)));message.style.display='block';
+        message.textContent=this.t("Speichern fehlgeschlagen: ","Save failed: ")+(err?.body?.message||err?.body?.error||err?.message||(typeof err==='object'?JSON.stringify(err):String(err)));message.style.display='block';
         save.disabled=false;discard.disabled=false;cancel.disabled=false;save.textContent=this.t("Speichern","Save");
       }
     };
@@ -1348,22 +1357,22 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13953</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="${this.t("Home Assistant Seitenleiste öffnen","Open Home Assistant sidebar")}" title="${this.t("Home Assistant Menü","Home Assistant menu")}">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="${this.t("Frontend-Build der installierten Integration","Frontend build of the installed integration")}">Rotapfel Control Manager · Alpha 13.9.54 · Build 0.2.0a13954</div>${d?`<div class="top"><div><button class="secondary" id="back">${this.t("← Übersicht","← Overview")}</button><h1>${e(d.name)}</h1><div class="muted">${this.t("Layout-Editor","Layout editor")} · ${e(d.profile)} ${this.dirty?this.t("· Ungespeicherte Änderungen","· Unsaved changes"):''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
 <div class="layout-control-panel">
-        ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
-        <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
+        ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>${this.t("01 · Design & Raster","01 · Design & grid")}</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">${this.t("Kartendesign pro Dashboard · Farben und Maße pro Karte","Design per dashboard · Colors and dimensions per card")}</span></div></details>
+        <details class="layout-control-group" open><summary>${this.t("02 · Geräteprofile & Vorlagen","02 · Device profiles & templates")}</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>${this.t("Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen","Show manual layout selection on smartphone dashboards")}</span></label><span id="device-profile-status" class="muted">${this.t("Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.","Alpha 13.7.105: Positions and sizes are stored per profile. Choose “Save layout” to keep your changes.")}</span></div></details>
     </div>
     <section class="layout-band layout-band-tabs" aria-labelledby="rotapfel-tabs-heading"><div class="toolbar"><h2 id="rotapfel-tabs-heading">Tabs</h2><button id="add-tab">${this.t("+ Tab","+ Tab")}</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     </section>
     ${this.layout?.length?this.renderTab():`<p class="muted">${this.t("Noch keine Tabs. Lege den ersten Tab an.","No tabs yet. Add a tab to get started.")}</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.53</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13953</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
-      <option value="auto">${this.t('Automatisch','Automatic')}</option><option value="de">Deutsch</option><option value="en">English</option>
-    </select></label><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">${this.t("Custom-Card-Ressourcen","Custom card resources")}</button><button class="secondary" id="import-dashboard-backup">${this.t("JSON importieren","Import JSON")}</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">${this.t("+ Dashboard erstellen","+ Create dashboard")}</button></div></div>
-    <div class="rotapfel-update-info" aria-label="Update-Info"><span>${this.t("Installiert","Installed")} <strong id="rotapfel-installed-version">${e(this._installedVersion||this.t("Nicht ermittelt","Unknown"))}</strong></span><span>${this.t("Verfügbares Update","Available update")} <strong id="rotapfel-offered-version">${e(this.availableUpdate()||this.t("Kein konkretes Update gemeldet","No update reported"))}</strong></span></div>
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">${this.t("Dashboard-Verwaltung","Dashboard management")} · Alpha 13.9.54</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13954</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
+      <option value="auto">${this.t('Automatisch','Automatic')}</option><option value="de">${this.t("Deutsch","German")}</option><option value="en">English</option>
+    </select></label><button class="secondary" id="frontend-reload" title="${this.t("Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)","Reload the frontend without restarting Home Assistant")}">${this.t("↻ Frontend neu laden","↻ Reload frontend")}</button><button class="secondary" id="resource-manager">${this.t("Custom-Card-Ressourcen","Custom card resources")}</button><button class="secondary" id="import-dashboard-backup">${this.t("JSON importieren","Import JSON")}</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">${this.t("+ Dashboard erstellen","+ Create dashboard")}</button></div></div>
+    <div class="rotapfel-update-info" aria-label="${this.t("Update-Info","Update information")}"><span>${this.t("Installiert","Installed")} <strong id="rotapfel-installed-version">${e(this._installedVersion||this.t("Nicht ermittelt","Unknown"))}</strong></span><span>${this.t("Verfügbares Update","Available update")} <strong id="rotapfel-offered-version">${e(this.availableUpdate()||this.t("Kein konkretes Update gemeldet","No update reported"))}</strong></span></div>
     <div class="dashboard-summary"><span>${this.t("Gesamt","Total")}: <strong>${(this.items||[]).length}</strong></span><span>${this.t("Veröffentlicht","Published")}: <strong>${(this.items||[]).filter(x=>x.publication&&this.isCurrentPublication(x)).length}</strong></span><span>${this.t("Unveröffentlicht","Unpublished")}: <strong>${(this.items||[]).filter(x=>!x.publication).length}</strong></span><span>${this.t("Prüfen","Check")}: <strong>${(this.items||[]).filter(x=>x.publication&&!this.isCurrentPublication(x)).length}</strong></span></div>
     <div class="dashboard-filters"><label>${this.t("Dashboard suchen","Search dashboards")}<input id="dashboard-search" type="search" placeholder="${this.t("Name oder Gerät","Name or device")}" value="${e(this._dashboardSearch||'')}"></label><label>${this.t("Veröffentlichung","Publication")}<select id="dashboard-filter"><option value="all">${this.t("Alle Dashboards","All dashboards")}</option><option value="published">${this.t("Veröffentlicht","Published")}</option><option value="unpublished">${this.t("Unveröffentlicht","Unpublished")}</option><option value="repair">${this.t("Verknüpfung prüfen","Check link")}</option></select></label><label>${this.t("Sortieren","Sort by")}<select id="dashboard-sort"><option value="name">Name A–Z</option><option value="name-desc">Name Z–A</option><option value="status">${this.t("Veröffentlichungsstatus","Publication status")}</option></select></label><div class="dashboard-view-switch" role="group" aria-label="${this.t("Ansicht wählen","Choose view")}"><button type="button" class="secondary" id="dashboard-view-cards" aria-pressed="true">${this.t("▦ Kacheln","▦ Cards")}</button><button type="button" class="secondary" id="dashboard-view-table" aria-pressed="false">${this.t("☷ Tabelle","☷ Table")}</button></div></div>
-    <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':this.isCurrentPublication(x)?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':this.isCurrentPublication(x)?'published':'repair'}">${!x.publication?'Nicht veröffentlicht':this.isCurrentPublication(x)?'Veröffentlicht':'Verknüpfung prüfen'}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">${this.t("YAML exportieren","Export YAML")}</button><button data-action="backup" class="secondary">${this.t("JSON sichern","Back up JSON")}</button><button data-action="history" class="secondary">${this.t("Versionen","Versions")}</button>${x.publication&&!this.isCurrentPublication(x)?`<button data-action="repair-publish">${this.t("Kopie veröffentlichen","Publish copy")}</button>`:x.publication?`<button data-action="update">${this.t("Veröffentlichung aktualisieren","Update publication")}</button><button data-action="open" class="secondary">${this.t("Öffnen","Open")}</button><button data-action="remove" class="secondary">${this.t("Veröffentlichung entfernen","Remove publication")}</button>`:`<button data-action="publish">${this.t("Veröffentlichen","Publish")}</button>`}<button data-action="edit" class="secondary">${this.t("Bearbeiten","Edit")}</button><button data-action="duplicate" class="secondary">${this.t("Duplizieren","Duplicate")}</button><button data-action="delete" class="secondary">${this.t("Dashboard endgültig löschen","Delete dashboard permanently")}</button></div></article>`).join('')}</div>${this.items?.length===0?`<p class="muted">${this.t("Noch keine Dashboards angelegt.","No dashboards yet.")}</p>`:''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>${this.t("Keine Dashboards entsprechen der Auswahl.","No dashboards match the filters.")}</p>`}
+    <div class="grid" id="dashboard-list">${(this.items||[]).map(x=>`<article data-id="${e(x.id)}" data-name="${e((x.name||'')+' '+(x.profile||''))}" data-status="${!x.publication?'unpublished':this.isCurrentPublication(x)?'published':'repair'}"><strong>${e(x.name)}</strong><div><span class="dashboard-status ${!x.publication?'':this.isCurrentPublication(x)?'published':'repair'}">${!x.publication?this.t("Nicht veröffentlicht","Not published"):this.isCurrentPublication(x)?this.t("Veröffentlicht","Published"):this.t("Verknüpfung prüfen","Check link")}</span></div><p class="muted">${e(x.profile)} · ${e((x.tabs||[]).length)} Tabs</p><div class="actions"><button data-action="layout">Layout</button><button data-action="export" class="secondary">${this.t("YAML exportieren","Export YAML")}</button><button data-action="backup" class="secondary">${this.t("JSON sichern","Back up JSON")}</button><button data-action="history" class="secondary">${this.t("Versionen","Versions")}</button>${x.publication&&!this.isCurrentPublication(x)?`<button data-action="repair-publish">${this.t("Kopie veröffentlichen","Publish copy")}</button>`:x.publication?`<button data-action="update">${this.t("Veröffentlichung aktualisieren","Update publication")}</button><button data-action="open" class="secondary">${this.t("Öffnen","Open")}</button><button data-action="remove" class="secondary">${this.t("Veröffentlichung entfernen","Remove publication")}</button>`:`<button data-action="publish">${this.t("Veröffentlichen","Publish")}</button>`}<button data-action="edit" class="secondary">${this.t("Bearbeiten","Edit")}</button><button data-action="duplicate" class="secondary">${this.t("Duplizieren","Duplicate")}</button><button data-action="delete" class="secondary">${this.t("Dashboard endgültig löschen","Delete dashboard permanently")}</button></div></article>`).join('')}</div>${this.items?.length===0?`<p class="muted">${this.t("Noch keine Dashboards angelegt.","No dashboards yet.")}</p>`:''}<p id="dashboard-empty-filter" class="dashboard-empty-filter" hidden>${this.t("Keine Dashboards entsprechen der Auswahl.","No dashboards match the filters.")}</p>`}
     ${this.error?`<p class="error">${e(this.error)}</p>`:''}</main>
     <dialog><form method="dialog"><h2 id="dialog-title">Dashboard</h2><label>Name<input name="name" maxlength="80" required></label><label>${this.t("Endgerät","Device")}<select name="profile"><option value="fire_hd">Fire HD</option><option value="smartphone">Smartphone</option><option value="tablet">Tablet</option><option value="desktop">Desktop</option></select></label><div class="actions"><button type="button" id="save">${this.t("Speichern","Save")}</button><button type="submit" class="secondary">${this.t("Abbrechen","Cancel")}</button></div></form></dialog>`;
     const root=this.shadowRoot,dlg=root.querySelector('dialog');const open=x=>{this.editId=x?.id||null;root.querySelector('#dialog-title').textContent=x?this.t("Dashboard bearbeiten","Edit dashboard"):this.t("Dashboard erstellen","Create dashboard");root.querySelector('[name=name]').value=x?.name||'';root.querySelector('[name=profile]').value=x?.profile||'fire_hd';dlg.showModal();};
@@ -1432,20 +1441,20 @@ class RotapfelDashboardManager extends HTMLElement {
         if(changed){const saved=await this.api('save_layout_templates',{templates});templates=saved.templates;}
         localStorage.removeItem(key);
       }
-    }catch(err){alert('Zentrale Layout-Vorlagen konnten nicht geladen werden: '+String(err));return;}
+    }catch(err){alert(this.t("Zentrale Layout-Vorlagen konnten nicht geladen werden: ","Could not load shared layout templates: ")+String(err));return;}
     const read=()=>templates;
     const persist=async next=>{const response=await this.api('save_layout_templates',{templates:next});templates=response.templates;};
     const dlg=document.createElement('dialog');
     dlg.style.cssText='padding:22px;border-radius:14px;border:1px solid #999;min-width:min(460px,90vw);max-width:90vw;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
-    dlg.innerHTML=`<div style="display:grid;gap:12px"><h3 style="margin:0">${this.t("Layout-Vorlagen","Layout templates")}</h3><p style="margin:0">Speichere die komplette Dashboard-Anordnung inklusive aller Tabs, Räume, Karten und Geräteprofile als wiederverwendbare Vorlage.</p><label>Vorlage auswählen<select id="lt-select" style="width:100%;padding:9px"></select></label><label>Vorlagenname<input id="lt-name" maxlength="80" placeholder="z. B. Wohnzimmer-Layout" style="width:100%;padding:9px;box-sizing:border-box"></label><p id="lt-status" style="margin:0;color:var(--secondary-text-color,#666)"></p><div style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" id="lt-save">Aktuelles Layout speichern</button><button type="button" id="lt-load">Vorlage anwenden</button><button type="button" id="lt-delete">Vorlage löschen</button><button type="button" id="lt-close">${this.t("Schließen","Close")}</button></div><small>Vorlagen werden zentral in Home Assistant gespeichert und stehen auf allen Geräten zur Verfügung.</small></div>`;
+    dlg.innerHTML=`<div style="display:grid;gap:12px"><h3 style="margin:0">${this.t("Layout-Vorlagen","Layout templates")}</h3><p style="margin:0">${this.t("Speichere die komplette Dashboard-Anordnung inklusive aller Tabs, Räume, Karten und Geräteprofile als wiederverwendbare Vorlage.","Save the complete dashboard layout as a reusable template, including tabs, rooms, cards and device profiles.")}</p><label>${this.t("Vorlage auswählen","Select template")}<select id="lt-select" style="width:100%;padding:9px"></select></label><label>${this.t("Vorlagenname","Template name")}<input id="lt-name" maxlength="80" placeholder="${this.t("z. B. Wohnzimmer-Layout","e.g. Living room layout")}" style="width:100%;padding:9px;box-sizing:border-box"></label><p id="lt-status" style="margin:0;color:var(--secondary-text-color,#666)"></p><div style="display:flex;flex-wrap:wrap;gap:8px"><button type="button" id="lt-save">${this.t("Aktuelles Layout speichern","Save current layout")}</button><button type="button" id="lt-load">${this.t("Vorlage anwenden","Apply template")}</button><button type="button" id="lt-delete">${this.t("Vorlage löschen","Delete template")}</button><button type="button" id="lt-close">${this.t("Schließen","Close")}</button></div><small>${this.t("Vorlagen werden zentral in Home Assistant gespeichert und stehen auf allen Geräten zur Verfügung.","Templates are stored in Home Assistant and available on every device.")}</small></div>`;
     this.shadowRoot.append(dlg);
     const select=dlg.querySelector('#lt-select'),name=dlg.querySelector('#lt-name'),status=dlg.querySelector('#lt-status');
-    const refresh=(preferred='')=>{const templates=read();select.replaceChildren(new Option('Vorlage auswählen …',''),...templates.map(t=>new Option(t.name,t.id)));if(preferred)select.value=preferred;};
+    const refresh=(preferred='')=>{const templates=read();select.replaceChildren(new Option(this.t("Vorlage auswählen …","Select template …"),''),...templates.map(t=>new Option(t.name,t.id)));if(preferred)select.value=preferred;};
     const current=()=>read().find(t=>t.id===select.value);
     dlg.querySelector('#lt-save').onclick=async()=>{
-      const title=name.value.trim();if(!title){status.textContent='Bitte zuerst einen Vorlagennamen eingeben.';return;}
+      const title=name.value.trim();if(!title){status.textContent=this.t("Bitte zuerst einen Vorlagennamen eingeben.","Enter a template name first.");return;}
       const templates=[...read()],existing=templates.findIndex(t=>t.name.toLowerCase()===title.toLowerCase());
-      if(existing>=0&&!confirm('Vorlage „'+title+'“ überschreiben?'))return;
+      if(existing>=0&&!confirm(this.t("Vorlage „","Template “")+title+this.t("“ überschreiben?","” with the current settings?")))return;
       // Persist the current profile positions before snapshotting.
       const tabs=JSON.parse(JSON.stringify(this.layout||[]));
       const profile=this._deviceLayoutProfile||'fire_hd';
@@ -1454,19 +1463,19 @@ class RotapfelDashboardManager extends HTMLElement {
       }
       const item={id:existing>=0?templates[existing].id:this.uid(),name:title,created:new Date().toISOString(),tabs,theme:this.theme,canvas:JSON.parse(JSON.stringify(this.canvas)),deviceProfiles:JSON.parse(JSON.stringify(this.deviceProfiles||{}))};
       if(existing>=0)templates[existing]=item;else templates.push(item);
-      try{await persist(templates);refresh(item.id);status.textContent='Vorlage zentral in Home Assistant gespeichert.';}catch(err){status.textContent='Speichern fehlgeschlagen: '+err.message;}
+      try{await persist(templates);refresh(item.id);status.textContent=this.t("Vorlage zentral in Home Assistant gespeichert.","Template saved in Home Assistant.");}catch(err){status.textContent=this.t("Speichern fehlgeschlagen: ","Save failed: ")+err.message;}
     };
     dlg.querySelector('#lt-load').onclick=()=>{
-      const item=current();if(!item){status.textContent='Bitte eine Vorlage auswählen.';return;}
-      if(!confirm('Die Vorlage „'+item.name+'“ ersetzt das aktuelle Dashboard-Layout im Editor. Nicht gespeicherte Änderungen gehen verloren. Fortfahren?'))return;
+      const item=current();if(!item){status.textContent=this.t("Bitte eine Vorlage auswählen.","Select a template.");return;}
+      if(!confirm(this.t("Die Vorlage „","The template “")+item.name+this.t("“ ersetzt das aktuelle Dashboard-Layout im Editor. Nicht gespeicherte Änderungen gehen verloren. Fortfahren?","” replaces the current dashboard layout in the editor. Unsaved changes will be lost. Continue?")))return;
       this.layout=JSON.parse(JSON.stringify(item.tabs));this.theme=item.theme||'light';this.canvas=JSON.parse(JSON.stringify(item.canvas));this.deviceProfiles=JSON.parse(JSON.stringify(item.deviceProfiles||{}));
       this._deviceLayoutProfile='fire_hd';this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});
       this.tabId=this.layout[0]?.id;this.dirty=true;dlg.close();this.render();
     };
     dlg.querySelector('#lt-delete').onclick=async()=>{
-      const item=current();if(!item){status.textContent='Bitte eine Vorlage auswählen.';return;}
-      if(!confirm('Vorlage „'+item.name+'“ löschen?'))return;
-      try{await persist(read().filter(t=>t.id!==item.id));refresh();status.textContent='Vorlage gelöscht.';}catch(err){status.textContent='Löschen fehlgeschlagen: '+err.message;}
+      const item=current();if(!item){status.textContent=this.t("Bitte eine Vorlage auswählen.","Select a template.");return;}
+      if(!confirm(this.t("Vorlage „","Template “")+item.name+this.t("“ löschen?","” delete?")))return;
+      try{await persist(read().filter(t=>t.id!==item.id));refresh();status.textContent=this.t("Vorlage gelöscht.","Template deleted.");}catch(err){status.textContent=this.t("Löschen fehlgeschlagen: ","Delete failed: ")+err.message;}
     };
     select.onchange=()=>{name.value=current()?.name||'';};
     dlg.querySelector('#lt-close').onclick=()=>dlg.close();dlg.addEventListener('close',()=>dlg.remove(),{once:true});refresh();dlg.showModal();
@@ -1476,27 +1485,27 @@ class RotapfelDashboardManager extends HTMLElement {
     const custom=Object.keys(profiles).filter(k=>!['fire_hd','desktop','iphone'].includes(k));
     const dlg=document.createElement('dialog');
     dlg.style.cssText='padding:24px;border-radius:14px;border:1px solid #999;min-width:min(480px,90vw);background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
-    dlg.innerHTML=`<form style="display:grid;gap:12px"><h3>Geräteprofile verwalten</h3>
-      <label>Aktion<select name="action"><option value="1">Neues Profil</option><option value="2">Profil duplizieren</option><option value="3">Profil bearbeiten</option><option value="4">Profil löschen</option></select></label>
-      <label id="profile-source-row">Profil auswählen<select name="source" style="display:block;width:100%;min-height:38px;padding:8px"></select></label>
+    dlg.innerHTML=`<form style="display:grid;gap:12px"><h3>${this.t("Geräteprofile verwalten","Manage device profiles")}</h3>
+      <label>${this.t("Aktion","Action")}<select name="action"><option value="1">${this.t("Neues Profil","New profile")}</option><option value="2">${this.t("Profil duplizieren","Duplicate profile")}</option><option value="3">${this.t("Profil bearbeiten","Edit profile")}</option><option value="4">${this.t("Profil löschen","Delete profile")}</option></select></label>
+      <label id="profile-source-row">${this.t("Profil auswählen","Select profile")}<select name="source" style="display:block;width:100%;min-height:38px;padding:8px"></select></label>
       <div id="profile-fields" style="display:grid;gap:10px"><label>Name<input name="profileName" maxlength="60"></label>
-      <label>Breite in CSS-px<input name="width" type="number" min="320" max="10000"></label>
-      <label>Höhe in CSS-px<input name="height" type="number" min="240" max="10000"></label>
-      <fieldset><legend>Höhenverhalten</legend><button type="button" data-mode="dynamic">Dynamisch</button> <button type="button" data-mode="fixed">Fix</button><p id="mode-description"></p></fieldset></div>
+      <label>${this.t("Breite in CSS-px","Width in CSS px")}<input name="width" type="number" min="320" max="10000"></label>
+      <label>${this.t("Höhe in CSS-px","Height in CSS px")}<input name="height" type="number" min="240" max="10000"></label>
+      <fieldset><legend>${this.t("Höhenverhalten","Height behavior")}</legend><button type="button" data-mode="dynamic">${this.t("Dynamisch","Expandable")}</button> <button type="button" data-mode="fixed">${this.t("Fix","Fixed")}</button><p id="mode-description"></p></fieldset></div>
       <p id="profile-error" style="color:var(--error-color,#c33)"></p>
       <div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="profile-cancel">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="profile-submit">${this.t("Übernehmen","Apply")}</button></div></form>`;
     this.shadowRoot.append(dlg);
     const form=dlg.querySelector('form'),action=form.elements.action,source=form.elements.source;
     let fixed=false;
-    const showMode=()=>{dlg.querySelectorAll('[data-mode]').forEach(b=>{const selected=(b.dataset.mode==='fixed')===fixed;b.style.setProperty('background',selected?'var(--primary-color,#039fc7)':'#e5e7eb','important');b.style.setProperty('color',selected?'#fff':'#1f2937','important');b.style.setProperty('border',selected?'2px solid var(--primary-color,#039fc7)':'1px solid #9ca3af','important');b.style.setProperty('box-shadow',selected?'0 0 0 2px #039fc733':'none','important');b.style.outline='none';b.style.fontWeight=selected?'700':'500';b.setAttribute('aria-pressed',String(selected));});dlg.querySelector('#mode-description').textContent=fixed?'Feste Displayhöhe':'Dynamisch wachsende Höhe';};
+    const showMode=()=>{dlg.querySelectorAll('[data-mode]').forEach(b=>{const selected=(b.dataset.mode==='fixed')===fixed;b.style.setProperty('background',selected?'var(--primary-color,#039fc7)':'#e5e7eb','important');b.style.setProperty('color',selected?'#fff':'#1f2937','important');b.style.setProperty('border',selected?'2px solid var(--primary-color,#039fc7)':'1px solid #9ca3af','important');b.style.setProperty('box-shadow',selected?'0 0 0 2px #039fc733':'none','important');b.style.outline='none';b.style.fontWeight=selected?'700':'500';b.setAttribute('aria-pressed',String(selected));});dlg.querySelector('#mode-description').textContent=fixed?this.t("Feste Displayhöhe","Fixed display height"):this.t("Dynamisch wachsende Höhe","Expandable height");};
     dlg.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{fixed=b.dataset.mode==='fixed';showMode();});
-    const fill=()=>{const original=profiles[source.value]||profiles.fire_hd;form.elements.profileName.value=action.value==='1'?'Neues Gerät':action.value==='2'?original.name+' Kopie':original.name;form.elements.width.value=original.width;form.elements.height.value=original.height;fixed=!!original.fixed;showMode();};
-    const update=()=>{const a=action.value,keys=a==='3'||a==='4'?custom:Object.keys(profiles);source.innerHTML=keys.map(k=>`<option value="${k}">${this.esc(profiles[k].name)} · ${profiles[k].width} × ${profiles[k].height}</option>`).join('');dlg.querySelector('#profile-source-row').style.display=a==='1'?'none':'';dlg.querySelector('#profile-fields').style.display=a==='4'?'none':'grid';dlg.querySelector('#profile-submit').disabled=!keys.length&&a!=='1';dlg.querySelector('#profile-error').textContent=!keys.length&&a!=='1'?'Keine eigenen Profile vorhanden. Bitte zuerst ein Profil erstellen oder duplizieren.':'';fill();};
+    const fill=()=>{const original=profiles[source.value]||profiles.fire_hd;form.elements.profileName.value=action.value==='1'?this.t("Neues Gerät","New device"):action.value==='2'?original.name+this.t(" Kopie"," Copy"):original.name;form.elements.width.value=original.width;form.elements.height.value=original.height;fixed=!!original.fixed;showMode();};
+    const update=()=>{const a=action.value,keys=a==='3'||a==='4'?custom:Object.keys(profiles);source.innerHTML=keys.map(k=>`<option value="${k}">${this.esc(profiles[k].name)} · ${profiles[k].width} × ${profiles[k].height}</option>`).join('');dlg.querySelector('#profile-source-row').style.display=a==='1'?'none':'';dlg.querySelector('#profile-fields').style.display=a==='4'?'none':'grid';dlg.querySelector('#profile-submit').disabled=!keys.length&&a!=='1';dlg.querySelector('#profile-error').textContent=!keys.length&&a!=='1'?this.t("Keine eigenen Profile vorhanden. Bitte zuerst ein Profil erstellen oder duplizieren.","No custom profiles yet. Create or duplicate a profile first."):'';fill();};
     action.onchange=update;source.onchange=fill;
     dlg.querySelector('#profile-cancel').onclick=()=>dlg.close();dlg.addEventListener('close',()=>dlg.remove(),{once:true});
     form.onsubmit=ev=>{ev.preventDefault();const a=action.value,src=a==='1'?'fire_hd':source.value,original=profiles[src];if(!original)return;
-      if(a==='4'){if(!confirm('Profil „'+original.name+'“ und seine Kartenpositionen löschen?'))return;this.eachLayoutCard(c=>{if(c.deviceLayouts)delete c.deviceLayouts[src];});delete profiles[src];if(this._deviceLayoutProfile===src)this.switchDeviceLayoutProfile('fire_hd');}
-      else{const name=form.elements.profileName.value.trim(),width=Number(form.elements.width.value),height=Number(form.elements.height.value);if(!name||!Number.isInteger(width)||width<320||width>10000||!Number.isInteger(height)||height<240||height>10000){dlg.querySelector('#profile-error').textContent='Bitte gültige Profilmaße eingeben.';return;}
+      if(a==='4'){if(!confirm(this.t("Profil „","Profile “")+original.name+this.t("“ und seine Kartenpositionen löschen?","” and its card positions delete?")))return;this.eachLayoutCard(c=>{if(c.deviceLayouts)delete c.deviceLayouts[src];});delete profiles[src];if(this._deviceLayoutProfile===src)this.switchDeviceLayoutProfile('fire_hd');}
+      else{const name=form.elements.profileName.value.trim(),width=Number(form.elements.width.value),height=Number(form.elements.height.value);if(!name||!Number.isInteger(width)||width<320||width>10000||!Number.isInteger(height)||height<240||height>10000){dlg.querySelector('#profile-error').textContent=this.t("Bitte gültige Profilmaße eingeben.","Enter valid profile dimensions.");return;}
         const key=a==='3'?src:'custom_'+this.uid().replace(/[^a-z0-9]/gi,'').slice(0,12);profiles[key]={name:name.slice(0,60),width,height,fixed};
         if(a!=='3')this.eachLayoutCard(c=>{c.deviceLayouts=c.deviceLayouts||{};if(c.position)c.deviceLayouts[this._deviceLayoutProfile||'fire_hd']=JSON.parse(JSON.stringify(c.position));const base=c.deviceLayouts[src]||c.position;if(base){const q=JSON.parse(JSON.stringify(base)),factor=width/original.width;q.x=Math.max(0,Math.round((Number(q.x)||0)*factor));q.y=Math.max(0,Math.round((Number(q.y)||0)*height/original.height));q.w=Math.max(1,Math.min(width,Math.round((Number(q.w)||240)*factor)));q.h=Math.max(1,Math.round((Number(q.h)||110)*factor));q.x=Math.min(q.x,width-q.w);c.deviceLayouts[key]=q;}});
         if(a!=='3'){this._deviceLayoutProfile=key;this.eachLayoutCard(c=>{if(c.deviceLayouts?.[key])c.position=JSON.parse(JSON.stringify(c.deviceLayouts[key]));});}
@@ -1540,13 +1549,13 @@ class RotapfelDashboardManager extends HTMLElement {
     const current=tab?.canvas||this.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8};
     const overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
     const e=s=>this.esc(s);
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(460px,95vw);max-height:90vh;overflow:auto"><h2>${tab?'Tab-Abmessungen':'Dashboard-Abmessungen'}</h2>${tab?`<label><input type="checkbox" id="inherit" style="width:auto;display:inline" ${!tab.canvas?'checked':''}> Dashboard-Einstellungen übernehmen</label>`:''}<label>Layoutmodus<select id="mode"><option value="responsive" ${current.mode==='responsive'?'selected':''}>Responsiv</option><option value="fixed" ${current.mode==='fixed'?'selected':''}>Feste Pixelgröße</option></select></label><label>Breite (CSS-Pixel)<input id="width" type="number" min="320" max="7680" value="${e(current.width)}"></label><label>Höhe (CSS-Pixel)<input id="height" type="number" min="240" max="4320" value="${e(current.height)}"></label><label>Rasterspalten<input id="columns" type="number" min="1" max="24" value="${e(current.columns)}"></label><label>Rasterabstand (Pixel)<input id="gap" type="number" min="0" max="64" value="${e(current.gap)}"></label><div class="actions"><button id="apply">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">Bei fester Größe kann die Arbeitsfläche horizontal gescrollt werden. Die Maße sind CSS-Pixel, nicht zwingend physische Displaypixel.</p></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(460px,95vw);max-height:90vh;overflow:auto"><h2>${tab?this.t("Tab-Abmessungen","Tab dimensions"):this.t("Dashboard-Abmessungen","Dashboard dimensions")}</h2>${tab?`<label><input type="checkbox" id="inherit" style="width:auto;display:inline" ${!tab.canvas?'checked':''}> ${this.t("Dashboard-Einstellungen übernehmen","Apply dashboard settings")}</label>`:''}<label>${this.t("Layoutmodus","Layout mode")}<select id="mode"><option value="responsive" ${current.mode==='responsive'?'selected':''}>${this.t("Responsiv","Responsive")}</option><option value="fixed" ${current.mode==='fixed'?'selected':''}>${this.t("Feste Pixelgröße","Fixed pixel dimensions")}</option></select></label><label>${this.t("Breite (CSS-Pixel)","Width (CSS pixels)")}<input id="width" type="number" min="320" max="7680" value="${e(current.width)}"></label><label>${this.t("Höhe (CSS-Pixel)","Height (CSS pixels)")}<input id="height" type="number" min="240" max="4320" value="${e(current.height)}"></label><label>${this.t("Rasterspalten","Grid columns")}<input id="columns" type="number" min="1" max="24" value="${e(current.columns)}"></label><label>${this.t("Rasterabstand (Pixel)","Grid spacing (pixels)")}<input id="gap" type="number" min="0" max="64" value="${e(current.gap)}"></label><div class="actions"><button id="apply">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">${this.t("Bei fester Größe kann die Arbeitsfläche horizontal gescrollt werden. Die Maße sind CSS-Pixel, nicht zwingend physische Displaypixel.","A fixed-size canvas can scroll horizontally. Its dimensions use CSS pixels, which can differ from physical display pixels.")}</p></div>`;
     this.shadowRoot.appendChild(overlay);
     overlay.querySelector('#cancel').onclick=()=>overlay.remove();
     overlay.querySelector('#apply').onclick=()=>{
       if(tab&&overlay.querySelector('#inherit').checked){delete tab.canvas;overlay.remove();this.dirty=true;this.render();return;}
       const val=id=>Number(overlay.querySelector('#'+id).value),v={mode:overlay.querySelector('#mode').value,width:val('width'),height:val('height'),columns:val('columns'),gap:val('gap')};
-      if(!Number.isInteger(v.width)||v.width<320||v.width>7680||!Number.isInteger(v.height)||v.height<240||v.height>4320||!Number.isInteger(v.columns)||v.columns<1||v.columns>24||!Number.isInteger(v.gap)||v.gap<0||v.gap>64){alert('Bitte gültige Maße und Rasterwerte eingeben.');return;}
+      if(!Number.isInteger(v.width)||v.width<320||v.width>7680||!Number.isInteger(v.height)||v.height<240||v.height>4320||!Number.isInteger(v.columns)||v.columns<1||v.columns>24||!Number.isInteger(v.gap)||v.gap<0||v.gap>64){alert(this.t("Bitte gültige Maße und Rasterwerte eingeben.","Enter valid dimensions and grid values."));return;}
       if(tab)tab.canvas=v;else this.canvas=v;
       overlay.remove();this.dirty=true;this.render();
     };
@@ -1624,7 +1633,7 @@ class RotapfelDashboardManager extends HTMLElement {
   placeNewCard(room,card){
     const plan=this.planCardPlacement(room,card);
     if(!plan){
-      window.alert('Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.');
+      window.alert(this.t("Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.","There is no space for this card. Move or shrink a card, or increase the dashboard dimensions."));
       return false;
     }
     this.applyCardPlacement(card,plan);
@@ -1633,7 +1642,7 @@ class RotapfelDashboardManager extends HTMLElement {
   previewCardInsertion(room,card,change,size=null,onCancel=null){
     const initial=this.planCardPlacement(room,card,size);
     if(!initial){
-      window.alert('Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.');
+      window.alert(this.t("Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.","There is no space for this card. Move or shrink a card, or increase the dashboard dimensions."));
       onCancel?.();
       return;
     }
@@ -1642,9 +1651,9 @@ class RotapfelDashboardManager extends HTMLElement {
     const dialog=document.createElement('dialog');
     dialog.style.cssText='width:min(900px,94vw);max-height:90vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
     dialog.innerHTML=`<h2>${this.t("Einfügevorschau","Insertion preview")}</h2><p>${this.esc(card.title)} · ${this.esc(room.name)}</p>
-      <div id="insertion-map" tabindex="0" aria-label="Kartenposition mit den Pfeiltasten einstellen" style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)"></div>
+      <div id="insertion-map" tabindex="0" aria-label="${this.t("Kartenposition mit den Pfeiltasten einstellen","Adjust card position with the arrow keys")}" style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)"></div>
       <p id="insertion-status" role="status"></p>
-      <div class="actions"><button id="insertion-apply">${this.t("Einfügen","Insert")}</button><button id="insertion-reset" class="secondary">Vorschlag zurücksetzen</button><button id="insertion-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button></div>`;
+      <div class="actions"><button id="insertion-apply">${this.t("Einfügen","Insert")}</button><button id="insertion-reset" class="secondary">${this.t("Vorschlag zurücksetzen","Reset suggestion")}</button><button id="insertion-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button></div>`;
     this.shadowRoot.append(dialog);
     const map=dialog.querySelector('#insertion-map'),status=dialog.querySelector('#insertion-status');
     const apply=dialog.querySelector('#insertion-apply');
@@ -1653,7 +1662,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const existing=valid&&plan.moves.length?plan.moves:initial.occupied;
       map.innerHTML=existing.map(p=>box(p,p.c.title,'border:1px solid var(--divider-color,#999);background:var(--secondary-background-color,#eee);pointer-events:none')).join('')
         +box(candidate,card.title,'touch-action:none;cursor:grab;background:var(--card-background-color,#fff);border:2px dashed '+(valid?'var(--primary-color,#168fc0)':'var(--error-color,#c33)'),true);
-      status.textContent=valid?(plan.moves.length?`${plan.moves.length} vorhandene Karten würden verschoben.`:this.t("Rahmen ziehen oder mit den Pfeiltasten verschieben.","Drag the frame or move it with the arrow keys.")):this.t("An dieser Stelle ist kein Platz.","There is no room at this position.");
+      status.textContent=valid?(plan.moves.length?`${plan.moves.length} ${this.t("vorhandene Karten würden verschoben.","existing cards would move.")}`:this.t("Rahmen ziehen oder mit den Pfeiltasten verschieben.","Drag the frame or move it with the arrow keys.")):this.t("An dieser Stelle ist kein Platz.","There is no room at this position.");
       apply.disabled=!valid||!!drag;
     };
     const point=ev=>{
@@ -1733,7 +1742,7 @@ class RotapfelDashboardManager extends HTMLElement {
   previewBatchInsertion(room,cards,change){
     const plan=this.planBatchInsertion(room,cards);
     if(!plan){
-      window.alert('Die Auswahl passt nicht vollständig in den Zielraum. Wähle weniger Karten oder einen anderen Raum.');
+      window.alert(this.t("Die Auswahl passt nicht vollständig in den Zielraum. Wähle weniger Karten oder einen anderen Raum.","The selection does not fit in the destination room. Select fewer cards or choose another room."));
       return;
     }
     const {width,height,draft,moves}=plan;
@@ -1743,14 +1752,14 @@ class RotapfelDashboardManager extends HTMLElement {
     const inserted=new Set(cards);
     const dialog=document.createElement('dialog');
     dialog.style.cssText='width:min(900px,94vw);max-height:90vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
-    dialog.innerHTML=`<h2>Einfügevorschau</h2><p>${cards.length} ${cards.length===1?this.t("Karte","card"):this.t("Karten","cards")} · ${this.esc(tab.name)} / ${this.esc(room.name)}</p>
-      <p>Gestrichelt: neue Karten.${moves.length?' Farblich umrandet: verschobene Karten.':''}</p>
+    dialog.innerHTML=`<h2>${this.t("Einfügevorschau","Insertion preview")}</h2><p>${cards.length} ${cards.length===1?this.t("Karte","card"):this.t("Karten","cards")} · ${this.esc(tab.name)} / ${this.esc(room.name)}</p>
+      <p>${this.t("Gestrichelt: neue Karten.","Dashed outlines indicate new cards.")}${moves.length?' Farblich umrandet: verschobene Karten.':''}</p>
       <div style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)">
       ${positions.map(({c,x,y,w,h})=>{
         const border=inserted.has(c)?'2px dashed var(--primary-color,#168fc0)':movedIds.has(c.id)?'2px solid var(--primary-color,#168fc0)':'1px solid var(--divider-color,#999)';
         return `<div style="position:absolute;box-sizing:border-box;overflow:hidden;left:${x/width*100}%;top:${y/height*100}%;width:${w/width*100}%;height:${h/height*100}%;border:${border};padding:4px;font-size:12px">${this.esc(c.title)}</div>`;
       }).join('')}</div>
-      <div class="actions"><button data-confirm>Alle einfügen</button><button class="secondary" data-cancel>${this.t("Abbrechen","Cancel")}</button></div>`;
+      <div class="actions"><button data-confirm>${this.t("Alle einfügen","Insert all")}</button><button class="secondary" data-cancel>${this.t("Abbrechen","Cancel")}</button></div>`;
     this.shadowRoot.append(dialog);
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
@@ -1778,7 +1787,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const roomExists=this.layout?.some(tab=>tab.rooms?.includes(room));
     if(!roomExists||room.cards.length!==after.length||after.some(([c,position],index)=>
       room.cards[index]!==c||c.position!==position)){
-      window.alert('Die Einfügung kann nach weiteren Layoutänderungen nicht rückgängig gemacht werden.');
+      window.alert(this.t("Die Einfügung kann nach weiteren Layoutänderungen nicht rückgängig gemacht werden.","You can undo the insertion only before making further layout changes."));
       this.render();
       return;
     }
@@ -2069,7 +2078,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const e=v=>this.esc(v),auto=false;
     const attrs=editing?`data-id="${e(c.id)}"`:`title="${e(room.name)} – ${e(c.title)}"`;
     const size=`height:${q.h}px;z-index:${Math.max(0,Math.round(Number(c.position?.z)||0))}`;
-    return `<div class="position-tile ${auto?'auto-card-height':''}" ${attrs} style="left:${q.x}px;top:${q.y}px;width:${q.w}px;${size}">${this.renderPreview(c)}${editing?'<div class="position-drag-handle" title="Karte einzeln ziehen"></div><div class="position-resize-edge position-resize-right" data-resize-axis="x" title="Nur Breite ändern"></div><div class="position-resize-edge position-resize-bottom" data-resize-axis="y" title="Nur Höhe ändern"></div><div class="position-resize" data-resize-axis="xy" title="Breite und Höhe ändern"></div>':''}</div>`;
+    return `<div class="position-tile ${auto?'auto-card-height':''}" ${attrs} style="left:${q.x}px;top:${q.y}px;width:${q.w}px;${size}">${this.renderPreview(c)}${editing?`<div class="position-drag-handle" title="${this.t("Karte einzeln ziehen","Drag individual card")}"></div><div class="position-resize-edge position-resize-right" data-resize-axis="x" title="${this.t("Nur Breite ändern","Resize width only")}"></div><div class="position-resize-edge position-resize-bottom" data-resize-axis="y" title="${this.t("Nur Höhe ändern","Resize height only")}"></div><div class="position-resize" data-resize-axis="xy" title="${this.t("Breite und Höhe ändern","Resize width and height")}"></div>`:''}</div>`;
   }
   renderCanvasPreview(t,cv){
     if(cv.mode!=='fixed')return '';
@@ -2078,7 +2087,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const rooms=t.rooms||[];
     const activeRoom=rooms.find(r=>r.id===this._activeRoomByTab?.[t.id])||rooms[0];
     const roomSelect=rooms.length?`<label class="room-preview-picker">${this.t("Raum anzeigen","Show room")}<select id="active-room-preview">${rooms.map(r=>`<option value="${e(r.id)}" ${r.id===activeRoom?.id?'selected':''}>${e(r.name)}</option>`).join('')}</select></label>`:'';
-    return `<div class="toolbar"><h3>Raumübersicht – ${e(activeRoom?.name||'Kein Raum')}</h3><span class="muted">${width} × ${height} CSS-px · nur aktiver Raum</span></div><div class="room-preview-controls">${roomSelect}<span class="muted">${this._roomTestMode?'Testmodus: Karten direkt bedienen. Änderungen an Geräten sind echt.':'Andere Räume bleiben gespeichert und können oben ausgewählt werden.'}</span></div><div class="preview-zoom-controls"><label for="preview-zoom">Ansicht</label><select id="preview-zoom"><option value="auto">Standard: max. 50 % (einpassen)</option>${[25,33,50,67,75,100].map(n=>`<option value="${n}">${n} %</option>`).join('')}</select><span class="zoom-status" id="preview-zoom-status"></span></div><div class="preview-viewport" id="preview-viewport" data-width="${width}" data-height="${height}"><div class="preview-scaled" id="preview-scaled" style="width:${width}px;height:${height}px"><div class="canvas-preview ${this._roomTestMode?'room-test-mode':''}" style="width:${width}px;height:${height}px;background-size:${pitch}px ${pitch}px">${this.cardPositions(t,cv).filter(({room})=>room.id===activeRoom?.id).map(({c,room,x,y,w,h})=>this.renderCanvasTile(c,room,{x,y,w,h})).join('')}</div></div></div><div class="preview-zoom-hint">Nur die Vorschau wird skaliert – X/Y-Positionen, Kartengrößen und gespeicherte Layoutdaten bleiben unverändert.</div>`;
+    return `<div class="toolbar"><h3>${this.t("Raumübersicht –","Room overview –")} ${e(activeRoom?.name||this.t("Kein Raum","No room"))}</h3><span class="muted">${width} × ${height} ${this.t("CSS-px · nur aktiver Raum","CSS px · active room only")}</span></div><div class="room-preview-controls">${roomSelect}<span class="muted">${this._roomTestMode?this.t("Testmodus: Karten direkt bedienen. Änderungen an Geräten sind echt.","Test mode: Use cards directly. Actions affect real devices."):this.t("Andere Räume bleiben gespeichert und können oben ausgewählt werden.","Use the selector above to preview another room.")}</span></div><div class="preview-zoom-controls"><label for="preview-zoom">${this.t("Ansicht","View")}</label><select id="preview-zoom"><option value="auto">${this.t("Standard: max. 50 % (einpassen)","Default: fit up to 50%")}</option>${[25,33,50,67,75,100].map(n=>`<option value="${n}">${n} %</option>`).join('')}</select><span class="zoom-status" id="preview-zoom-status"></span></div><div class="preview-viewport" id="preview-viewport" data-width="${width}" data-height="${height}"><div class="preview-scaled" id="preview-scaled" style="width:${width}px;height:${height}px"><div class="canvas-preview ${this._roomTestMode?'room-test-mode':''}" style="width:${width}px;height:${height}px;background-size:${pitch}px ${pitch}px">${this.cardPositions(t,cv).filter(({room})=>room.id===activeRoom?.id).map(({c,room,x,y,w,h})=>this.renderCanvasTile(c,room,{x,y,w,h})).join('')}</div></div></div><div class="preview-zoom-hint">${this.t("Nur die Vorschau wird skaliert – X/Y-Positionen, Kartengrößen und gespeicherte Layoutdaten bleiben unverändert.","Preview zoom preserves X/Y positions, card sizes and saved layout data.")}</div>`;
   }
   bindPreviewZoom(){
     const root=this.shadowRoot,viewport=root.querySelector('#preview-viewport'),select=root.querySelector('#preview-zoom');
@@ -2110,8 +2119,8 @@ class RotapfelDashboardManager extends HTMLElement {
     this._previewResizeObserver.observe(viewport);
     apply();
   }
-  renderTab(){const e=s=>this.esc(s),t=this.layout.find(x=>x.id===this.tabId);if(!t)return'';const selectedRoom=(t.rooms||[]).find(r=>r.id===this._activeRoomByTab?.[t.id])||t.rooms?.[0];const cv=this.effectiveCanvas(t),fixed=cv.mode==='fixed',cols=cv.columns||12;return `<section class="layout-band layout-band-tabs"><div class="toolbar layout-section-heading"><h2>Tab · ${e(t.name)}</h2><div class="editor-actions" aria-label="Tab-Aktionen"><button class="editor-primary" id="position-editor">▦ Positionierungsfläche öffnen</button><button id="add-room">${this.t("+ Raum","+ Room")}</button><button class="secondary" id="tab-canvas">${this.t("Tab-Maße / Raster","Tab dimensions / grid")}</button><details class="editor-action-menu"><summary>Tab-Aktionen</summary><div class="editor-menu-items"><button class="secondary" id="duplicate-tab">${this.t("Tab duplizieren","Duplicate tab")}</button><button class="secondary" id="rename-tab">${this.t("Tab umbenennen","Rename tab")}</button><button class="secondary layout-action-danger" id="remove-tab">${this.t("Tab löschen","Delete tab")}</button></div></details></div></div>
-    <div class="canvas-meta">${fixed?`Arbeitsfläche: ${cv.width} × ${cv.height} CSS-Pixel`:'Responsive Arbeitsfläche'} · ${cols} Rasterspalten · ${cv.gap}px Abstand ${t.canvas?'· Tab-Einstellungen':'· Dashboard-Einstellungen'}</div>
+  renderTab(){const e=s=>this.esc(s),t=this.layout.find(x=>x.id===this.tabId);if(!t)return'';const selectedRoom=(t.rooms||[]).find(r=>r.id===this._activeRoomByTab?.[t.id])||t.rooms?.[0];const cv=this.effectiveCanvas(t),fixed=cv.mode==='fixed',cols=cv.columns||12;return `<section class="layout-band layout-band-tabs"><div class="toolbar layout-section-heading"><h2>Tab · ${e(t.name)}</h2><div class="editor-actions" aria-label="${this.t("Tab-Aktionen","Tab actions")}"><button class="editor-primary" id="position-editor">${this.t("▦ Positionierungsfläche öffnen","▦ Open positioning canvas")}</button><button id="add-room">${this.t("+ Raum","+ Room")}</button><button class="secondary" id="tab-canvas">${this.t("Tab-Maße / Raster","Tab dimensions / grid")}</button><details class="editor-action-menu"><summary>${this.t("Tab-Aktionen","Tab actions")}</summary><div class="editor-menu-items"><button class="secondary" id="duplicate-tab">${this.t("Tab duplizieren","Duplicate tab")}</button><button class="secondary" id="rename-tab">${this.t("Tab umbenennen","Rename tab")}</button><button class="secondary layout-action-danger" id="remove-tab">${this.t("Tab löschen","Delete tab")}</button></div></details></div></div>
+    <div class="canvas-meta">${fixed?`${this.t("Arbeitsfläche:","Canvas:")} ${cv.width} × ${cv.height} CSS-Pixel`:this.t("Responsive Arbeitsfläche","Responsive canvas")} · ${cols} ${this.t("Rasterspalten","Grid columns")} · ${cv.gap}${this.t("px Abstand","px spacing")} ${t.canvas?'· Tab-Einstellungen':'· Dashboard-Einstellungen'}</div>
     ${this.renderCanvasPreview(t,cv)}
     </section>
     <details class="edit-room-list layout-band layout-band-rooms" open><summary>${this.t("Räume und Karten","Rooms and cards")}</summary>
@@ -2132,7 +2141,7 @@ class RotapfelDashboardManager extends HTMLElement {
   openPositionEditor(tab){
     this.refreshCustomCardCatalog();
     const cv=this.effectiveCanvas(tab),width=Math.max(320,Number(cv.width)||1920),height=Math.max(240,Number(cv.height)||1080),dynamicHeight=this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false,gap=Math.max(0,Number(cv.gap)||0),cols=Math.max(1,Number(cv.columns)||12);
-    if(cv.mode!=='fixed'){alert('Bitte zuerst unter Dashboard-Maße / Raster eine feste Pixelgröße wählen.');return;}
+    if(cv.mode!=='fixed'){alert(this.t("Bitte zuerst unter Dashboard-Maße / Raster eine feste Pixelgröße wählen.","First select fixed pixel dimensions under Dashboard dimensions / grid."));return;}
     const rooms=tab.rooms||[];
     const activeRoom=rooms.find(r=>r.id===this._activeRoomByTab?.[tab.id])||rooms[0];
     const cards=(activeRoom?.cards||[]).map(c=>({c,room:activeRoom}));
@@ -2142,7 +2151,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const initial=(c,i)=>{const w=clamp(Number(c.position?.w ?? Math.round(this.design(c).width*width/4)),76,width),h=Math.max(60,Number(c.position?.h ?? (this.externalVariant(c)==='equinox'?Math.round(w*280/430):this.design(c).height)));return {x:clamp(Number(c.position?.x ?? ((i%3)*Math.min(400,Math.floor(width/3)))),0,width-w),y:Math.max(0,Number(c.position?.y ?? (Math.floor(i/3)*160))),w,h};};
     const positions=new Map(cards.map(({c},i)=>[c.id,initial(c,i)]));
     const overlay=document.createElement('div');overlay.className='rotapfel-position-overlay';overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);display:flex;flex-direction:column;box-sizing:border-box';
-    overlay.innerHTML=`<div class="position-tools" style="padding:10px 16px;margin:0;border-bottom:1px solid #9995"><strong>Positionierungsfläche · ${this.esc(tab.name)}</strong><label style="margin:0;display:flex;align-items:center;gap:6px">Raum <select id="position-room" style="width:auto;max-width:220px">${rooms.map(r=>`<option value="${this.esc(r.id)}" ${r.id===activeRoom?.id?'selected':''}>${this.esc(r.name)}</option>`).join('')}</select></label><span id="position-height-label">${width} × ${height} CSS-px</span><button id="position-test-toggle" type="button" class="secondary" aria-pressed="false">▶ Testen</button><button id="position-mobile-options" type="button" class="secondary" aria-expanded="false" aria-controls="position-options-panel">⚙ Kartenoptionen</button><button id="position-nav-toggle" type="button" class="secondary" aria-expanded="false">☰ Navigation</button><button id="position-touch-mode" type="button" class="secondary" aria-pressed="false">↕ Scrollen</button><button id="position-mobile-select" type="button" class="secondary" aria-pressed="false">☑ Karten auswählen</button><button id="position-mobile-select-all" type="button" class="secondary">${this.t("Alle auswählen","Select all")}</button><span id="position-test-hint" class="muted" hidden>Live-Test: Bedienung steuert echte Home-Assistant-Geräte.</span><label style="margin:0"><input id="snap" type="checkbox" style="width:auto;display:inline"> ${this.t("Raster","Grid")}</label><label style="margin:0"><input id="magnet" type="checkbox" checked style="width:auto;display:inline"> ${this.t("Magnet","Snap")}</label><label style="margin:0;display:flex;align-items:center;gap:4px">${this.t("Raster","Grid")} <select id="snap-size" style="width:auto"><option value="5">5 px</option><option value="10" selected>10 px</option><option value="20">20 px</option></select></label><label style="margin:0"><input id="snap-guides" type="checkbox" checked style="width:auto;display:inline"> ${this.t("Hilfslinien","Guides")}</label><span class="muted" title="Während des Ziehens Alt/Option gedrückt halten, um das Einrasten vorübergehend auszuschalten">Alt/Option = frei</span><button id="auto-fit-frames" class="secondary" title="Kartenrahmen auf tatsächliche Kartengröße anpassen">${this.t("Rahmen automatisch anpassen","Fit frame automatically")}</button><span class="muted" id="multi-count">0 Karten ausgewählt</span><button id="close" class="secondary" style="margin-left:auto">${this.t("Zurück zum Layout-Editor","Back to layout editor")}</button></div><div class="position-editor-body"><div class="position-canvas-pane"><div class="position-workspace" style="width:${width}px;height:${height}px;background-size:${pitch}px ${pitch}px">${cards.map(({c,room})=>this.renderCanvasTile(c,room,positions.get(c.id),true)).join('')}</div></div><aside class="position-options-pane" id="position-options-panel"><h3 style="margin:0">${this.t("Kartenoptionen","Card options")}</h3><div class="position-editor-actions"><button id="undo-position" class="secondary" disabled>↶ Rückgängig</button><button id="redo-position" class="secondary" disabled>↷ Wiederholen</button></div><details class="position-section"><summary>01 · Dashboardweite Entsperrung</summary><p class="muted">Entfernt Sperren in allen Tabs und Räumen, auch in den gespeicherten Geräteprofilen. Gruppen, Positionen und Kartengrößen bleiben unverändert.</p><p id="dashboard-lock-count" class="muted">Sperren werden ermittelt …</p><div class="align-grid"><button class="secondary" id="dashboard-unlock-position">Positionssperren aufheben</button><button class="secondary" id="dashboard-unlock-size">Größensperren aufheben</button><button class="secondary" id="dashboard-unlock-layout">Layoutsperren aufheben</button><button id="dashboard-unlock-all">Alle Kartensperren aufheben</button></div><p class="muted">Anschließend im Layout-Editor speichern. Die zentrale Entsperrung wirkt auf das gesamte Dashboard.</p></details><details class="position-section" open><summary>02 · Kartenauswahl & automatische Anordnung</summary><div class="position-global-buttons"><button class="secondary" id="select-all-cards">${this.t("Alle Karten auswählen","Select all cards")}</button><button class="secondary" id="clear-multi">${this.t("Auswahl aufheben","Clear selection")}</button><button class="secondary" id="unlock-all-position">${this.t("Alle Positionssperren aufheben","Unlock all positions")}</button><button class="secondary" id="unlock-all-size">${this.t("Alle Größensperren aufheben","Unlock all sizes")}</button><p class="muted" id="align-hint">Mindestens zwei Karten auswählen; Verteilung über die Profilbreite möglich.</p></div><div class="position-auto-layout-subsection" style="border-top:1px solid #9995;margin-top:14px;padding-top:10px"><strong>${this.t("Automatische Anordnung","Automatic arrangement")}</strong><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">Alle Karten auswählen (vor Anordnung)</button><div class="auto-layout-tools" style="border-top:1px solid #9995;padding-top:12px;display:grid;gap:7px"><strong>${this.t("Automatische Tab-Anordnung","Automatic tab arrangement")}</strong><label style="display:flex;align-items:center;gap:8px">${this.t("Anordnung innerhalb der Gruppen","Arrangement within groups")} <select id="auto-group-direction" style="width:auto"><option value="keep">${this.t("Bisherige Anordnung beibehalten","Keep existing arrangement")}</option><option value="horizontal">Horizontal (nebeneinander)</option><option value="vertical">Vertikal (untereinander)</option></select></label><label style="display:flex;align-items:center;gap:8px">${this.t("Flächennutzung","Use of space")} <select id="auto-space-mode" style="width:auto"><option value="compact">${this.t("Enge Positionierung","Compact placement")}</option><option value="wide">Großflächig verteilen</option></select></label><span class="muted">Gruppen zuerst · 12 px Abstand · Einzelkarten anschließend nach Typ</span><button class="secondary" id="auto-ideal-size">${this.t("Ideale Größe · Auswahl","Ideal size · Selection")}</button><p class="muted" id="auto-ideal-size-result" role="status"></p><button class="secondary" id="auto-layout-tab">Alle Karten automatisch anordnen</button><span class="muted">Wähle, ob Karten innerhalb einer Gruppe ihre bisherigen Abstände behalten oder horizontal/vertikal neu angeordnet werden. Gruppen haben Vorrang, Einzelkarten füllen freie Bereiche. Kartengrößen bleiben erhalten.</span></div></div></details><details class="position-section" open><summary>03 · Position, Größe & Schutz</summary><label>Karte<select id="selected">${cards.map(({c,room})=>`<option value="${this.esc(c.id)}">${this.esc(room.name)} – ${this.esc(c.title)}</option>`).join('')}</select></label>${[['x','X-Position'],['y','Y-Position'],['w','Breite'],['h','Höhe']].map(([k,label])=>`<label>${label} (px)<input type="number" id="pos-${k}" min="0" step="1"></label>`).join('')}<button id="apply-pos">Position übernehmen</button><button id="reset-native-size" class="secondary" type="button">Auf Standardgröße zurücksetzen</button><label title="Beim Ändern der Breite die Höhe proportional an die gemessene Custom Card anpassen"><input id="auto-height-on-width" type="checkbox" checked style="width:auto"> Höhe bei Breitenänderung automatisch anpassen (Custom Cards)</label><label><input id="protect-size" type="checkbox" style="width:auto"> Manuelle Größe schützen</label><label><input id="protect-position" type="checkbox" style="width:auto"> Manuelle Position schützen</label><label><input id="editor-lock" type="checkbox" style="width:auto"> 🔒 Karte gegen Layoutänderungen sperren</label><p class="muted">Karte ziehen; am rechten Rand Breite, am unteren Rand Höhe oder an der Ecke beide Maße ändern. Änderungen anschließend im Layout-Editor speichern.</p></details><details class="position-section" open><summary>04 · Ausrichten</summary><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><p class="muted">Strg/Cmd + Klick: mehrere Karten auswählen. Umschalt + Klick: Bereich auswählen.</p><div class="align-tools"><strong>Ausrichten</strong><div class="align-grid"><button class="secondary" data-align="left">Links</button><button class="secondary" data-align="hcenter">Horizontal mittig</button><button class="secondary" data-align="right">Rechts</button><button class="secondary" data-align="top">Oben</button><button class="secondary" data-align="vcenter">Vertikal mittig</button><button class="secondary" data-align="bottom">Unten</button></div></div></details><details class="position-section"><summary>05 · Verteilen & Abstände</summary><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><div class="align-tools"><strong>Verteilen / Abstände</strong><div class="align-grid"><button class="secondary" data-align="distribute-x">Horizontal verteilen</button><button class="secondary" data-align="distribute-y">Vertikal verteilen</button><button class="secondary" data-align="gap-x">Gleicher horizontaler Abstand</button><button class="secondary" data-align="gap-y">Gleicher vertikaler Abstand</button></div><label>Fester Abstand (px) <input id="fixed-card-gap" type="number" min="0" max="200" step="1" value="12" style="width:76px"></label><label>Ausrichtung <select id="fixed-gap-alignment" style="width:auto"><option value="start">Oben / Links</option><option value="center">Mittig</option><option value="end">Unten / Rechts</option></select></label><div class="align-grid"><button class="secondary" data-fixed-gap="x">Horizontal mit Abstand</button><button class="secondary" data-fixed-gap="y">Vertikal mit Abstand</button></div><label><input id="auto-push-cards" type="checkbox" checked style="width:auto;display:inline"> Nachbarkarten beim Verschieben automatisch weiterschieben</label><p class="muted">Automatisches Weiterschieben nur bei Einzelkarten; gesperrte Karten bleiben stehen.</p></div></details><details class="position-section"><summary>06 · Kartengröße & Skalierung</summary><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><p class="muted">Mindestens zwei Karten mit Cmd/Strg auswählen. Referenz ist die zuletzt angeklickte Karte; gesperrte Karten bleiben unverändert.</p><div class="align-grid"><button class="secondary" data-bulk-size="width">Gleiche Breite</button><button class="secondary" data-bulk-size="height">Gleiche Höhe</button><button class="secondary" data-bulk-size="both">Gleiche Größe</button></div><label>Gemeinsam proportional skalieren (%)<input id="bulk-scale-percent" type="number" min="10" max="300" step="5" value="110"></label><button class="secondary" id="bulk-scale-apply">Auswahl skalieren</button><p class="muted" id="bulk-size-hint">Mindestens zwei Karten auswählen.</p><div class="align-tools"><strong>Ideale Kartengröße</strong><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><p class="muted">Profilbreite nutzen und die Höhe auf den benötigten Karteninhalt begrenzen. Gesperrte Karten werden übersprungen. Keine automatische Neupositionierung.</p><div class="align-grid"><button class="secondary" id="ideal-size-selected">Ideale Größe – Auswahl</button><button class="secondary" id="ideal-size-all">Ideale Größe – alle Karten</button></div><p class="muted" id="ideal-size-result">Gilt nur für den aktuellen Raum und das aktive Geräteprofil.</p></div></details><details class="position-section"><summary>07 · Kartengruppen</summary><p class="muted">Mehrere Karten mit Strg/Cmd auswählen, gruppieren und anschließend durch Ziehen einer Gruppenkarte gemeinsam verschieben. Größen bleiben individuell.</p><div class="align-grid"><button class="secondary" id="group-cards">Auswahl gruppieren</button><button class="secondary" id="ungroup-cards">Gruppe auflösen</button><button class="secondary" id="ungroup-all-cards">Alle Gruppen auflösen</button></div><p class="muted" id="group-status">Keine Gruppe ausgewählt</p></details><details class="position-section"><summary>08 · Ebenenverwaltung</summary><p class="muted">Höhere Ebenen liegen vor niedrigeren. Änderungen gelten für die ausgewählte Karte und können rückgängig gemacht werden.</p><div class="align-grid"><button class="secondary" id="layer-back">Ganz nach hinten</button><button class="secondary" id="layer-down">Eine Ebene zurück</button><button class="secondary" id="layer-up">Eine Ebene vor</button><button class="secondary" id="layer-front">Ganz nach vorne</button></div></details></aside></div>`;
+    overlay.innerHTML=`<div class="position-tools" style="padding:10px 16px;margin:0;border-bottom:1px solid #9995"><strong>${this.t("Positionierungsfläche","Positioning canvas")} · ${this.esc(tab.name)}</strong><label style="margin:0;display:flex;align-items:center;gap:6px">${this.t("Raum","Room")} <select id="position-room" style="width:auto;max-width:220px">${rooms.map(r=>`<option value="${this.esc(r.id)}" ${r.id===activeRoom?.id?'selected':''}>${this.esc(r.name)}</option>`).join('')}</select></label><span id="position-height-label">${width} × ${height} CSS-px</span><button id="position-test-toggle" type="button" class="secondary" aria-pressed="false">${this.t("▶ Testen","▶ Test")}</button><button id="position-mobile-options" type="button" class="secondary" aria-expanded="false" aria-controls="position-options-panel">${this.t("⚙ Kartenoptionen","⚙ Card options")}</button><button id="position-nav-toggle" type="button" class="secondary" aria-expanded="false">${this.t("☰ Navigation","☰ Navigation")}</button><button id="position-touch-mode" type="button" class="secondary" aria-pressed="false">${this.t("↕ Scrollen","↕ Scroll")}</button><button id="position-mobile-select" type="button" class="secondary" aria-pressed="false">${this.t("☑ Karten auswählen","☑ Select cards")}</button><button id="position-mobile-select-all" type="button" class="secondary">${this.t("Alle auswählen","Select all")}</button><span id="position-test-hint" class="muted" hidden>${this.t("Live-Test: Bedienung steuert echte Home-Assistant-Geräte.","Live test: Actions control real Home Assistant devices.")}</span><label style="margin:0"><input id="snap" type="checkbox" style="width:auto;display:inline"> ${this.t("Raster","Grid")}</label><label style="margin:0"><input id="magnet" type="checkbox" checked style="width:auto;display:inline"> ${this.t("Magnet","Snap")}</label><label style="margin:0;display:flex;align-items:center;gap:4px">${this.t("Raster","Grid")} <select id="snap-size" style="width:auto"><option value="5">5 px</option><option value="10" selected>10 px</option><option value="20">20 px</option></select></label><label style="margin:0"><input id="snap-guides" type="checkbox" checked style="width:auto;display:inline"> ${this.t("Hilfslinien","Guides")}</label><span class="muted" title="${this.t("Während des Ziehens Alt/Option gedrückt halten, um das Einrasten vorübergehend auszuschalten","Hold Alt/Option while dragging to temporarily disable snapping")}">Alt/Option = frei</span><button id="auto-fit-frames" class="secondary" title="${this.t("Kartenrahmen auf tatsächliche Kartengröße anpassen","Fit frames to actual card sizes")}">${this.t("Rahmen automatisch anpassen","Fit frame automatically")}</button><span class="muted" id="multi-count">${this.t("0 Karten ausgewählt","0 cards selected")}</span><button id="close" class="secondary" style="margin-left:auto">${this.t("Zurück zum Layout-Editor","Back to layout editor")}</button></div><div class="position-editor-body"><div class="position-canvas-pane"><div class="position-workspace" style="width:${width}px;height:${height}px;background-size:${pitch}px ${pitch}px">${cards.map(({c,room})=>this.renderCanvasTile(c,room,positions.get(c.id),true)).join('')}</div></div><aside class="position-options-pane" id="position-options-panel"><h3 style="margin:0">${this.t("Kartenoptionen","Card options")}</h3><div class="position-editor-actions"><button id="undo-position" class="secondary" disabled>${this.t("↶ Rückgängig","↶ Undo")}</button><button id="redo-position" class="secondary" disabled>${this.t("↷ Wiederholen","↷ Redo")}</button></div><details class="position-section"><summary>${this.t("01 · Dashboardweite Entsperrung","01 · Unlock across dashboard")}</summary><p class="muted">${this.t("Entfernt Sperren in allen Tabs und Räumen, auch in den gespeicherten Geräteprofilen. Gruppen, Positionen und Kartengrößen bleiben unverändert.","Remove locks across tabs, rooms and saved device profiles. Groups, positions and sizes are preserved.")}</p><p id="dashboard-lock-count" class="muted">${this.t("Sperren werden ermittelt …","Checking locks …")}</p><div class="align-grid"><button class="secondary" id="dashboard-unlock-position">${this.t("Positionssperren aufheben","Unlock positions")}</button><button class="secondary" id="dashboard-unlock-size">${this.t("Größensperren aufheben","Unlock sizes")}</button><button class="secondary" id="dashboard-unlock-layout">${this.t("Layoutsperren aufheben","Unlock layouts")}</button><button id="dashboard-unlock-all">${this.t("Alle Kartensperren aufheben","Unlock all cards")}</button></div><p class="muted">${this.t("Anschließend im Layout-Editor speichern. Die zentrale Entsperrung wirkt auf das gesamte Dashboard.","Save in the layout editor afterward. This applies to the entire dashboard.")}</p></details><details class="position-section" open><summary>${this.t("02 · Kartenauswahl & automatische Anordnung","02 · Card selection & automatic arrangement")}</summary><div class="position-global-buttons"><button class="secondary" id="select-all-cards">${this.t("Alle Karten auswählen","Select all cards")}</button><button class="secondary" id="clear-multi">${this.t("Auswahl aufheben","Clear selection")}</button><button class="secondary" id="unlock-all-position">${this.t("Alle Positionssperren aufheben","Unlock all positions")}</button><button class="secondary" id="unlock-all-size">${this.t("Alle Größensperren aufheben","Unlock all sizes")}</button><p class="muted" id="align-hint">${this.t("Mindestens zwei Karten auswählen; Verteilung über die Profilbreite möglich.","Select at least two cards to distribute them across the profile width.")}</p></div><div class="position-auto-layout-subsection" style="border-top:1px solid #9995;margin-top:14px;padding-top:10px"><strong>${this.t("Automatische Anordnung","Automatic arrangement")}</strong><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen (vor Anordnung)","Select all cards before arranging")}</button><div class="auto-layout-tools" style="border-top:1px solid #9995;padding-top:12px;display:grid;gap:7px"><strong>${this.t("Automatische Tab-Anordnung","Automatic tab arrangement")}</strong><label style="display:flex;align-items:center;gap:8px">${this.t("Anordnung innerhalb der Gruppen","Arrangement within groups")} <select id="auto-group-direction" style="width:auto"><option value="keep">${this.t("Bisherige Anordnung beibehalten","Keep existing arrangement")}</option><option value="horizontal">${this.t("Horizontal (nebeneinander)","Horizontal (side by side)")}</option><option value="vertical">${this.t("Vertikal (untereinander)","Vertical (stacked)")}</option></select></label><label style="display:flex;align-items:center;gap:8px">${this.t("Flächennutzung","Use of space")} <select id="auto-space-mode" style="width:auto"><option value="compact">${this.t("Enge Positionierung","Compact placement")}</option><option value="wide">${this.t("Großflächig verteilen","Spread across available space")}</option></select></label><span class="muted">${this.t("Gruppen zuerst · 12 px Abstand · Einzelkarten anschließend nach Typ","Groups first · 12 px spacing · Individual cards by type")}</span><button class="secondary" id="auto-ideal-size">${this.t("Ideale Größe · Auswahl","Ideal size · Selection")}</button><p class="muted" id="auto-ideal-size-result" role="status"></p><button class="secondary" id="auto-layout-tab">${this.t("Alle Karten automatisch anordnen","Arrange all cards automatically")}</button><span class="muted">${this.t("Wähle, ob Karten innerhalb einer Gruppe ihre bisherigen Abstände behalten oder horizontal/vertikal neu angeordnet werden. Gruppen haben Vorrang, Einzelkarten füllen freie Bereiche. Kartengrößen bleiben erhalten.","Keep existing spacing within groups, or rearrange them horizontally or vertically. Groups go first, then individual cards fill the gaps. Card sizes are preserved.")}</span></div></div></details><details class="position-section" open><summary>${this.t("03 · Position, Größe & Schutz","03 · Position, size & locks")}</summary><label>${this.t("Karte","Card")}<select id="selected">${cards.map(({c,room})=>`<option value="${this.esc(c.id)}">${this.esc(room.name)} – ${this.esc(c.title)}</option>`).join('')}</select></label>${[['x',this.t("X-Position","X position")],['y',this.t("Y-Position","Y position")],['w',this.t("Breite","Width")],['h',this.t("Höhe","Height")]].map(([k,label])=>`<label>${label} (px)<input type="number" id="pos-${k}" min="0" step="1"></label>`).join('')}<button id="apply-pos">${this.t("Position übernehmen","Apply position")}</button><button id="reset-native-size" class="secondary" type="button">${this.t("Auf Standardgröße zurücksetzen","Reset to default size")}</button><label title="${this.t("Beim Ändern der Breite die Höhe proportional an die gemessene Custom Card anpassen","Adjust height proportionally when resizing a custom card")}"><input id="auto-height-on-width" type="checkbox" checked style="width:auto"> ${this.t("Höhe bei Breitenänderung automatisch anpassen (Custom Cards)","Adjust height automatically when changing width (custom cards)")}</label><label><input id="protect-size" type="checkbox" style="width:auto"> ${this.t("Manuelle Größe schützen","Lock manual size")}</label><label><input id="protect-position" type="checkbox" style="width:auto"> ${this.t("Manuelle Position schützen","Lock manual position")}</label><label><input id="editor-lock" type="checkbox" style="width:auto"> ${this.t("🔒 Karte gegen Layoutänderungen sperren","🔒 Lock card layout")}</label><p class="muted">${this.t("Karte ziehen; am rechten Rand Breite, am unteren Rand Höhe oder an der Ecke beide Maße ändern. Änderungen anschließend im Layout-Editor speichern.","Drag the card to move it. Resize from the right edge, bottom edge or corner. Save afterward in the layout editor.")}</p></details><details class="position-section" open><summary>${this.t("04 · Ausrichten","04 · Align")}</summary><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><p class="muted">${this.t("Strg/Cmd + Klick: mehrere Karten auswählen. Umschalt + Klick: Bereich auswählen.","Ctrl/Cmd + click selects multiple cards. Shift + click selects a range.")}</p><div class="align-tools"><strong>${this.t("Ausrichten","Align")}</strong><div class="align-grid"><button class="secondary" data-align="left">${this.t("Links","Left")}</button><button class="secondary" data-align="hcenter">${this.t("Horizontal mittig","Center horizontally")}</button><button class="secondary" data-align="right">${this.t("Rechts","Right")}</button><button class="secondary" data-align="top">${this.t("Oben","Top")}</button><button class="secondary" data-align="vcenter">${this.t("Vertikal mittig","Center vertically")}</button><button class="secondary" data-align="bottom">${this.t("Unten","Bottom")}</button></div></div></details><details class="position-section"><summary>${this.t("05 · Verteilen & Abstände","05 · Distribution & spacing")}</summary><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><div class="align-tools"><strong>${this.t("Verteilen / Abstände","Distribute / space")}</strong><div class="align-grid"><button class="secondary" data-align="distribute-x">${this.t("Horizontal verteilen","Distribute horizontally")}</button><button class="secondary" data-align="distribute-y">${this.t("Vertikal verteilen","Distribute vertically")}</button><button class="secondary" data-align="gap-x">${this.t("Gleicher horizontaler Abstand","Equal horizontal spacing")}</button><button class="secondary" data-align="gap-y">${this.t("Gleicher vertikaler Abstand","Equal vertical spacing")}</button></div><label>${this.t("Fester Abstand (px)","Fixed spacing (px)")} <input id="fixed-card-gap" type="number" min="0" max="200" step="1" value="12" style="width:76px"></label><label>${this.t("Ausrichtung","Alignment")} <select id="fixed-gap-alignment" style="width:auto"><option value="start">${this.t("Oben / Links","Top / Left")}</option><option value="center">${this.t("Mittig","Center")}</option><option value="end">${this.t("Unten / Rechts","Bottom / Right")}</option></select></label><div class="align-grid"><button class="secondary" data-fixed-gap="x">${this.t("Horizontal mit Abstand","Horizontal with spacing")}</button><button class="secondary" data-fixed-gap="y">${this.t("Vertikal mit Abstand","Vertical with spacing")}</button></div><label><input id="auto-push-cards" type="checkbox" checked style="width:auto;display:inline"> ${this.t("Nachbarkarten beim Verschieben automatisch weiterschieben","Automatically push neighboring cards while moving")}</label><p class="muted">${this.t("Automatisches Weiterschieben nur bei Einzelkarten; gesperrte Karten bleiben stehen.","Automatic pushing applies to individual cards. Locked cards stay in place.")}</p></div></details><details class="position-section"><summary>${this.t("06 · Kartengröße & Skalierung","06 · Card size & scaling")}</summary><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><p class="muted">${this.t("Mindestens zwei Karten mit Cmd/Strg auswählen. Referenz ist die zuletzt angeklickte Karte; gesperrte Karten bleiben unverändert.","Select at least two cards with Cmd/Ctrl. The last clicked card is the reference. Locked cards are preserved.")}</p><div class="align-grid"><button class="secondary" data-bulk-size="width">${this.t("Gleiche Breite","Match width")}</button><button class="secondary" data-bulk-size="height">${this.t("Gleiche Höhe","Match height")}</button><button class="secondary" data-bulk-size="both">${this.t("Gleiche Größe","Match size")}</button></div><label>${this.t("Gemeinsam proportional skalieren (%)","Scale together proportionally (%)")}<input id="bulk-scale-percent" type="number" min="10" max="300" step="5" value="110"></label><button class="secondary" id="bulk-scale-apply">${this.t("Auswahl skalieren","Scale selection")}</button><p class="muted" id="bulk-size-hint">${this.t("Mindestens zwei Karten auswählen.","Select at least two cards.")}</p><div class="align-tools"><strong>${this.t("Ideale Kartengröße","Ideal card size")}</strong><button type="button" class="secondary position-select-all-inline" data-select-all-inline="true">${this.t("Alle Karten auswählen","Select all cards")}</button><p class="muted">${this.t("Profilbreite nutzen und die Höhe auf den benötigten Karteninhalt begrenzen. Gesperrte Karten werden übersprungen. Keine automatische Neupositionierung.","Use the profile width and fit the height to the card content. Locked cards are skipped and positions are preserved.")}</p><div class="align-grid"><button class="secondary" id="ideal-size-selected">${this.t("Ideale Größe – Auswahl","Ideal size – selection")}</button><button class="secondary" id="ideal-size-all">${this.t("Ideale Größe – alle Karten","Ideal size – all cards")}</button></div><p class="muted" id="ideal-size-result">${this.t("Gilt nur für den aktuellen Raum und das aktive Geräteprofil.","Applies only to the current room and active device profile.")}</p></div></details><details class="position-section"><summary>${this.t("07 · Kartengruppen","07 · Card groups")}</summary><p class="muted">${this.t("Mehrere Karten mit Strg/Cmd auswählen, gruppieren und anschließend durch Ziehen einer Gruppenkarte gemeinsam verschieben. Größen bleiben individuell.","Select multiple cards with Ctrl/Cmd, group them, then drag any member to move them together. Each card keeps its size.")}</p><div class="align-grid"><button class="secondary" id="group-cards">${this.t("Auswahl gruppieren","Group selection")}</button><button class="secondary" id="ungroup-cards">${this.t("Gruppe auflösen","Ungroup")}</button><button class="secondary" id="ungroup-all-cards">${this.t("Alle Gruppen auflösen","Ungroup all")}</button></div><p class="muted" id="group-status">${this.t("Keine Gruppe ausgewählt","No group selected")}</p></details><details class="position-section"><summary>${this.t("08 · Ebenenverwaltung","08 · Layer order")}</summary><p class="muted">${this.t("Höhere Ebenen liegen vor niedrigeren. Änderungen gelten für die ausgewählte Karte und können rückgängig gemacht werden.","Higher layers appear in front. Changes apply to the selected card and can be undone.")}</p><div class="align-grid"><button class="secondary" id="layer-back">${this.t("Ganz nach hinten","Send to back")}</button><button class="secondary" id="layer-down">${this.t("Eine Ebene zurück","Send backward")}</button><button class="secondary" id="layer-up">${this.t("Eine Ebene vor","Bring forward")}</button><button class="secondary" id="layer-front">${this.t("Ganz nach vorne","Bring to front")}</button></div></details></aside></div>`;
     const style=document.createElement('style');style.textContent='.rotapfel-position-overlay .position-tile{touch-action:none}.rotapfel-position-overlay .position-tile .external-card-preview{height:100%!important;min-height:0!important;overflow:hidden!important;padding:0!important;position:relative!important}.rotapfel-position-overlay .position-tile .external-card-slot{pointer-events:none!important;overflow:visible!important;max-height:none!important}.rotapfel-position-overlay .position-tile .external-card-slot>*{pointer-events:none!important}.rotapfel-position-overlay .position-tile .nexus-preview{height:100%;min-height:0!important;box-sizing:border-box}.rotapfel-position-overlay .position-drag-handle{position:absolute;top:0;left:0;right:28px;height:19px;z-index:6;cursor:grab;touch-action:none;background:transparent}.rotapfel-position-overlay .position-resize-edge{position:absolute;z-index:5;background:transparent}.rotapfel-position-overlay .position-resize-right{right:0;top:12%;height:76%;width:10px;cursor:ew-resize}.rotapfel-position-overlay .position-resize-bottom{bottom:0;left:12%;width:76%;height:10px;cursor:ns-resize}.rotapfel-position-overlay .position-resize{position:absolute;right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;background:linear-gradient(135deg,transparent 49%,#009ac4 50%);z-index:5}.rotapfel-position-overlay aside label{display:block;margin:12px 0}.rotapfel-position-overlay aside input,.rotapfel-position-overlay aside select{width:100%;box-sizing:border-box}.rotapfel-position-overlay .position-tile.selected{outline:3px solid #009ac4}.rotapfel-position-overlay .position-tile.multi-selected{outline:3px dashed #e9a100}.rotapfel-position-overlay .position-tile.reference-card{outline:4px solid #27ae60!important;outline-offset:2px}.rotapfel-position-overlay .position-tile.reference-card::after{content:"⊕ Referenz";position:absolute;top:4px;right:8px;background:#168c48;color:white;border-radius:5px;padding:2px 6px;font:700 12px sans-serif;z-index:20;pointer-events:none}.rotapfel-position-overlay .align-tools{display:grid;gap:9px;margin:12px 0;padding:10px 0;border-top:1px solid #9995;border-bottom:1px solid #9995}.rotapfel-position-overlay .align-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}.rotapfel-position-overlay .align-grid button{font-size:11px;padding:7px 4px;white-space:normal}.rotapfel-position-overlay .align-tools strong{font-size:12px}';style.textContent+='\n.rotapfel-position-overlay .position-editor-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);flex:1;min-height:0;overflow:hidden}.rotapfel-position-overlay .position-canvas-pane{min-width:0;min-height:0;overflow:auto;padding:12px;box-sizing:border-box;background:#8882;position:relative}.rotapfel-position-overlay .position-workspace{transform-origin:top left}.rotapfel-position-overlay .position-options-pane{min-width:0;min-height:0;overflow-y:auto;border-left:1px solid #9995;padding:18px 20px;box-sizing:border-box}.rotapfel-position-overlay .position-options-pane .align-grid{gap:9px}.rotapfel-position-overlay .position-options-pane .align-grid button{font-size:13px;padding:11px 9px;min-height:43px}.rotapfel-position-overlay .position-options-pane .align-tools{gap:14px}.rotapfel-position-overlay .position-options-pane .align-tools strong{font-size:14px}.rotapfel-position-overlay .position-options-pane button{white-space:normal}.rotapfel-position-overlay .position-options-pane input[type=checkbox]{width:auto}.rotapfel-position-overlay .position-tools{flex-shrink:0}@media(max-width:800px){.rotapfel-position-overlay .position-options-pane{padding:10px}.rotapfel-position-overlay .position-options-pane .align-grid{grid-template-columns:1fr}}';style.textContent+='\n.rotapfel-position-overlay .position-section{border:1px solid #9995;border-radius:9px;margin:12px 0;overflow:hidden;padding:0 12px 10px}.rotapfel-position-overlay .position-section:not([open]){padding-bottom:0}.rotapfel-position-overlay .position-section>summary{cursor:pointer;font-weight:700;font-size:14px;padding:13px 2px;user-select:none}.rotapfel-position-overlay .position-section>summary:hover{color:var(--primary-color,#009ac4)}.rotapfel-position-overlay .position-global-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rotapfel-position-overlay .position-global-buttons button{min-height:42px}.rotapfel-position-overlay .position-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.rotapfel-position-overlay .position-editor-actions button{min-height:40px}';style.textContent+=`
 .rotapfel-position-overlay.position-test-active .climate-controls{pointer-events:auto!important}.rotapfel-position-overlay.position-test-active .position-workspace{background-image:none!important;background-color:transparent!important}.rotapfel-position-overlay.position-test-active .position-tile{outline:none!important;border-color:transparent!important;box-shadow:none!important;cursor:default!important}.rotapfel-position-overlay.position-test-active .position-resize,.rotapfel-position-overlay.position-test-active [data-resize-axis],.rotapfel-position-overlay.position-test-active .position-options-pane{display:none!important}.rotapfel-position-overlay.position-test-active .position-editor-body{grid-template-columns:minmax(0,1fr)}.rotapfel-position-overlay.position-test-active .position-tile .external-card-slot{pointer-events:auto!important}.rotapfel-position-overlay.position-test-active .position-tile .external-card-slot>*{pointer-events:auto!important}.rotapfel-position-overlay.position-test-active .position-drag-handle{display:none!important}.rotapfel-position-overlay.position-test-active .position-tile{touch-action:auto!important}.rotapfel-position-overlay.position-test-active .position-tile .external-card-preview{touch-action:auto!important}.rotapfel-position-overlay.position-test-active .position-tools #snap,.rotapfel-position-overlay.position-test-active .position-tools #snap-size,.rotapfel-position-overlay.position-test-active .position-tools #snap-guides{pointer-events:none}.rotapfel-position-overlay.position-test-active #position-test-toggle{background:var(--primary-color,#0399ca)!important;color:white!important}.rotapfel-position-overlay.position-test-active .position-canvas-pane{overflow:auto}
 /* Alpha 13.7.105: mobile-first editor controls, without changing card geometry. */
@@ -2274,19 +2283,19 @@ class RotapfelDashboardManager extends HTMLElement {
     const setMobileOptions=open=>{
       overlay.classList.toggle('position-mobile-options-open',!!open);
       mobileOptionsButton?.setAttribute('aria-expanded',String(!!open));
-      mobileOptionsButton.textContent=open?'✕ Optionen schließen':'⚙ Kartenoptionen';
+      mobileOptionsButton.textContent=open?this.t("✕ Optionen schließen","✕ Close options"):this.t("⚙ Kartenoptionen","⚙ Card options");
     };
     mobileOptionsButton?.addEventListener('click',()=>setMobileOptions(!overlay.classList.contains('position-mobile-options-open')));
     const navButton=overlay.querySelector('#position-nav-toggle');
     navButton?.addEventListener('click',()=>{
       const expanded=overlay.classList.toggle('position-nav-expanded');
       navButton.setAttribute('aria-expanded',String(expanded));
-      navButton.textContent=expanded?'✕ Navigation schließen':'☰ Navigation';
+      navButton.textContent=expanded?this.t("✕ Navigation schließen","✕ Close navigation"):this.t("☰ Navigation","☰ Navigation");
     });
     // Alpha 13.8.9: mobile drawer is independent of canvas drag/scroll mode.
     const mobileDrawer=document.createElement('div');
     mobileDrawer.className='position-mobile-drawer';
-    mobileDrawer.setAttribute('aria-label','Werkzeuge und Kartenoptionen');
+    mobileDrawer.setAttribute('aria-label',this.t("Werkzeuge und Kartenoptionen","Tools and card options"));
     const mobileDrawerBackdrop=document.createElement('div');
     mobileDrawerBackdrop.className='position-mobile-backdrop';
     overlay.append(mobileDrawerBackdrop,mobileDrawer);
@@ -2310,7 +2319,7 @@ class RotapfelDashboardManager extends HTMLElement {
     mobileDrawerBackdrop.addEventListener('click',()=>{
       overlay.classList.remove('position-nav-expanded');
       navButton?.setAttribute('aria-expanded','false');
-      if(navButton)navButton.textContent='☰ Navigation';
+      if(navButton)navButton.textContent=this.t("☰ Navigation","☰ Navigation");
     });
     // Allow native touch scrolling inside the drawer even while dragging cards.
     for(const eventName of ['touchstart','touchmove','pointerdown','pointermove']){
@@ -2319,14 +2328,14 @@ class RotapfelDashboardManager extends HTMLElement {
     const touchHint=document.createElement('span');
     touchHint.id='position-touch-hint';
     touchHint.setAttribute('role','status');
-    touchHint.textContent='Scrollmodus: Fläche mit dem Finger verschieben.';
+    touchHint.textContent=this.t("Scrollmodus: Fläche mit dem Finger verschieben.","Scroll mode: Swipe to pan the canvas.");
     overlay.querySelector('.position-tools')?.append(touchHint);
     const touchModeButton=overlay.querySelector('#position-touch-mode');
     touchModeButton?.addEventListener('click',()=>{
       const dragging=overlay.classList.toggle('position-touch-drag');
       touchModeButton.setAttribute('aria-pressed',String(dragging));
-      touchModeButton.textContent=dragging?'✥ Verschieben aktiv':'↕ Scrollen';
-      touchHint.textContent=dragging?'Verschiebemodus: Karten mit dem Finger ziehen. Zum Scrollen erneut umschalten.':'Scrollmodus: Fläche mit dem Finger verschieben. Zum Bearbeiten Verschieben aktivieren.';
+      touchModeButton.textContent=dragging?'✥ Verschieben aktiv':this.t("↕ Scrollen","↕ Scroll");
+      touchHint.textContent=dragging?this.t("Verschiebemodus: Karten mit dem Finger ziehen. Zum Scrollen erneut umschalten.","Move mode: Drag cards to reposition them. Switch modes to scroll."):this.t("Scrollmodus: Fläche mit dem Finger verschieben. Zum Bearbeiten Verschieben aktivieren.","Scroll mode: Swipe to pan the canvas. Switch to Move to edit.");
     });
     style.textContent+=`
 @media(max-width:767px){
@@ -2364,7 +2373,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const refreshCanvasHeight=()=>{
       const bottom=dynamicHeight?Math.max(height,...[...positions.values()].map(q=>q.y+q.h+24)):height;
       canvasWorkspace.style.height=Math.ceil(bottom)+'px';
-      if(heightLabel)heightLabel.textContent=`${width} × ${Math.ceil(bottom)} CSS-px (${dynamicHeight?'Höhe dynamisch':'feste Displaygröße'})`;
+      if(heightLabel)heightLabel.textContent=`${width} × ${Math.ceil(bottom)} CSS-px (${dynamicHeight?this.t("Höhe dynamisch","Expandable height"):this.t("feste Displaygröße","fixed display size")})`;
     };
     const canvasWorkspace=overlay.querySelector('.position-workspace');
     const guideX=document.createElement('div'),guideY=document.createElement('div');
@@ -2374,7 +2383,7 @@ class RotapfelDashboardManager extends HTMLElement {
     guideY.style.height='1px';guideY.style.width='100%';guideY.style.left='0';
     const magnetBadge=document.createElement('div');
     magnetBadge.textContent='🧲';
-    magnetBadge.title='Magnet hat die Kartenposition korrigiert';
+    magnetBadge.title=this.t("Magnet hat die Kartenposition korrigiert","Snapped to a nearby card");
     magnetBadge.style.cssText='position:absolute;z-index:10002;pointer-events:none;display:none;font-size:22px;line-height:1;padding:5px;background:#e8f5e9;border:2px solid #20a35b;border-radius:9px;box-shadow:0 2px 8px #0003';
     canvasWorkspace.append(magnetBadge);
     const hideGuides=()=>{guideX.style.display='none';guideY.style.display='none';magnetBadge.style.display='none';};
@@ -2451,7 +2460,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(active)setMobileOptions(false);
       positionTestActive=active;
       overlay.classList.toggle('position-test-active',active);
-      testToggle.textContent=active?'✎ Zurück zu Bearbeiten':'▶ Testen';
+      testToggle.textContent=active?this.t("✎ Zurück zu Bearbeiten","✎ Back to editing"):this.t("▶ Testen","▶ Test");
       testToggle.setAttribute('aria-pressed',String(active));
       overlay.querySelector('#position-test-hint').hidden=!active;
       hideGuides();
@@ -2482,7 +2491,7 @@ class RotapfelDashboardManager extends HTMLElement {
         const hit=collided.has(tile.dataset.id);
         tile.style.setProperty('outline',hit?'3px solid #e53935':'','important');
         tile.style.setProperty('outline-offset',hit?'-3px':'','important');
-        tile.title=hit?'Überlappung mit einer anderen Karte':'';
+        tile.title=hit?this.t("Überlappung mit einer anderen Karte","Overlaps another card"):'';
       }
     };
     const fitPositionCards=()=>{this.fitCanvasCards(overlay);refreshCollisions();};
@@ -2544,11 +2553,11 @@ class RotapfelDashboardManager extends HTMLElement {
     const selectedIds=new Set();let selectionAnchor=null;let selectionOrder=[];
     const referenceCard=()=>{const chosen=selectionOrder.map(id=>cards.find(v=>v.c.id===id)?.c).filter(c=>c&&selectedIds.has(c.id));return chosen.find(isEditorLocked)||chosen[0]||null;};
     const groupMembers=id=>{const c=cards.find(v=>v.c.id===id)?.c;return c?.groupId?cards.filter(v=>v.c.groupId===c.groupId).map(v=>v.c):c?[c]:[];};
-    const updateGroupControls=()=>{const members=cards.filter(v=>selectedIds.has(v.c.id)).map(v=>v.c);const current=active?.groupId;overlay.querySelector('#group-cards').disabled=members.length<2;overlay.querySelector('#ungroup-cards').disabled=!current;overlay.querySelector('#ungroup-all-cards').disabled=!cards.some(v=>v.c.groupId);overlay.querySelector('#group-status').textContent=current?`Gruppe: ${groupMembers(active.id).length} Karten · Ziehen bewegt alle gemeinsam`:'Keine Gruppe ausgewählt';};
+    const updateGroupControls=()=>{const members=cards.filter(v=>selectedIds.has(v.c.id)).map(v=>v.c);const current=active?.groupId;overlay.querySelector('#group-cards').disabled=members.length<2;overlay.querySelector('#ungroup-cards').disabled=!current;overlay.querySelector('#ungroup-all-cards').disabled=!cards.some(v=>v.c.groupId);overlay.querySelector('#group-status').textContent=current?`${this.t("Gruppe:","Group:")} ${groupMembers(active.id).length} ${this.t("Karten · Ziehen bewegt alle gemeinsam","cards · Drag to move them together")}`:this.t("Keine Gruppe ausgewählt","No group selected");};
     overlay.querySelector('#group-cards').onclick=()=>{const chosen=cards.filter(v=>selectedIds.has(v.c.id)).map(v=>v.c);if(chosen.length<2)return;rememberChange();const id=this.uid();for(const c of chosen)c.groupId=id;this.dirty=true;syncSelection();};
     overlay.querySelector('#ungroup-cards').onclick=()=>{if(!active?.groupId)return;rememberChange();for(const c of groupMembers(active.id))delete c.groupId;this.dirty=true;syncSelection();};
-    overlay.querySelector('#ungroup-all-cards').onclick=()=>{const grouped=cards.filter(v=>v.c.groupId).map(v=>v.c);if(!grouped.length)return;if(!window.confirm(`Alle ${new Set(grouped.map(c=>c.groupId)).size} Kartengruppen im aktiven Raum auflösen? Die Karten bleiben unverändert.`))return;rememberChange();for(const c of grouped)delete c.groupId;this.dirty=true;syncSelection();};
-    const syncSelection=()=>{overlay.querySelectorAll('.position-tile[data-id]').forEach(el=>{el.classList.toggle('selected',selectedIds.has(el.dataset.id)&&el.dataset.id===active?.id);el.classList.toggle('multi-selected',selectedIds.has(el.dataset.id)&&el.dataset.id!==active?.id);el.classList.toggle('reference-card',el.dataset.id===referenceCard()?.id);});overlay.querySelector('#multi-count').textContent=`${selectedIds.size} Karten ausgewählt`;updateGroupControls();const bulkEligible=cards.filter(({c})=>selectedIds.has(c.id)&&!isEditorLocked(c));const ref=referenceCard();const canResize=selectedIds.size>=2&&bulkEligible.some(({c})=>c.id!==ref?.id);overlay.querySelectorAll('[data-bulk-size]').forEach(b=>b.disabled=!canResize);overlay.querySelector('#bulk-scale-apply').disabled=!canResize;overlay.querySelector('#bulk-size-hint').textContent=ref?`Referenz: ${ref.title||ref.id}${isEditorLocked(ref)?' (gesperrt)':''} · ${bulkEligible.length} bearbeitbar`:'Zuerst Karten auswählen.';overlay.querySelectorAll('[data-align]').forEach(b=>{b.disabled=selectedIds.size<2;});};
+    overlay.querySelector('#ungroup-all-cards').onclick=()=>{const grouped=cards.filter(v=>v.c.groupId).map(v=>v.c);if(!grouped.length)return;if(!window.confirm(`${this.t("Alle","All")} ${new Set(grouped.map(c=>c.groupId)).size} ${this.t("Kartengruppen im aktiven Raum auflösen? Die Karten bleiben unverändert.","Ungroup all cards in the active room? Card settings are preserved.")}`))return;rememberChange();for(const c of grouped)delete c.groupId;this.dirty=true;syncSelection();};
+    const syncSelection=()=>{overlay.querySelectorAll('.position-tile[data-id]').forEach(el=>{el.classList.toggle('selected',selectedIds.has(el.dataset.id)&&el.dataset.id===active?.id);el.classList.toggle('multi-selected',selectedIds.has(el.dataset.id)&&el.dataset.id!==active?.id);el.classList.toggle('reference-card',el.dataset.id===referenceCard()?.id);});overlay.querySelector('#multi-count').textContent=`${selectedIds.size} ${this.t("Karten ausgewählt","cards selected")}`;updateGroupControls();const bulkEligible=cards.filter(({c})=>selectedIds.has(c.id)&&!isEditorLocked(c));const ref=referenceCard();const canResize=selectedIds.size>=2&&bulkEligible.some(({c})=>c.id!==ref?.id);overlay.querySelectorAll('[data-bulk-size]').forEach(b=>b.disabled=!canResize);overlay.querySelector('#bulk-scale-apply').disabled=!canResize;overlay.querySelector('#bulk-size-hint').textContent=ref?`${this.t("Referenz:","Reference:")} ${ref.title||ref.id}${isEditorLocked(ref)?' (gesperrt)':''} · ${bulkEligible.length} ${this.t("bearbeitbar","editable")}`:this.t("Zuerst Karten auswählen.","Select cards first.");overlay.querySelectorAll('[data-align]').forEach(b=>{b.disabled=selectedIds.size<2;});};
     let mobileMultiSelect=false;
     const selectCard=(id,ev)=>{
       if(mobileMultiSelect&&ev&&!ev.ctrlKey&&!ev.metaKey&&!ev.shiftKey)ev={ctrlKey:true};const index=cards.findIndex(v=>v.c.id===id);if(index<0)return;if(ev&&(ev.ctrlKey||ev.metaKey)){if(selectedIds.has(id)){selectedIds.delete(id);selectionOrder=selectionOrder.filter(x=>x!==id);}else{selectedIds.add(id);selectionOrder.push(id);}selectionAnchor=id;}else if(ev?.shiftKey&&selectionAnchor){const from=cards.findIndex(v=>v.c.id===selectionAnchor);if(from>=0){for(let i=Math.min(from,index);i<=Math.max(from,index);i++){const cid=cards[i].c.id;if(!selectedIds.has(cid)){selectedIds.add(cid);selectionOrder.push(cid);}}}}else{selectedIds.clear();selectedIds.add(id);selectionOrder=[id];selectionAnchor=id;}select.value=id;choose(id);};
@@ -2626,7 +2635,7 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelectorAll('[data-bulk-size]').forEach(b=>b.onclick=()=>bulkResize(b.dataset.bulkSize));
     overlay.querySelector('#bulk-scale-apply').onclick=()=>{
       const percent=Number(overlay.querySelector('#bulk-scale-percent').value);
-      if(!Number.isFinite(percent)||percent<10||percent>300){alert('Bitte einen Skalierungswert zwischen 10 und 300 % eingeben.');return;}
+      if(!Number.isFinite(percent)||percent<10||percent>300){alert(this.t("Bitte einen Skalierungswert zwischen 10 und 300 % eingeben.","Enter a scale between 10% and 300%."));return;}
       bulkResize('scale',percent);
     };
     overlay.querySelector('#auto-fit-frames').onclick=()=>{
@@ -2634,10 +2643,10 @@ class RotapfelDashboardManager extends HTMLElement {
         const card=cards.find(v=>v.c.id===tile.dataset.id)?.c;
         return card&&(this.externalVariant(card)||card.type==='custom')&&card.position?.manualSize===true&&!isEditorLocked(card);
       }).length;
-      const includeProtected=protectedCount>0&&confirm(`${protectedCount} Karte(n) haben eine manuell geschützte Größe. Sollen diese Größen für diese einmalige automatische Anpassung ausdrücklich überschrieben werden? Die manuelle Größensperre bleibt anschließend bestehen.`);
+      const includeProtected=protectedCount>0&&confirm(`${protectedCount} ${this.t("Karte(n) haben eine manuell geschützte Größe. Sollen diese Größen für diese einmalige automatische Anpassung ausdrücklich überschrieben werden? Die manuelle Größensperre bleibt anschließend bestehen.","cards have a locked size. Override those sizes for this one adjustment? Their locks will be kept.")}`);
       rememberChange();const count=this.autoFitExternalFrames(tab,overlay,positions,update,includeProtected);
-      if(!count)alert('Keine anpassbaren Kartenrahmen gefunden oder die Abmessungen passen bereits. Gesperrte Karten und nicht freigegebene manuelle Größen bleiben unverändert.');
-      else alert(`${count} Kartenrahmen angepasst. Bitte Ergebnis prüfen und erst danach im Layout-Editor speichern.`);
+      if(!count)alert(this.t("Keine anpassbaren Kartenrahmen gefunden oder die Abmessungen passen bereits. Gesperrte Karten und nicht freigegebene manuelle Größen bleiben unverändert.","No eligible frames need resizing. Locked cards and unapproved manual sizes are preserved."));
+      else alert(`${count} ${this.t("Kartenrahmen angepasst. Bitte Ergebnis prüfen und erst danach im Layout-Editor speichern.","card frames resized. Review the result, then save in the layout editor.")}`);
     };
     // Plan alignment atomically. Never change an unselected tile. Selected tiles may overlap each
     // other intentionally; new overlaps with unselected tiles are blocked.
@@ -2645,7 +2654,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const chosen=cards.filter(({c})=>selectedIds.has(c.id)&&!isEditorLocked(c)).map(({c})=>({c,q:{...positions.get(c.id)}}));
       const distribute=mode.startsWith('distribute')||mode.startsWith('gap');
       const refCard=referenceCard(),refRect=refCard&&positions.get(refCard.id);
-      if(selectedIds.size<2||chosen.length<2){if(distribute)alert('Zum Verteilen mindestens zwei entsperrte Karten auswählen.');return;}
+      if(selectedIds.size<2||chosen.length<2){if(distribute)alert(this.t("Zum Verteilen mindestens zwei entsperrte Karten auswählen.","Select at least two unlocked cards to distribute them."));return;}
       if(!distribute&&(!refRect||!chosen.some(({c})=>c.id!==refCard.id)))return;
       // Explicit alignment is a manual user action and takes precedence over position protection.
       const left=refRect?.x,top=refRect?.y;
@@ -2671,7 +2680,7 @@ class RotapfelDashboardManager extends HTMLElement {
             // minimum horizontal/vertical gap and distribute each row evenly.
             const spacing=12,rows=[];let row=[],rowWidth=0;
             for(const item of ordered){
-              if(item.q.w>available){alert('Mindestens eine Karte ist breiter als die verfügbare Profilbreite. Bitte diese Karte verkleinern.');return;}
+              if(item.q.w>available){alert(this.t("Mindestens eine Karte ist breiter als die verfügbare Profilbreite. Bitte diese Karte verkleinern.","At least one card is wider than the available profile width. Reduce that card’s width."));return;}
               if(row.length&&rowWidth+spacing+item.q.w>available){rows.push(row);row=[];rowWidth=0;}
               row.push(item);rowWidth+=item.q.w+(row.length>1?spacing:0);
             }
@@ -2679,7 +2688,7 @@ class RotapfelDashboardManager extends HTMLElement {
             const rowHeights=rows.map(items=>Math.max(...items.map(v=>v.q.h)));
             const totalHeight=rowHeights.reduce((sum,h)=>sum+h,0)+spacing*(rows.length-1);
             const maxHeight=dynamicHeight?Math.max(height,...[...positions.values()].map(v=>v.y+v.h+24),totalHeight+24):height;
-            if(totalHeight>maxHeight-2*margin){alert('Für den horizontalen Zeilenumbruch ist nicht genügend Höhe vorhanden. Bitte Karten verkleinern oder die Displayhöhe erhöhen.');return;}
+            if(totalHeight>maxHeight-2*margin){alert(this.t("Für den horizontalen Zeilenumbruch ist nicht genügend Höhe vorhanden. Bitte Karten verkleinern oder die Displayhöhe erhöhen.","There is insufficient height to wrap cards into rows. Shrink cards or increase the display height."));return;}
             let y=margin;
             rows.forEach((items,i)=>{
               const sum=items.reduce((n,v)=>n+v.q.w,0);
@@ -2712,14 +2721,14 @@ class RotapfelDashboardManager extends HTMLElement {
             const ra={...a.q,y},rb={...b.q,y:y+a.q.h+gap};
             return !others.some(t=>intersects(ra,t)||intersects(rb,t));
           });
-          if(found===undefined){alert('Keine freie vertikale Position für die zwei Karten mit 12 px Abstand gefunden.');return;}
+          if(found===undefined){alert(this.t("Keine freie vertikale Position für die zwei Karten mit 12 px Abstand gefunden.","No available vertical position fits both cards with 12 px spacing."));return;}
           a.q.y=found;b.q.y=found+a.q.h+gap;
         }else{
           // For three or more cards, distribute between the two outermost cards.
           const first=ordered[0],last=ordered[ordered.length-1];
           const total=ordered.reduce((sum,v)=>sum+v.q.h,0);
           const gap=(last.q.y+last.q.h-first.q.y-total)/(ordered.length-1);
-          if(gap<0){alert('Zwischen den äußeren Karten ist nicht genügend Platz. Bitte die äußeren Karten weiter auseinanderziehen.');return;}
+          if(gap<0){alert(this.t("Zwischen den äußeren Karten ist nicht genügend Platz. Bitte die äußeren Karten weiter auseinanderziehen.","There is insufficient space between the outer cards. Move them farther apart."));return;}
           let cursor=first.q.y+first.q.h+gap;
           ordered.slice(1,-1).forEach(item=>{item.q.y=Math.round(cursor);cursor+=item.q.h+gap;});
         }
@@ -2747,12 +2756,12 @@ class RotapfelDashboardManager extends HTMLElement {
         (moved.has(a.id)||moved.has(b.id))&&overlaps(a,b)&&
         !overlaps(oldById.get(a.id),oldById.get(b.id))));
       if(outOfBounds||collision){
-        const issue=outOfBounds?'Mindestens eine ausgewählte Karte würde den Displayrahmen verlassen.':'Eine ausgewählte Karte würde eine nicht ausgewählte Karte überlagern.';
-        alert('Ausrichtung nicht übernommen: '+issue+' Bestehende Überlagerungen bleiben unverändert.');
+        const issue=outOfBounds?this.t("Mindestens eine ausgewählte Karte würde den Displayrahmen verlassen.","At least one selected card would extend beyond the display."):this.t("Eine ausgewählte Karte würde eine nicht ausgewählte Karte überlagern.","A selected card would overlap an unselected card.");
+        alert(this.t("Ausrichtung nicht übernommen: ","Could not apply alignment: ")+issue+this.t(" Bestehende Überlagerungen bleiben unverändert."," Existing overlaps are preserved."));
         return;
       }
       const didMove=chosen.some(({c})=>{const q=proposed.get(c.id),old=positions.get(c.id);return q.x!==old.x||q.y!==old.y;});
-      if(!didMove&&distribute){alert('Keine Positionsänderung: Die Karten sind bereits gleichmäßig verteilt oder es gibt zwischen den äußeren Karten keinen zusätzlichen Spielraum.');return;}
+      if(!didMove&&distribute){alert(this.t("Keine Positionsänderung: Die Karten sind bereits gleichmäßig verteilt oder es gibt zwischen den äußeren Karten keinen zusätzlichen Spielraum.","Positions are unchanged because the cards are already evenly spaced or the outer cards leave no extra room."));return;}
       if(didMove)rememberChange();
       chosen.forEach(({c})=>{
         const q=proposed.get(c.id),old=positions.get(c.id);
@@ -2763,7 +2772,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const fixedGap=()=>Math.max(0,Math.min(200,Math.round(Number(overlay.querySelector('#fixed-card-gap').value)||0)));
     const arrangeFixedGap=axis=>{
       const chosen=cards.filter(({c})=>selectedIds.has(c.id)&&!isEditorLocked(c)).map(({c})=>({c,q:{...positions.get(c.id)}}));
-      if(chosen.length<2){alert('Bitte mindestens zwei entsperrte Karten auswählen.');return;}
+      if(chosen.length<2){alert(this.t("Bitte mindestens zwei entsperrte Karten auswählen.","Select at least two unlocked cards."));return;}
       const horizontal=axis==='x',gap=fixedGap(),ordered=chosen.sort((a,b)=>a.q[axis]-b.q[axis]);
       const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
       const overlaps=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>1;
@@ -2774,7 +2783,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const lineLimit=horizontal?width:(fixed?height:Math.max(height,...[...originals.values()].map(q=>q.y+q.h)));
       const lines=[];let line=[],lineSpan=0;
       for(const item of ordered){
-        if(item.q[size]>lineLimit){alert('Mindestens eine Karte ist größer als die verfügbare Displayachse.');return;}
+        if(item.q[size]>lineLimit){alert(this.t("Mindestens eine Karte ist größer als die verfügbare Displayachse.","At least one card exceeds the available display dimension."));return;}
         if(line.length&&lineSpan+gap+item.q[size]>lineLimit){lines.push(line);line=[];lineSpan=0;}
         lineSpan+=item.q[size]+(line.length?gap:0);line.push(item);
       }
@@ -2783,7 +2792,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const span=Math.max(...lineSizes.map(v=>v.span));
       const thickness=lineSizes.reduce((n,v)=>n+v.thickness,0)+gap*(lines.length-1);
       if((horizontal&&fixed&&thickness>height)||(!horizontal&&thickness>width)){
-        alert('Auch mit automatischem Zeilen- bzw. Spaltenumbruch reicht die Displayfläche nicht aus.');return;
+        alert(this.t("Auch mit automatischem Zeilen- bzw. Spaltenumbruch reicht die Displayfläche nicht aus.","The display is too small even with automatic row or column wrapping."));return;
       }
       const originX=Math.min(...ordered.map(v=>v.q.x)),originY=Math.min(...ordered.map(v=>v.q.y));
       const candidate=(x,y)=>{
@@ -2858,7 +2867,7 @@ class RotapfelDashboardManager extends HTMLElement {
         if(possible)solution=next;
       }
       if(!solution){
-        alert('Keine kollisionsfreie Anordnung möglich. Gesperrte Karten und Displaygrenzen bleiben unverändert.');return;
+        alert(this.t("Keine kollisionsfreie Anordnung möglich. Gesperrte Karten und Displaygrenzen bleiben unverändert.","No arrangement fits without overlaps. Locked cards and display boundaries are preserved."));return;
       }
       const changes=cards.filter(({c})=>{const a=originals.get(c.id),b=solution.get(c.id);return a.x!==b.x||a.y!==b.y;});
       if(!changes.length)return;
@@ -2989,15 +2998,16 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#auto-group-direction').addEventListener('change',saveAutoPrefs);
     overlay.querySelector('#auto-space-mode').addEventListener('change',saveAutoPrefs);
     overlay.querySelector('#auto-layout-tab').onclick=()=>{
-      if(!cards.length){alert('Keine Karten im aktuellen Tab vorhanden.');return;}
+      if(!cards.length){alert(this.t("Keine Karten im aktuellen Tab vorhanden.","There are no cards in the current tab."));return;}
       const proposal=planAutoLayout();
-      if(!proposal){alert(dynamicHeight?'Mindestens eine Karte oder Gruppe ist breiter als die verfügbare Profilbreite (inklusive 12 px Rand). Es wurde nichts verändert.':'Die Karten passen mit unveränderten Größen und mindestens 12 px Abstand nicht vollständig in die feste Displayfläche. Es wurde nichts verändert.');return;}
+      if(!proposal){alert(dynamicHeight?this.t("Mindestens eine Karte oder Gruppe ist breiter als die verfügbare Profilbreite (inklusive 12 px Rand). Es wurde nichts verändert.","At least one card or group exceeds the profile width with its 12 px margin. The layout is unchanged."):this.t("Die Karten passen mit unveränderten Größen und mindestens 12 px Abstand nicht vollständig in die feste Displayfläche. Es wurde nichts verändert.","The cards do not fit the fixed display at their current sizes with 12 px minimum spacing. The layout is unchanged."));return;}
       const snapshot=new Map(cards.map(({c})=>[c.id,{position:c.position?{...c.position}:null,q:{...positions.get(c.id)}}]));
       const previousDirty=this.dirty;
       rememberChange();applyAutoLayout(proposal);
       // Let the browser paint the arrangement before asking for confirmation.
       requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        if(!confirm(`Automatische Tab-Anordnung übernehmen?\n\nFlächennutzung: ${overlay.querySelector('#auto-space-mode').value==='wide'?'Großflächig verteilen':'Enge Positionierung'}\nGruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\nPositionssperren bleiben gespeichert.\n\nAbbrechen stellt die vorherigen Positionen wieder her.`)){
+        if(!confirm(`${this.t("Automatische Tab-Anordnung übernehmen?\n\nFlächennutzung:","Apply automatic tab arrangement?\n\nUse of space:")} ${overlay.querySelector('#auto-space-mode').value==='wide'?this.t("Großflächig verteilen","Spread across available space"):this.t("Enge Positionierung","Compact placement")}
+${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\nPositionssperren bleiben gespeichert.\n\nAbbrechen stellt die vorherigen Positionen wieder her.","Groups first · Individual cards by type · At least 12 px spacing.\nPosition locks are kept.\n\nCancel to restore the previous positions.")}`)){
           cards.forEach(({c})=>{
             const old=snapshot.get(c.id);if(!old)return;
             const wasLocked=isEditorLocked(c);
@@ -3017,7 +3027,7 @@ class RotapfelDashboardManager extends HTMLElement {
     mobileSelectButton?.addEventListener('click',()=>{
       mobileMultiSelect=!mobileMultiSelect;
       mobileSelectButton.setAttribute('aria-pressed',String(mobileMultiSelect));
-      mobileSelectButton.textContent=mobileMultiSelect?'☑ Auswahl beenden':'☑ Karten auswählen';
+      mobileSelectButton.textContent=mobileMultiSelect?'☑ Auswahl beenden':this.t("☑ Karten auswählen","☑ Select cards");
     });
     overlay.querySelector('#position-mobile-select-all')?.addEventListener('click',()=>overlay.querySelector('#select-all-cards')?.click());
     overlay.querySelectorAll('[data-select-all-inline]').forEach(button=>button.addEventListener('click',()=>overlay.querySelector('#select-all-cards')?.click()));
@@ -3025,13 +3035,13 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#clear-multi').onclick=()=>{selectedIds.clear();selectionOrder=[];syncSelection();};
     const unlockAll=(key,label)=>{
       const count=cards.filter(({c})=>c.position?.[key]===true).length;
-      if(!count){alert('Es sind keine '+label+' aktiv.');return;}
-      if(!confirm(`${count} ${label} im aktuellen Tab aufheben? Positionen und Größen bleiben unverändert.`))return;
+      if(!count){alert(this.t("Es sind keine ","There are no ")+label+' aktiv.');return;}
+      if(!confirm(`${count} ${label} ${this.t("im aktuellen Tab aufheben? Positionen und Größen bleiben unverändert.","in this tab? Positions and sizes are preserved.")}`))return;
       rememberChange();cards.forEach(({c})=>{if(c.position?.[key]===true)c.position={...c.position,[key]:false};});
-      this.dirty=true;if(active)choose(active.id);alert(`${count} ${label} aufgehoben. Bitte Layout speichern.`);
+      this.dirty=true;if(active)choose(active.id);alert(`${count} ${label} ${this.t("aufgehoben. Bitte Layout speichern.","removed. Save the layout.")}`);
     };
-    overlay.querySelector('#unlock-all-position').onclick=()=>unlockAll('manualPosition','Positionssperren');
-    overlay.querySelector('#unlock-all-size').onclick=()=>unlockAll('manualSize','Größensperren');
+    overlay.querySelector('#unlock-all-position').onclick=()=>unlockAll('manualPosition',this.t("Positionssperren","position locks"));
+    overlay.querySelector('#unlock-all-size').onclick=()=>unlockAll('manualSize',this.t("Größensperren","size locks"));
     // Dashboard-wide unlock: include inactive rooms/tabs and every stored
     // device profile, not only the cards currently visible in this editor.
     const dashboardCards=()=>this.layout.flatMap(t=>(t.rooms||[]).flatMap(r=>r.cards||[]));
@@ -3045,13 +3055,16 @@ class RotapfelDashboardManager extends HTMLElement {
     };
     const refreshDashboardLocks=()=>{
       const n=lockCounts();
-      overlay.querySelector('#dashboard-lock-count').textContent=`Aktive Sperren (Karten): ${n.manualPosition} Position · ${n.manualSize} Größe · ${n.editorLocked} Layout`;
+      overlay.querySelector('#dashboard-lock-count').textContent=`${this.t("Aktive Sperren (Karten):","Active locks (cards):")} ${n.manualPosition} ${this.t("Position","Position")} · ${n.manualSize} ${this.t("Größe","Size")} · ${n.editorLocked} Layout`;
     };
     const dashboardUnlock=keys=>{
       const n=lockCounts();const affected=keys.reduce((total,key)=>total+n[key],0);
-      if(!affected){alert('Keine entsprechenden Sperren im Dashboard vorhanden.');return;}
-      const labels=keys.map(k=>({manualPosition:'Positions',manualSize:'Größen',editorLocked:'Layout'}[k])).join(', ');
-      if(!confirm(`${labels}-Sperren im gesamten Dashboard aufheben? Betroffen sind alle Tabs, Räume und Geräteprofile. Positionen, Größen und Gruppen bleiben unverändert. Änderungen anschließend speichern.`))return;
+      if(!affected){alert(this.t("Keine entsprechenden Sperren im Dashboard vorhanden.","No matching locks in the dashboard."));return;}
+      const labels=keys.map(k=>({manualPosition:this.t("Positions","Position"),manualSize:this.t("Größen","Sizes"),editorLocked:'Layout'}[k])).join(', ');
+      if(!confirm(this.t(
+        `${labels}-Sperren im gesamten Dashboard aufheben? Betroffen sind alle Tabs, Räume und Geräteprofile. Positionen, Größen und Gruppen bleiben unverändert. Änderungen anschließend speichern.`,
+        `Remove ${labels.toLowerCase()} locks across the dashboard? This affects all tabs, rooms and device profiles. Positions, sizes and groups are preserved. Save the changes afterward.`
+      )))return;
       // The local undo stack only covers the current room. Do not claim
       // dashboard-wide undo; preserve all layout values other than locks.
       rememberChange();
@@ -3062,7 +3075,7 @@ class RotapfelDashboardManager extends HTMLElement {
       this.dirty=true;
       if(active)choose(active.id);
       refreshDashboardLocks();
-      alert('Sperren aufgehoben. Bitte im Layout-Editor speichern.');
+      alert(this.t("Sperren aufgehoben. Bitte im Layout-Editor speichern.","Locks removed. Save in the layout editor."));
     };
     overlay.querySelector('#dashboard-unlock-position').onclick=()=>dashboardUnlock(['manualPosition']);
     overlay.querySelector('#dashboard-unlock-size').onclick=()=>dashboardUnlock(['manualSize']);
@@ -3077,7 +3090,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const idealSize=async (all,resultId='ideal-size-result')=>{
       const result=overlay.querySelector('#'+resultId);
       const targets=cards.filter(({c})=>(all||selectedIds.has(c.id))&&c.type!=='label'&&!isEditorLocked(c)&&!c.position?.manualSize);
-      if(!targets.length){result.textContent='Wähle Karten ohne Größen- oder Layoutsperre aus.';return;}
+      if(!targets.length){result.textContent=this.t("Wähle Karten ohne Größen- oder Layoutsperre aus.","Select cards with no size or layout lock.");return;}
       const buttons=['#ideal-size-selected','#ideal-size-all','#auto-ideal-size','#auto-layout-tab'].map(q=>overlay.querySelector(q));
       buttons.forEach(b=>b.disabled=true);
       const changes=[];let skipped=0;
@@ -3135,7 +3148,7 @@ class RotapfelDashboardManager extends HTMLElement {
         }
         if(!overlay.isConnected)return;
         if(changes.length){rememberChange();for(const {c,q} of changes)update(c,q,false);syncSelection();}
-        result.textContent=`${changes.length} Karten angepasst · ${skipped} mit Ersatzmaß. Andere Geräteprofile bleiben unverändert.`;
+        result.textContent=`${changes.length} ${this.t("Karten angepasst","cards resized")} · ${skipped} ${this.t("mit Ersatzmaß. Andere Geräteprofile bleiben unverändert.","used fallback sizes. Other device profiles are preserved.")}`;
       }finally{buttons.forEach(b=>b.disabled=false);}
     };
     overlay.querySelector('#auto-ideal-size').onclick=()=>idealSize(false,'auto-ideal-size-result');
@@ -3149,7 +3162,7 @@ class RotapfelDashboardManager extends HTMLElement {
       button.disabled=true;
       try{
         const standard=await this.standardExternalSize(card);
-        if(!standard){alert('Die Custom Card stellt keine zuverlässig ermittelbare Standardgröße bereit. Die Kartengröße bleibt unverändert.');return;}
+        if(!standard){alert(this.t("Die Custom Card stellt keine zuverlässig ermittelbare Standardgröße bereit. Die Kartengröße bleibt unverändert.","The custom card has no reliably detectable default size. Its size is preserved."));return;}
         if(!overlay.isConnected)return;
         const w=Math.min(width,Math.max(76,Math.round(standard.w)));
         const h=Math.min(height,Math.max(60,Math.round(standard.h)));
@@ -3335,14 +3348,14 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   transferRoomDialog(sourceTab,room,change){
     const destinations=(this.layout||[]).filter(tab=>tab.id!==sourceTab.id);
-    if(!destinations.length){alert('Bitte zuerst einen weiteren Tab anlegen.');return;}
+    if(!destinations.length){alert(this.t("Bitte zuerst einen weiteren Tab anlegen.","Create another tab first."));return;}
     const dialog=document.createElement('dialog');
     dialog.style.cssText='border:1px solid #888;border-radius:14px;padding:22px;max-width:min(480px,92vw);width:100%;box-sizing:border-box;color:var(--primary-text-color,#222);background:var(--card-background-color,#fff)';
-    dialog.innerHTML=`<form method="dialog" style="display:grid;gap:12px"><h3 style="margin:0">Raum kopieren oder verschieben</h3><p style="margin:0">${this.esc(room.name)} · ${this.esc(sourceTab.name)}</p><label>Aktion<select id="room-transfer-mode" style="width:100%;padding:9px"><option value="copy">Kopieren (Original behalten)</option><option value="move">Verschieben (Original entfernen)</option></select></label><label>Ziel-Tab<select id="room-transfer-target" style="width:100%;padding:9px">${destinations.map(tab=>`<option value="${this.esc(tab.id)}">${this.esc(tab.name)}</option>`).join('')}</select></label><p class="muted">Alle Karten, Einstellungen und Geräteprofil-Layouts werden übernommen. Kopien erhalten unabhängige IDs.</p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" class="secondary" id="room-transfer-cancel">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="room-transfer-confirm">Kopieren</button></div></form>`;
+    dialog.innerHTML=`<form method="dialog" style="display:grid;gap:12px"><h3 style="margin:0">${this.t("Raum kopieren oder verschieben","Copy or move room")}</h3><p style="margin:0">${this.esc(room.name)} · ${this.esc(sourceTab.name)}</p><label>${this.t("Aktion","Action")}<select id="room-transfer-mode" style="width:100%;padding:9px"><option value="copy">${this.t("Kopieren (Original behalten)","Copy (keep original)")}</option><option value="move">${this.t("Verschieben (Original entfernen)","Move (remove original)")}</option></select></label><label>${this.t("Ziel-Tab","Destination tab")}<select id="room-transfer-target" style="width:100%;padding:9px">${destinations.map(tab=>`<option value="${this.esc(tab.id)}">${this.esc(tab.name)}</option>`).join('')}</select></label><p class="muted">${this.t("Alle Karten, Einstellungen und Geräteprofil-Layouts werden übernommen. Kopien erhalten unabhängige IDs.","All cards, settings and device profile layouts are retained. Copies get their own IDs.")}</p><div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button type="button" class="secondary" id="room-transfer-cancel">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="room-transfer-confirm">${this.t("Kopieren","Copy")}</button></div></form>`;
     this.shadowRoot.append(dialog);
     dialog.querySelector('#room-transfer-cancel').onclick=()=>dialog.close();
     const mode=dialog.querySelector('#room-transfer-mode');
-    mode.onchange=()=>dialog.querySelector('#room-transfer-confirm').textContent=mode.value==='move'?'Verschieben':'Kopieren';
+    mode.onchange=()=>dialog.querySelector('#room-transfer-confirm').textContent=mode.value==='move'?this.t("Verschieben","Move"):this.t("Kopieren","Copy");
     dialog.querySelector('form').onsubmit=ev=>{
       ev.preventDefault();
       const target=this.layout.find(tab=>tab.id===dialog.querySelector('#room-transfer-target').value);
@@ -3376,7 +3389,7 @@ class RotapfelDashboardManager extends HTMLElement {
     root.querySelector('#theme-select').onchange=ev=>{this.theme=ev.target.value;change();};
     root.querySelector('#device-layout-profile').onchange=ev=>this.switchDeviceLayoutProfile(ev.target.value);root.querySelector('#show-mobile-layout-selector').onchange=ev=>{this.canvas.show_mobile_layout_selector=ev.target.checked;change();};
     root.querySelector('#manage-device-profiles').onclick=()=>this.manageDeviceProfiles();root.querySelector('#manage-layout-templates').onclick=()=>this.manageLayoutTemplates();
-    root.querySelector('#add-tab').onclick=()=>{const name=ask('Name des neuen Tabs');if(!name)return;const t={id:this.uid(),name,rooms:[]};this.layout.push(t);this.tabId=t.id;change();};
+    root.querySelector('#add-tab').onclick=()=>{const name=ask(this.t("Name des neuen Tabs","New tab name"));if(!name)return;const t={id:this.uid(),name,rooms:[]};this.layout.push(t);this.tabId=t.id;change();};
     root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{this.tabId=b.dataset.tab;this.render();});
     const t=this.layout.find(x=>x.id===this.tabId);if(!t)return;
     root.querySelector('#tab-canvas').onclick=()=>this.canvasDialog(t);
@@ -3393,11 +3406,11 @@ class RotapfelDashboardManager extends HTMLElement {
       const picker=root.querySelector('#active-room-preview');if(picker&&picker.value!==rid){picker.value=rid;this.render();}
     }));
     this.bindPreviewZoom();
-    root.querySelector('#duplicate-tab').onclick=()=>{const copy=this.cloneTabForLayout(t);copy.name=t.name+' (Kopie)';this.layout.splice(this.layout.indexOf(t)+1,0,copy);this.tabId=copy.id;this._activeRoomByTab={...(this._activeRoomByTab||{}),[copy.id]:copy.rooms[0]?.id};change();};
+    root.querySelector('#duplicate-tab').onclick=()=>{const copy=this.cloneTabForLayout(t);copy.name=t.name+this.t(" (Kopie)"," (Copy)");this.layout.splice(this.layout.indexOf(t)+1,0,copy);this.tabId=copy.id;this._activeRoomByTab={...(this._activeRoomByTab||{}),[copy.id]:copy.rooms[0]?.id};change();};
     root.querySelector('#rename-tab').onclick=()=>{const name=ask(this.t("Tab umbenennen","Rename tab"),t.name);if(name){t.name=name;change();}};
-    root.querySelector('#remove-tab').onclick=()=>{if(!confirm(`Tab „${t.name}“ samt Räumen entfernen?`))return;this.layout=this.layout.filter(x=>x!==t);this.tabId=this.layout[0]?.id;change();};
-    root.querySelector('#add-room').onclick=()=>{const name=ask('Name des Raums');if(name){const r={id:this.uid(),name,cards:[]};t.rooms.push(r);this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};change();}};
-    root.querySelectorAll('[data-room-action]').forEach(b=>b.onclick=()=>{const r=t.rooms.find(x=>x.id===b.closest('[data-room]').dataset.room),a=b.dataset.roomAction;if(a==='rename'){const name=ask(this.t("Raum umbenennen","Rename room"),r.name);if(name){r.name=name;change();}}else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(r));copy.id=this.uid();copy.name=r.name+' (Kopie)';copy.cards=(copy.cards||[]).map(c=>{c.id=this.uid();return c;});t.rooms.splice(t.rooms.indexOf(r)+1,0,copy);this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:copy.id};change();}else if(a==='transfer'){this.transferRoomDialog(t,r,change);}else if(a==='remove'){if(confirm(`Raum „${r.name}“ entfernen?`)){t.rooms=t.rooms.filter(x=>x!==r);if(this._activeRoomByTab?.[t.id]===r.id)this._activeRoomByTab[t.id]=t.rooms[0]?.id;change();}}else if(a==='paste'){if(!this._cardClipboard)return;const c=JSON.parse(JSON.stringify(this._cardClipboard));c.id=this.uid();r.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[r.id]:c.id};this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};change();}else if(a==='add-type'){this.openCardTypePicker(r,change);}else if(a==='library'){this.openCardLibrary(r,change);}});
+    root.querySelector('#remove-tab').onclick=()=>{if(!confirm(`${this.t("Tab „","Tab “")}${t.name}${this.t("“ samt Räumen entfernen?","” and its rooms remove?")}`))return;this.layout=this.layout.filter(x=>x!==t);this.tabId=this.layout[0]?.id;change();};
+    root.querySelector('#add-room').onclick=()=>{const name=ask(this.t("Name des Raums","Room name"));if(name){const r={id:this.uid(),name,cards:[]};t.rooms.push(r);this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};change();}};
+    root.querySelectorAll('[data-room-action]').forEach(b=>b.onclick=()=>{const r=t.rooms.find(x=>x.id===b.closest('[data-room]').dataset.room),a=b.dataset.roomAction;if(a==='rename'){const name=ask(this.t("Raum umbenennen","Rename room"),r.name);if(name){r.name=name;change();}}else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(r));copy.id=this.uid();copy.name=r.name+this.t(" (Kopie)"," (Copy)");copy.cards=(copy.cards||[]).map(c=>{c.id=this.uid();return c;});t.rooms.splice(t.rooms.indexOf(r)+1,0,copy);this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:copy.id};change();}else if(a==='transfer'){this.transferRoomDialog(t,r,change);}else if(a==='remove'){if(confirm(`${this.t("Raum „","Room “")}${r.name}${this.t("“ entfernen?","” remove?")}`)){t.rooms=t.rooms.filter(x=>x!==r);if(this._activeRoomByTab?.[t.id]===r.id)this._activeRoomByTab[t.id]=t.rooms[0]?.id;change();}}else if(a==='paste'){if(!this._cardClipboard)return;const c=JSON.parse(JSON.stringify(this._cardClipboard));c.id=this.uid();r.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[r.id]:c.id};this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};change();}else if(a==='add-type'){this.openCardTypePicker(r,change);}else if(a==='library'){this.openCardLibrary(r,change);}});
     root.querySelectorAll('.room-sort').forEach(sel=>sel.onchange=()=>{const id=sel.closest('[data-room]').dataset.room;this._roomSort={...(this._roomSort||{}),[id]:sel.value};this.render();});
     root.querySelectorAll('.room-card-item').forEach(el=>{const choose=()=>{const rid=el.closest('[data-room]').dataset.room;this._selectedCards={...(this._selectedCards||{}),[rid]:el.dataset.card};this.render();};el.addEventListener('click',ev=>{if(ev.target.closest('[data-toggle]'))return;choose();});el.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();choose();}});});
     root.querySelectorAll('[data-side-action]').forEach(b=>b.onclick=()=>{const room=b.closest('[data-room]'),r=t.rooms.find(x=>x.id===room.dataset.room),c=r.cards.find(x=>x.id===(this._selectedCards?.[r.id]||r.cards[0]?.id));if(!c)return;const a=b.dataset.sideAction;
@@ -3410,7 +3423,7 @@ class RotapfelDashboardManager extends HTMLElement {
       else if(a==='transfer'){this.openCardTransferDialog(t,r,c);}
       else if(a==='save-library'){this.saveCardToLibrary(c);}
       else if(a==='copy'){this._cardClipboard=JSON.parse(JSON.stringify(c));this.render();}
-      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);this.previewCardInsertion(r,copy,change,size);}else if(a==='remove'){if(confirm(this.t(`Karte „${c.title}“ entfernen?`,`Remove card “${c.title}”?`))){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
+      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||this.t("Karte","Card"))+this.t(" (Kopie)"," (Copy)");delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);this.previewCardInsertion(r,copy,change,size);}else if(a==='remove'){if(confirm(this.t(`Karte „${c.title}“ entfernen?`,`Remove card “${c.title}”?`))){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
       else if(a==='left'||a==='right'){const i=r.cards.indexOf(c),j=i+(a==='left'?-1:1);if(j>=0&&j<r.cards.length){r.cards.splice(i,1);r.cards.splice(j,0,c);change();}}
     });
   }
@@ -3439,19 +3452,19 @@ class RotapfelDashboardManager extends HTMLElement {
     return result;
   }
   async saveCardToLibrary(card){
-    const name=window.prompt('Name für die Kartenvorlage',card.title||'Meine Karte');
+    const name=window.prompt(this.t("Name für die Kartenvorlage","Card template name"),card.title||this.t("Meine Karte","My card"));
     if(!name?.trim())return;
     try{
       const response=await this.api('card_library');
       const cards=Array.isArray(response.cards)?response.cards:[];
       if(cards.some(item=>item.name.toLowerCase()===name.trim().toLowerCase())){
-        window.alert('Eine Vorlage mit diesem Namen existiert bereits. Bitte einen anderen Namen wählen.');
+        window.alert(this.t("Eine Vorlage mit diesem Namen existiert bereits. Bitte einen anderen Namen wählen.","A template with this name already exists. Choose a different name."));
         return;
       }
       cards.push({id:this.uid(),name:name.trim(),card:this.libraryCardData(card)});
       await this.api('save_card_library',{cards});
-      window.alert('Kartenvorlage gespeichert. Sie ist in allen Dashboards verfügbar.');
-    }catch(err){window.alert('Kartenbibliothek konnte nicht gespeichert werden: '+String(err?.message||err));}
+      window.alert(this.t("Kartenvorlage gespeichert. Sie ist in allen Dashboards verfügbar.","Card template saved. It is available in all dashboards."));
+    }catch(err){window.alert(this.t("Kartenbibliothek konnte nicht gespeichert werden: ","Could not save the card library: ")+String(err?.message||err));}
   }
   async openCardLibrary(room,change){
     let cards;
@@ -3502,7 +3515,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const describe=card=>{
       const cfg=card.custom_config||{};
       const entity=cfg.entity||card.entity_id||cfg.entities?.[0]?.entity||cfg.entities?.[0]||'';
-      const type=cfg.type||card.variant||card.type||'Karte';
+      const type=cfg.type||card.variant||card.type||this.t("Karte","Card");
       return {entity:String(entity),type:String(type)};
     };
     const persist=async(next)=>{
@@ -3517,7 +3530,7 @@ class RotapfelDashboardManager extends HTMLElement {
       list.innerHTML=visible.length?visible.map(x=>'<section data-rl-index="'+x.index+'" style="border:1px solid var(--divider-color,#9996);border-radius:12px;padding:14px;min-width:0;display:grid;gap:9px">'
         +'<label><input style="width:auto;display:inline" type="checkbox" data-rl-select '+(selected.has(x.item.id)?'checked':'')+'> '+this.esc(x.item.name)+'</label>'
         +'<div class="muted" style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.type)+'</div>'
-        +'<div style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.entity||'Ohne direkte Entität')+'</div>'
+        +'<div style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.entity||this.t("Ohne direkte Entität","No direct entity"))+'</div>'
         +`<div style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" data-rl-action="insert">${this.t("Einfügen","Insert")}</button><button type="button" class="secondary" data-rl-action="rename">${this.t("Umbenennen","Rename")}</button><button type="button" class="secondary" data-rl-action="edit">${this.t("Bearbeiten","Edit")}</button><button type="button" class="secondary" data-rl-action="delete">${this.t("Löschen","Delete")}</button></div></section>`).join('')
         :'<p class="muted">'+(cards.length?this.t("Keine passenden Vorlagen.","No matching templates."):this.t("Noch keine Kartenvorlagen gespeichert.","No saved card templates yet."))+'</p>';
       updateSelection();
@@ -3571,7 +3584,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const esc=v=>this.esc(String(v??''));
     const dialog=document.createElement('dialog');
     dialog.style.cssText='border:1px solid var(--divider-color,#999);border-radius:14px;padding:22px;width:min(500px,94vw);max-width:94vw;color:var(--primary-text-color,#222);background:var(--card-background-color,#fff);box-shadow:0 12px 50px #0005';
-    dialog.innerHTML=`<form method="dialog" style="display:grid;gap:12px"><h3 style="margin:0">${this.t("Karte verschieben oder kopieren","Move or copy card")}</h3><p style="margin:0">${esc(sourceCard.title||'Karte')} · ${esc(sourceTab.name)} / ${esc(sourceRoom.name)}</p><label>${this.t("Aktion","Action")}<select id="transfer-mode" style="width:100%;padding:9px"><option value="copy">${this.t("Kopieren (Original behalten)","Copy (keep original)")}</option><option value="move">${this.t("Verschieben (Original entfernen)","Move (remove original)")}</option></select></label><label>${this.t("Ziel-Tab","Destination tab")}<select id="transfer-tab" style="width:100%;padding:9px"></select></label><label>${this.t("Ziel-Raum","Destination room")}<select id="transfer-room" style="width:100%;padding:9px"></select></label><p class="muted" style="margin:0">${this.t("Kartenkonfiguration und Positionen sämtlicher Geräteprofile werden übernommen. Bei Überlagerungen kannst du die Karte anschließend im Positionierungseditor verschieben.","The card configuration and positions for all device profiles are carried over. If cards overlap, move the card in the positioning editor.")}</p><p id="transfer-error" style="color:var(--error-color,#c33);margin:0"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="transfer-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="transfer-apply">${this.t("Kopieren","Copy")}</button></div></form>`;
+    dialog.innerHTML=`<form method="dialog" style="display:grid;gap:12px"><h3 style="margin:0">${this.t("Karte verschieben oder kopieren","Move or copy card")}</h3><p style="margin:0">${esc(sourceCard.title||this.t("Karte","Card"))} · ${esc(sourceTab.name)} / ${esc(sourceRoom.name)}</p><label>${this.t("Aktion","Action")}<select id="transfer-mode" style="width:100%;padding:9px"><option value="copy">${this.t("Kopieren (Original behalten)","Copy (keep original)")}</option><option value="move">${this.t("Verschieben (Original entfernen)","Move (remove original)")}</option></select></label><label>${this.t("Ziel-Tab","Destination tab")}<select id="transfer-tab" style="width:100%;padding:9px"></select></label><label>${this.t("Ziel-Raum","Destination room")}<select id="transfer-room" style="width:100%;padding:9px"></select></label><p class="muted" style="margin:0">${this.t("Kartenkonfiguration und Positionen sämtlicher Geräteprofile werden übernommen. Bei Überlagerungen kannst du die Karte anschließend im Positionierungseditor verschieben.","The card configuration and positions for all device profiles are carried over. If cards overlap, move the card in the positioning editor.")}</p><p id="transfer-error" style="color:var(--error-color,#c33);margin:0"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="transfer-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="transfer-apply">${this.t("Kopieren","Copy")}</button></div></form>`;
     this.shadowRoot.append(dialog);
     const tabSelect=dialog.querySelector('#transfer-tab'),roomSelect=dialog.querySelector('#transfer-room'),mode=dialog.querySelector('#transfer-mode');
     tabSelect.innerHTML=(this.layout||[]).map(t=>`<option value="${esc(t.id)}" ${t.id===sourceTab.id?'selected':''}>${esc(t.name)}</option>`).join('');
@@ -3584,7 +3597,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(!targetRoom){dialog.querySelector('#transfer-error').textContent=this.t("Bitte einen Zielraum auswählen.","Select a destination room.");return;}
       if(mode.value==='move'&&targetRoom===sourceRoom){dialog.querySelector('#transfer-error').textContent=this.t("Die Karte befindet sich bereits in diesem Raum.","This card is already in that room.");return;}
       const card=mode.value==='copy'?JSON.parse(JSON.stringify(sourceCard)):sourceCard;
-      if(mode.value==='copy'){card.id=this.uid();delete card.groupId;card.title=(card.title||'Karte')+' (Kopie)';}
+      if(mode.value==='copy'){card.id=this.uid();delete card.groupId;card.title=(card.title||this.t("Karte","Card"))+this.t(" (Kopie)"," (Copy)");}
       if(mode.value==='move')sourceRoom.cards.splice(sourceRoom.cards.indexOf(sourceCard),1);
       targetRoom.cards=targetRoom.cards||[];targetRoom.cards.push(card);
       this._selectedCards={...(this._selectedCards||{}),[targetRoom.id]:card.id,[sourceRoom.id]:mode.value==='move'?sourceRoom.cards[0]?.id:this._selectedCards?.[sourceRoom.id]};
@@ -3645,7 +3658,7 @@ class RotapfelDashboardManager extends HTMLElement {
       try{config=JSON.parse(field.value);}
       catch{config=(await this.api('parse_card_yaml',{yaml:field.value})).config;}
       if(!config||typeof config!=='object'||Array.isArray(config))throw Error(this.t("Die Konfiguration muss ein Objekt sein.","The configuration must be an object."));
-      if(config.type&&config.type!==type)throw Error('Der Kartentyp muss '+type+' bleiben.');
+      if(config.type&&config.type!==type)throw Error(this.t("Der Kartentyp muss ","The card type must remain ")+type+' bleiben.');
       return {...config,type};
     };
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
@@ -3733,7 +3746,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const q=search.value.toLocaleLowerCase('de').trim(),cat=category.value;
       const visible=catalog.filter(x=>(!cat||(cat==='Favoriten'?favorites.includes(x[0]):x[2]===cat))&&(!q||x.slice(1).join(' ').toLocaleLowerCase('de').includes(q)));
       if(!visible.some(x=>x[0]===selected)&&visible.length)selected=visible[0][0];
-      list.innerHTML=visible.length?visible.map(x=>`<div style="display:flex;align-items:stretch;gap:6px"><button type="button" data-card-choice="${esc(x[0])}" class="${selected===x[0]?'':'secondary'}" style="flex:1;text-align:left;white-space:normal;padding:10px"><strong>${esc(x[1])}</strong><br><small>${esc(x[2])} · ${esc(x[3])}</small></button><button type="button" class="secondary" data-card-fav="${esc(x[0])}" aria-label="${favorites.includes(x[0])?'Favorit entfernen':'Als Favorit markieren'}" title="Favorit" style="min-width:44px">${favorites.includes(x[0])?'★':'☆'}</button></div>`).join(''):`<p class="muted">${this.t("Keine passenden Kartentypen gefunden.","No matching card types.")}</p>`;
+      list.innerHTML=visible.length?visible.map(x=>`<div style="display:flex;align-items:stretch;gap:6px"><button type="button" data-card-choice="${esc(x[0])}" class="${selected===x[0]?'':'secondary'}" style="flex:1;text-align:left;white-space:normal;padding:10px"><strong>${esc(x[1])}</strong><br><small>${esc(x[2])} · ${esc(x[3])}</small></button><button type="button" class="secondary" data-card-fav="${esc(x[0])}" aria-label="${favorites.includes(x[0])?this.t("Favorit entfernen","Remove from favorites"):this.t("Als Favorit markieren","Add to favorites")}" title="${this.t("Favorit","Favorite")}" style="min-width:44px">${favorites.includes(x[0])?'★':'☆'}</button></div>`).join(''):`<p class="muted">${this.t("Keine passenden Kartentypen gefunden.","No matching card types.")}</p>`;
       list.querySelectorAll('[data-card-choice]').forEach(btn=>btn.onclick=()=>{selected=btn.dataset.cardChoice;draw();});
       list.querySelectorAll('[data-card-fav]').forEach(btn=>btn.onclick=()=>{const id=btn.dataset.cardFav;favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];try{localStorage.setItem(favKey,JSON.stringify(favorites));}catch(_e){}draw();});
       help.textContent=visible.length?(catalog.find(x=>x[0]===selected)?.[3]||''):'';
@@ -3754,7 +3767,7 @@ class RotapfelDashboardManager extends HTMLElement {
         return;
       }
       if(choice==='placeholder'){
-        const title=prompt('Titel der Platzhalterkarte','Neue Karte');if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
+        const title=prompt(this.t("Titel der Platzhalterkarte","Placeholder card title"),this.t("Neue Karte","New card"));if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
       }
       if(choice.startsWith('ha:')){
         const type=choice.slice(3);
@@ -3768,12 +3781,12 @@ class RotapfelDashboardManager extends HTMLElement {
         return;
       }
       if(choice==='custom'){
-        const c={id:this.uid(),type:'custom',title:'Neue Custom Card',custom:{card_type:'',configuration:''}};
+        const c={id:this.uid(),type:'custom',title:this.t("Neue Custom Card","New custom card"),custom:{card_type:'',configuration:''}};
         this.configureCustomCard(c,()=>{if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();},true);return;
       }
       const domains={light:['light'],switch:['switch','input_boolean'],sensor:['sensor'],window:['binary_sensor'],equinox:['climate'],climate_cluster:['climate'],rotapfel_simple_thermcard:['climate'],rotapfel_climate:['climate']};
       this.pickEntity(null,eid=>{
-        if(domains[choice]&&!domains[choice].includes(eid.split('.')[0])){alert('Bitte eine passende Entität auswählen: '+domains[choice].join(', '));return;}
+        if(domains[choice]&&!domains[choice].includes(eid.split('.')[0])){alert(this.t("Bitte eine passende Entität auswählen: ","Select a compatible entity: ")+domains[choice].join(', '));return;}
         const c={id:this.uid(),type:'entity',entity_id:eid,title:this._hass.states[eid]?.attributes?.friendly_name||eid};
         if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(choice))c.variant=choice;else if(choice!=='nexus')c.variant='nexus-'+choice;
         if(choice==='equinox'&&eid==='climate.wohn_esszimmer_vtherm_wz_ez')c.external_options={power_entity:'sensor.wohn_esszimmer_vtherm_wz_ez_energie',humidity_entity:'sensor.tempsensor_wz_ez_humidity',temperature_entity:'sensor.tempsensor_wz_ez_temperature'};
@@ -3802,19 +3815,19 @@ class RotapfelDashboardManager extends HTMLElement {
     const entityLabel=overlay.querySelector('#custom-entity-label');
     const cardTemplate=type=>{
       const templates={
-        'custom:mushroom-entity-card':['entity: light.example','name: Meine Karte'],
-        'custom:mushroom-template-card':['primary: Meine Karte','secondary: Status','icon: mdi:home'],
-        'custom:mushroom-light-card':['entity: light.example','name: Beleuchtung'],
-        'custom:mushroom-climate-card':['entity: climate.example','name: Heizung'],
-        'custom:mushroom-cover-card':['entity: cover.example','name: Rollladen'],
+        'custom:mushroom-entity-card':['entity: light.example',this.t("name: Meine Karte","name: My card")],
+        'custom:mushroom-template-card':[this.t("primary: Meine Karte","primary: My card"),'secondary: Status','icon: mdi:home'],
+        'custom:mushroom-light-card':['entity: light.example',this.t("name: Beleuchtung","name: Lighting")],
+        'custom:mushroom-climate-card':['entity: climate.example',this.t("name: Heizung","name: Heating")],
+        'custom:mushroom-cover-card':['entity: cover.example',this.t("name: Rollladen","name: Shutter")],
         'custom:mushroom-person-card':['entity: person.example'],
-        'custom:mushroom-title-card':['title: Meine Überschrift'],
+        'custom:mushroom-title-card':[this.t("title: Meine Überschrift","title: My heading")],
         'custom:mushroom-chips-card':['chips:','  - type: entity','    entity: light.example'],
         'custom:mushroom-lock-card':['entity: lock.example'],
-        'custom:button-card':['entity: light.example','name: Meine Karte'],
-        'custom:mini-graph-card':['entities:','  - sensor.example','name: Verlauf'],
-        'custom:apexcharts-card':['header:','  show: true','  title: Verlauf','series:','  - entity: sensor.example'],
-        'custom:climate-cluster-card':['entity: climate.example','name: Heizung'],
+        'custom:button-card':['entity: light.example',this.t("name: Meine Karte","name: My card")],
+        'custom:mini-graph-card':['entities:','  - sensor.example',this.t("name: Verlauf","name: History")],
+        'custom:apexcharts-card':['header:','  show: true',this.t("  title: Verlauf","  title: History"),'series:','  - entity: sensor.example'],
+        'custom:climate-cluster-card':['entity: climate.example',this.t("name: Heizung","name: Heating")],
         'custom:equinox-card':['entity: climate.example']
       };
       return ['type: '+type,...(templates[type]||[])].join('\n');
@@ -3870,7 +3883,7 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#custom-pick-entity').onclick=()=>{
       this.pickEntity(getConfiguredEntity(),entity=>{
         const type=typeInput.value.trim();
-        if(!type){overlay.querySelector('#custom-error').textContent='Bitte zuerst einen Kartentyp auswählen.';return;}
+        if(!type){overlay.querySelector('#custom-error').textContent=this.t("Bitte zuerst einen Kartentyp auswählen.","Select a card type first.");return;}
         const current=configInput.value.trim();
         const entityName=this._hass?.states?.[entity]?.attributes?.friendly_name||entity;
         let updated=false;
@@ -4079,7 +4092,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const externalMode=c.design?.external_mode||'original';
     const cardConfig=profile?this.externalConfig(c):null;
     const thermColors=c.variant==='rotapfel_simple_thermcard'?`<fieldset style="border:1px solid #8885;border-radius:10px;padding:12px;margin:12px 0"><legend>${this.t("Individuelle Kartenfarben","Custom card colors")}</legend>`+[['therm_background',this.t("Kartenhintergrund","Card background"),'#faf9f5'],['therm_text',this.t("Schriftfarbe","Text color"),'#1c1a17']].map(([key,label,fallback])=>'<label style="display:flex;align-items:center;gap:10px;margin:10px 0">'+label+' <input type="color" data-design-color="'+key+'" value="'+(/^#[0-9a-fA-F]{6}$/.test(c.external_options?.[key]||'')?c.external_options[key]:fallback)+'" style="width:56px;height:34px"><input type="checkbox" data-design-color-on="'+key+'" '+(c.external_options?.[key]?'checked':'')+`> ${this.t("Eigene Farbe","Custom color")}</label>`).join('')+'</fieldset>':'';
-    const thermAccent=c.variant==='rotapfel_simple_thermcard'?`<label>${this.t("Akzentfarbe","Accent color")}<select id="d-therm-accent"><option value="">${this.t("Standard der Karte","Card default")}</option>`+['yellow','sage','coral','sky','lilac'].map(v=>'<option value="'+v+'" '+(c.external_options?.accent===v?'selected':'')+'>'+({yellow:'Gelb',sage:'Salbeigrün',coral:'Koralle',sky:'Himmelblau',lilac:'Flieder'})[v]+'</option>').join('')+'</select></label>':'';
+    const thermAccent=c.variant==='rotapfel_simple_thermcard'?`<label>${this.t("Akzentfarbe","Accent color")}<select id="d-therm-accent"><option value="">${this.t("Standard der Karte","Card default")}</option>`+['yellow','sage','coral','sky','lilac'].map(v=>'<option value="'+v+'" '+(c.external_options?.accent===v?'selected':'')+'>'+({yellow:this.t("Gelb","Yellow"),sage:this.t("Salbeigrün","Sage"),coral:this.t("Koralle","Coral"),sky:this.t("Himmelblau","Sky blue"),lilac:this.t("Flieder","Lilac")})[v]+'</option>').join('')+'</select></label>':'';
     const profileFields=profile?.fields||[];
     const profileFieldMarkup=profileFields.map(f=>{
       const value=c.external_options?.[f.key]??cardConfig?.[f.key]??f.fallback;
@@ -4146,8 +4159,8 @@ class RotapfelDashboardManager extends HTMLElement {
       const input=el('profile-'+f.key),select=el('profile-'+f.key+'-preset'),picker=el('profile-'+f.key+'-picker');
       if(!input||!select||!picker)continue;
       const swatch=document.createElement('span');
-      swatch.setAttribute('aria-label','Farbanzeige');
-      swatch.title='CSS-Farbnamen sind eine Annäherung; HEX zeigt den exakten Wert.';
+      swatch.setAttribute('aria-label',this.t("Farbanzeige","Color display"));
+      swatch.title=this.t("CSS-Farbnamen sind eine Annäherung; HEX zeigt den exakten Wert.","CSS color names are approximate. HEX shows the exact value.");
       swatch.style.cssText='width:30px;height:30px;flex:none;border:1px solid #888;border-radius:5px;display:inline-block';
       picker.insertAdjacentElement('afterend',swatch);
       const syncColor=()=>{
@@ -4185,8 +4198,8 @@ class RotapfelDashboardManager extends HTMLElement {
       const box=overlay.querySelector('#d-preview');
       const style=`background:rgba(${rgb.join(',')},${d.opacity/100});color:${d.fg};border:${d.border_width}px solid ${d.border_color};border-radius:${d.radius}px;box-shadow:${shadow};font-size:${d.font_size}px;text-align:${d.text_align};padding:16px;min-height:90px;box-sizing:border-box;`;
       const name=el('show-name').checked?`<strong>${this.esc(c.title)}</strong>`:'';
-      const id=el('show-id').checked?`<small style="display:block">${this.esc(c.entity_id||'Keine Entität')}</small>`:'';
-      box.innerHTML=external&&el('external-mode').value!=='wrapper'?`<div style="padding:16px;border:1px dashed #888;border-radius:8px">${this.esc(profile?.label||'Custom Card')} – Originaldarstellung wird von der Karte selbst erzeugt.<div class="muted">Farbvorschau oben ist eine Browser-Näherung. Die echte Karte wird nach Übernehmen neu geladen.</div></div>`:`<div style="${style}">${name}${id}<div style="margin-top:12px;color:${d.fg}">${external?this.t("Äußerer Kartencontainer – Vorschau","Outer card container preview"):this.esc(this.stateLabel(c))}</div><span style="display:inline-block;margin-top:10px;background:${d.accent};color:white;padding:5px 12px;border-radius:8px">${this.t("Akzent","Accent")}</span></div>`;
+      const id=el('show-id').checked?`<small style="display:block">${this.esc(c.entity_id||this.t("Keine Entität","No entity"))}</small>`:'';
+      box.innerHTML=external&&el('external-mode').value!=='wrapper'?`<div style="padding:16px;border:1px dashed #888;border-radius:8px">${this.esc(profile?.label||'Custom Card')} ${this.t("– Originaldarstellung wird von der Karte selbst erzeugt.","– The card controls its own appearance.")}<div class="muted">${this.t("Farbvorschau oben ist eine Browser-Näherung. Die echte Karte wird nach Übernehmen neu geladen.","The browser preview approximates the colors. The actual card reloads after you apply the changes.")}</div></div>`:`<div style="${style}">${name}${id}<div style="margin-top:12px;color:${d.fg}">${external?this.t("Äußerer Kartencontainer – Vorschau","Outer card container preview"):this.esc(this.stateLabel(c))}</div><span style="display:inline-block;margin-top:10px;background:${d.accent};color:white;padding:5px 12px;border-radius:8px">${this.t("Akzent","Accent")}</span></div>`;
       if(c.variant==='rotapfel_simple_thermcard'){
         // Preview is read-only: never attach the live Home Assistant service client.
         const config=this.externalConfig(c);
@@ -4202,8 +4215,8 @@ class RotapfelDashboardManager extends HTMLElement {
           try{
             const card=document.createElement(tag);
             card.setConfig(config);
-            const readonlyHass=this._hass?new Proxy(this._hass,{get(target,key){
-              if(key==='callService'||key==='callApi'||key==='callWS')return ()=>Promise.reject(new Error('Designvorschau: Steuerung deaktiviert'));
+            const readonlyHass=this._hass?new Proxy(this._hass,{get:(target,key)=>{
+              if(key==='callService'||key==='callApi'||key==='callWS')return ()=>Promise.reject(new Error(this.t("Designvorschau: Steuerung deaktiviert","Design preview: Controls disabled")));
               const value=Reflect.get(target,key,target);
               return typeof value==='function'?value.bind(target):value;
             }}):null;
@@ -4216,7 +4229,7 @@ class RotapfelDashboardManager extends HTMLElement {
             }
             this.applyThermColors(card,liveColorOpts);
             this.mountThermPreview(box,card);
-          }catch(err){box.textContent='Live-Vorschau nicht verfügbar: '+String(err);}
+          }catch(err){box.textContent=this.t("Live-Vorschau nicht verfügbar: ","Live preview unavailable: ")+String(err);}
         };
         renderLive();
         if(!customElements.get(config.type.replace(/^custom:/,'')))
@@ -4260,40 +4273,40 @@ class RotapfelDashboardManager extends HTMLElement {
     // This avoids accessing undocumented auth internals and prevents silent failures.
     const storeTemplates=async(next)=>{
       const data=await this.api('save_design_templates',{templates:next});
-      if(!data||!Array.isArray(data.templates))throw Error('Ungültige Serverantwort beim Speichern');
+      if(!data||!Array.isArray(data.templates))throw Error(this.t("Ungültige Serverantwort beim Speichern","Invalid server response while saving"));
       templates=data.templates;
       populate();
     };
     const loadTemplates=async()=>{
       try{
         const data=await this.api('design_templates');
-        if(!data||!Array.isArray(data.templates))throw Error('Ungültige Serverantwort');
+        if(!data||!Array.isArray(data.templates))throw Error(this.t("Ungültige Serverantwort","Invalid server response"));
         templates=data.templates;populate();
-        if(templates.length)setStatus(templates.length+' Designvorlage(n) verfügbar.');
-      }catch(err){setStatus('Vorlagen konnten nicht geladen werden: '+(err.message||err));}
+        if(templates.length)setStatus(templates.length+this.t(" Designvorlage(n) verfügbar."," design templates available."));
+      }catch(err){setStatus(this.t("Vorlagen konnten nicht geladen werden: ","Could not load templates: ")+(err.message||err));}
     };
     loadTemplates();
     el('template-save').onclick=async()=>{
-      const name=prompt('Name der neuen Designvorlage:');if(name===null)return;
-      const clean=name.trim().slice(0,60);if(!clean){setStatus('Bitte einen Namen angeben.');return;}
+      const name=prompt(this.t("Name der neuen Designvorlage:","New design template name:"));if(name===null)return;
+      const clean=name.trim().slice(0,60);if(!clean){setStatus(this.t("Bitte einen Namen angeben.","Enter a name."));return;}
       const existing=templates.findIndex(t=>t.name.toLocaleLowerCase()===clean.toLocaleLowerCase());
-      if(existing>=0&&!confirm('Vorlage „'+clean+'“ überschreiben?'))return;
+      if(existing>=0&&!confirm(this.t(`Vorlage „${clean}“ überschreiben?`,`Overwrite template “${clean}” with the current settings?`)))return;
       const current=read(),design=Object.fromEntries(visualKeys.map(k=>[k,current[k]]));
       const display={show_name:el('show-name').checked,show_entity_id:el('show-id').checked};
       const next=[...templates],item={name:clean,design,display};if(existing>=0)next[existing]=item;else next.push(item);
-      try{await storeTemplates(next);templateSelect.value=String(existing>=0?existing:templates.length-1);setStatus('Vorlage „'+clean+'“ gespeichert und in der Liste verfügbar.');}catch(err){setStatus('Fehler: '+(err.message||err));}
+      try{await storeTemplates(next);templateSelect.value=String(existing>=0?existing:templates.length-1);setStatus(this.t("Vorlage „","Template “")+clean+this.t("“ gespeichert und in der Liste verfügbar.","” saved and available in the list."));}catch(err){setStatus(this.t("Fehler: ","Error: ")+(err.message||err));}
     };
     el('template-load').onclick=()=>{
-      const t=templates[Number(templateSelect.value)];if(templateSelect.value===''||!t){setStatus('Bitte eine Vorlage auswählen.');return;}
+      const t=templates[Number(templateSelect.value)];if(templateSelect.value===''||!t){setStatus(this.t("Bitte eine Vorlage auswählen.","Select a template."));return;}
       for(const key of visualKeys){if(t.design[key]!==undefined&&el(key))el(key).value=t.design[key];}
       el('show-name').checked=t.display?.show_name!==false;
       el('show-id').checked=t.display?.show_entity_id===true;
-      preview();setStatus('Vorlage geladen. Mit „Übernehmen“ auf diese Karte anwenden.');
+      preview();setStatus(this.t("Vorlage geladen. Mit „Übernehmen“ auf diese Karte anwenden.","Template loaded. Choose “Apply” to apply it to this card."));
     };
     el('template-delete').onclick=async()=>{
       const idx=Number(templateSelect.value),t=templates[idx];if(templateSelect.value===''||!t)return;
-      if(!confirm('Designvorlage „'+t.name+'“ dauerhaft löschen?'))return;
-      try{await storeTemplates(templates.filter((_,i)=>i!==idx));templateSelect.value='';setStatus('Vorlage gelöscht.');}catch(err){setStatus('Fehler: '+(err.message||err));}
+      if(!confirm(this.t(`Designvorlage „${t.name}“ dauerhaft löschen?`,`Permanently delete design template “${t.name}”?`)))return;
+      try{await storeTemplates(templates.filter((_,i)=>i!==idx));templateSelect.value='';setStatus(this.t("Vorlage gelöscht.","Template deleted."));}catch(err){setStatus(this.t("Fehler: ","Error: ")+(err.message||err));}
     };
     el('save').onclick=()=>{
       c.design=read();
@@ -4305,16 +4318,16 @@ class RotapfelDashboardManager extends HTMLElement {
           const raw=input.value.trim();
           if(field.kind==='number'){
             const n=Number(raw);
-            if(!raw||!Number.isFinite(n)||n<field.min||n>field.max){alert('Ungültiger Wert für '+field.label);return;}
+            if(!raw||!Number.isFinite(n)||n<field.min||n>field.max){alert(this.t("Ungültiger Wert für ","Invalid value for ")+field.label);return;}
             updates[field.key]=n;
           }else if(field.kind==='color'){
-            if(!(/^#[0-9a-f]{6}$/i.test(raw)||/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(raw))){alert('Bitte einen gültigen HEX-Wert (#RRGGBB) oder Farbnamen eingeben.');return;}
+            if(!(/^#[0-9a-f]{6}$/i.test(raw)||/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/.test(raw))){alert(this.t("Bitte einen gültigen HEX-Wert (#RRGGBB) oder Farbnamen eingeben.","Enter a valid HEX value (#RRGGBB) or color name."));return;}
             updates[field.key]=raw;
           }else if(field.kind==='enum'){
-            if(!field.values.includes(raw)&&raw!==String(c.external_options?.[field.key]??cardConfig?.[field.key]??'')){alert('Nicht unterstützter Wert für '+field.label);return;}
+            if(!field.values.includes(raw)&&raw!==String(c.external_options?.[field.key]??cardConfig?.[field.key]??'')){alert(this.t("Nicht unterstützter Wert für ","Unsupported value for ")+field.label);return;}
             updates[field.key]=raw;
           }else{
-            if(!/^[a-zA-Z0-9_-]{1,64}$/.test(raw)){alert('Bitte einen gültigen Farbnamen für '+field.label+' eingeben.');return;}
+            if(!/^[a-zA-Z0-9_-]{1,64}$/.test(raw)){alert(this.t("Bitte einen gültigen Farbnamen für ","Enter a valid color name for ")+field.label+' eingeben.');return;}
             updates[field.key]=raw;
           }
         }
@@ -4337,7 +4350,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const entries=Object.keys(states).filter(id=>allowed.includes(id.split('.')[0])).sort();
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>${this.t("Home Assistant Entität auswählen","Select a Home Assistant entity")}</h2><label>${this.t("Suche","Search")}<input id="entity-search" placeholder="${this.t("Name oder entity_id","Name or entity ID")}" autocomplete="off"></label><label>Entitätstyp<select id="entity-domain"><option value="">Alle Typen</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>${this.t("Entität","Entity")}<select id="entity-select" size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="entity-cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.</p></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>${this.t("Home Assistant Entität auswählen","Select a Home Assistant entity")}</h2><label>${this.t("Suche","Search")}<input id="entity-search" placeholder="${this.t("Name oder entity_id","Name or entity ID")}" autocomplete="off"></label><label>${this.t("Entitätstyp","Entity type")}<select id="entity-domain"><option value="">${this.t("Alle Typen","All types")}</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>${this.t("Entität","Entity")}<select id="entity-select" size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="entity-cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">${this.t("Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.","The list shows entities currently exposed to the frontend by Home Assistant.")}</p></div>`;
     this.shadowRoot.appendChild(overlay);
     const search=overlay.querySelector('#entity-search'),domain=overlay.querySelector('#entity-domain'),select=overlay.querySelector('#entity-select');
     const refresh=()=>{const q=search.value.toLocaleLowerCase(),d=domain.value;const filtered=entries.filter(id=>(!d||id.startsWith(d+'.'))&&(id.toLowerCase().includes(q)||String(states[id]?.attributes?.friendly_name||'').toLowerCase().includes(q))).slice(0,500);select.replaceChildren(...filtered.map(id=>{const o=document.createElement('option');o.value=id;o.textContent=`${states[id]?.attributes?.friendly_name||id} · ${id}`;if(id===current)o.selected=true;return o;}));};

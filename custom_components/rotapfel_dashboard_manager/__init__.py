@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.53, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.54, isolated from existing dashboards."""
 import asyncio
 import copy
 import json
@@ -13,7 +13,7 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13953"
+VERSION = "0.2.0a13954"
 
 SHARED_PANEL = "rotapfel-shared"
 
@@ -236,6 +236,11 @@ class RotapfelView(HomeAssistantView):
 
     async def post(self, request, action):
         self._check_admin(request)
+        english = request.query.get("language") == "en"
+
+        def message(de, en):
+            return en if english else de
+
         if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "shared_publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library"}:
             raise web.HTTPNotFound()
         try:
@@ -247,17 +252,17 @@ class RotapfelView(HomeAssistantView):
         if action == "parse_card_yaml":
             source = body.get("yaml")
             if not isinstance(source, str) or len(source) > 100_000:
-                raise web.HTTPBadRequest(text="YAML-Konfiguration fehlt oder ist zu lang")
+                raise web.HTTPBadRequest(text=message("YAML-Konfiguration fehlt oder ist zu lang", "YAML configuration is missing or too long"))
             try:
                 parsed = yaml.safe_load(source)
                 if not isinstance(parsed, dict):
-                    raise ValueError("Die Konfiguration muss ein YAML-Objekt sein")
+                    raise ValueError(message("Die Konfiguration muss ein YAML-Objekt sein", "Configuration must be a YAML object"))
                 # Reject YAML-specific scalar values that cannot round-trip to JSON.
                 json.dumps(parsed, allow_nan=False)
                 if not all(isinstance(key, str) for key in parsed):
-                    raise ValueError("Alle YAML-Schlüssel müssen Text sein")
+                    raise ValueError(message("Alle YAML-Schlüssel müssen Text sein", "All YAML keys must be text"))
             except (yaml.YAMLError, ValueError, TypeError, OverflowError) as exc:
-                raise web.HTTPBadRequest(text=f"Ungültige YAML-Konfiguration: {exc}") from exc
+                raise web.HTTPBadRequest(text=message("Ungültige YAML-Konfiguration: ", "Invalid YAML configuration: ") + str(exc)) from exc
             return self.json({"config": parsed})
         state = self._state()
         async with state["lock"]:
@@ -270,18 +275,18 @@ class RotapfelView(HomeAssistantView):
             if action == "save_card_library":
                 cards = body.get("cards")
                 if not isinstance(cards, list) or len(cards) > 100:
-                    raise web.HTTPBadRequest(text="Ungültige Kartenbibliothek (maximal 100 Vorlagen)")
+                    raise web.HTTPBadRequest(text=message("Ungültige Kartenbibliothek (maximal 100 Vorlagen)", "Invalid card library (maximum 100 templates)"))
                 seen = set()
                 for item in cards:
                     if not isinstance(item, dict) or set(item) != {"id", "name", "card"}:
-                        raise web.HTTPBadRequest(text="Ungültiger Bibliothekseintrag")
+                        raise web.HTTPBadRequest(text=message("Ungültiger Bibliothekseintrag", "Invalid library entry"))
                     ident, name, card = item["id"], item["name"], item["card"]
                     if not isinstance(ident, str) or not 1 <= len(ident) <= 100 or ident in seen:
-                        raise web.HTTPBadRequest(text="Ungültige oder doppelte Vorlagen-ID")
+                        raise web.HTTPBadRequest(text=message("Ungültige oder doppelte Vorlagen-ID", "Invalid or duplicate template ID"))
                     if not isinstance(name, str) or not 1 <= len(name.strip()) <= 100:
-                        raise web.HTTPBadRequest(text="Ungültiger Vorlagenname")
+                        raise web.HTTPBadRequest(text=message("Ungültiger Vorlagenname", "Invalid template name"))
                     if not isinstance(card, dict) or len(json.dumps(card, allow_nan=False)) > 100_000:
-                        raise web.HTTPBadRequest(text="Ungültige Kartenvorlage")
+                        raise web.HTTPBadRequest(text=message("Ungültige Kartenvorlage", "Invalid card template"))
                     seen.add(ident)
                 data["card_library"] = copy.deepcopy(cards)
                 await save()
@@ -406,7 +411,7 @@ class RotapfelView(HomeAssistantView):
                     raise web.HTTPNotFound(text="Dashboard not found")
                 label = body.get("label")
                 if not isinstance(label, str) or not 1 <= len(label.strip()) <= 80:
-                    raise web.HTTPBadRequest(text="Sicherungspunkt-Name muss 1 bis 80 Zeichen enthalten")
+                    raise web.HTTPBadRequest(text=message("Sicherungspunkt-Name muss 1 bis 80 Zeichen enthalten", "Restore point name must contain 1 to 80 characters"))
                 keys = ("name", "profile", "theme", "canvas", "deviceProfiles", "tabs", "cards")
                 snapshot = {k: copy.deepcopy(target[k]) for k in keys if k in target}
                 target.setdefault("manual_history", []).append({
@@ -420,7 +425,7 @@ class RotapfelView(HomeAssistantView):
                 manual = target.get("manual_history", [])
                 match = next((v for v in manual if v.get("id") == body.get("version_id")), None)
                 if match is None:
-                    raise web.HTTPNotFound(text="Manueller Sicherungspunkt nicht gefunden")
+                    raise web.HTTPNotFound(text=message("Manueller Sicherungspunkt nicht gefunden", "Manual restore point not found"))
                 manual.remove(match)
                 await save()
                 return self.json({"ok": True})
@@ -478,15 +483,15 @@ class RotapfelView(HomeAssistantView):
                         if not isinstance(cards, list) or len(cards) > 100:
                             raise web.HTTPBadRequest(text="Invalid cards")
                         for index, card in enumerate(cards, start=1):
-                            location = f"{tab['name']} / {room['name']} / Karte {index}"
+                            location = f"{tab['name']} / {room['name']} / {message('Karte', 'Card')} {index}"
                             if not isinstance(card, dict):
-                                raise web.HTTPBadRequest(text=f"{location}: Ungültiges Kartenformat")
+                                raise web.HTTPBadRequest(text=f"{location}: " + message("Ungültiges Kartenformat", "Invalid card format"))
                             if card.get("type") not in ("placeholder", "entity", "custom", "label"):
-                                raise web.HTTPBadRequest(text=f"{location}: Ungültiger Kartentyp")
+                                raise web.HTTPBadRequest(text=f"{location}: " + message("Ungültiger Kartentyp", "Invalid card type"))
                             if not isinstance(card.get("id"), str):
-                                raise web.HTTPBadRequest(text=f"{location}: Ungültige Karten-ID")
+                                raise web.HTTPBadRequest(text=f"{location}: " + message("Ungültige Karten-ID", "Invalid card ID"))
                             if not isinstance(card.get("title"), str):
-                                raise web.HTTPBadRequest(text=f"{location}: Kartentitel muss Text sein")
+                                raise web.HTTPBadRequest(text=f"{location}: " + message("Kartentitel muss Text sein", "Card title must be text"))
                             design = card.get("design")
                             if design is not None:
                                 if not isinstance(design, dict) or not isinstance(design.get("width"), int) or not 1 <= design["width"] <= 4 or not isinstance(design.get("height"), int) or not 76 <= design["height"] <= 320 or any(not isinstance(design.get(k), str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", design[k]) for k in ("bg", "fg", "accent")):

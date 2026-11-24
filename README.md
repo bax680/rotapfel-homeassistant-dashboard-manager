@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.53 · **Integrationsversion:** `0.2.0a13953` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.54 · **Integrationsversion:** `0.2.0a13954` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -25,7 +25,7 @@ Für eine manuelle Installation kopierst du `custom_components/rotapfel_dashboar
 
 ## Sprache des Rotapfel Managers
 
-In der Übersicht kannst du **Automatisch**, **Deutsch** oder **English** auswählen. Automatisch folgt zuerst der ausdrücklich gewählten Home-Assistant-Profilsprache. Ohne diese Einstellung verwendet Rotapfel Deutsch für Deutschland, Österreich und die Schweiz, sonst Englisch. Ohne Länderangabe gilt die Browsersprache. Die Auswahl gilt pro Benutzerkonto im jeweiligen Browser. Die englische Übersetzung deckt die wichtigsten Bedienelemente ab. In einigen Dialogen und Meldungen erscheinen noch deutsche Texte. Native Karteneditoren verwenden weiterhin die Home-Assistant-Sprache.
+In der Übersicht kannst du **Automatisch**, **Deutsch** oder **English** auswählen. Automatisch folgt zuerst der ausdrücklich gewählten Home-Assistant-Profilsprache. Ohne diese Einstellung verwendet Rotapfel Deutsch für Deutschland, Österreich und die Schweiz, sonst Englisch. Ohne Länderangabe gilt die Browsersprache. Die Auswahl gilt pro Benutzerkonto im jeweiligen Browser. Rotapfel übersetzt seine Bedienelemente, Dialoge und Meldungen. Namen und Inhalte, die du selbst eingibst, behalten ihre Schreibweise. Native Karteneditoren verwenden weiterhin die Home-Assistant-Sprache.
 
 ## Erstes Dashboard erstellen
 
@@ -192,3 +192,7 @@ Freigegebene Dashboards erhalten direkte Seitenleisteneinträge. Die automatisch
 ### Alpha 13.9.53
 
 Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kartenkonfiguration, Design und Kartentransfer. Gespeicherte Namen bleiben unverändert.
+
+### Alpha 13.9.54
+
+Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.

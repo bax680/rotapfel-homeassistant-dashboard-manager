@@ -16,7 +16,7 @@ const rotapfelCardLanguage=(hass)=>{
 };
 class RotapfelEntityCard extends HTMLElement {
   setConfig(config){
-    if(!config||!config.entity)throw new Error('Rotapfel-Entitätskarte benötigt entity');
+    if(!config||!config.entity)throw new Error(rotapfelCardLanguage(this._hass)==='de'?'Rotapfel-Entitätskarte benötigt entity':'Rotapfel entity card requires entity');
     this._config=structuredClone(config);
     if(!this.shadowRoot)this.attachShadow({mode:'open'});
     this._render();
@@ -88,7 +88,7 @@ if(!customElements.get('rotapfel-label-card'))customElements.define('rotapfel-la
 
 class RotapfelCanvasCard extends HTMLElement {
   setConfig(config){
-    if(!config||!Array.isArray(config.elements))throw new Error('Rotapfel Canvas: elements erforderlich');
+    if(!config||!Array.isArray(config.elements))throw new Error(rotapfelCardLanguage(this._hass)==='de'?'Rotapfel Canvas: elements erforderlich':'Rotapfel Canvas requires elements');
     this._config=structuredClone(config);
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
     if(!rooms.some(r=>String(r.id)===String(this._activeRoomId)))this._activeRoomId=rooms[0]?.id??null;
@@ -270,7 +270,7 @@ class RotapfelCanvasCard extends HTMLElement {
           }
           this._cards.push(card);
         }catch(error){
-          const fallback=document.createElement('div');fallback.textContent='Karte nicht verfügbar: '+String(error);tile.append(fallback);
+          const fallback=document.createElement('div');fallback.textContent=(german?'Karte nicht verfügbar: ':'Card unavailable: ')+String(error);tile.append(fallback);
         }
         canvas.append(tile);
       }
