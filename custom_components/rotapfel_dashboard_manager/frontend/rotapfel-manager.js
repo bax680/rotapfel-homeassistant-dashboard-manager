@@ -1,3 +1,5 @@
+import {renderRotapfelNavigation,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
+
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
   let choice;
@@ -737,6 +739,13 @@ class RotapfelDashboardManager extends HTMLElement {
   backgroundFor(canvas,tab){
     return tab?.background??canvas?.background??{};
   }
+  presentationFor(d,tab){
+    return {...d.canvas?.presentation,
+      background:this.backgroundFor(d.canvas,tab),
+      tabs:(d.tabs||[]).map(item=>({path:this.tabRoute(item),label:item.navigationLabel||item.name||'Tab'})),
+      path:this.tabRoute(tab)
+    };
+  }
   presentationDialog(tab){
     const global=this.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8};
     const original=this.backgroundFor(global,tab);
@@ -773,6 +782,7 @@ class RotapfelDashboardManager extends HTMLElement {
           ['manager',t('Manager-Leiste','Manager tab strip')],['bar',t('Navigationsleiste','Navigation bar')],
           ['buttons',t('Einzelne Schaltflächen','Individual buttons')],['none',t('Keine Tab-Navigation','No tab navigation')]
         ],settings.navigation||'manager')}</select></label>`}
+      <p class="muted">${t('Mit „Layout speichern“ werden die Darstellungsoptionen dauerhaft übernommen.','Use “Save layout” to keep the appearance settings.')}</p>
       <p data-error role="alert"></p>
       <div class="actions"><button type="submit" data-apply>${t('Übernehmen','Apply')}</button><button type="button" data-cancel class="secondary">${t('Abbrechen','Cancel')}</button></div>
     </form>`;
@@ -783,6 +793,7 @@ class RotapfelDashboardManager extends HTMLElement {
       get('background').disabled=inherit.checked;
       inherit.onchange=()=>{get('background').disabled=inherit.checked;};
     }
+    get('bg-color').oninput=()=>{get('bg-color-default').checked=false;};
     const mediaList=get('bg-media-list');
     const browse=async (id='',parent=null)=>{
       mediaList.hidden=false;
@@ -855,6 +866,7 @@ class RotapfelDashboardManager extends HTMLElement {
             kiosk:get('presentation-kiosk').checked,navigation:get('presentation-nav').value
           }};
         }
+        this._appearancePending=this.editing;
         dialog.close();
         this.dirty=true;
         this.render();
@@ -869,7 +881,6 @@ class RotapfelDashboardManager extends HTMLElement {
     // Keep the exported document entirely independent from manager storage.
     const fallback={width:1920,height:1080,columns:12,gap:8};
     const warnings=[],views=[];
-    const tabs=(d.tabs||[]).map(tab=>({path:this.tabRoute(tab),label:tab.navigationLabel||tab.name||'Tab'}));
     for(const tab of d.tabs||[]){
       const canvas={...fallback,...(d.canvas||{}),...(tab.canvas||{})};
       const elements=[];
@@ -903,8 +914,7 @@ class RotapfelDashboardManager extends HTMLElement {
         elements.push({room_id:room.id,x,y,w,h,z:Math.max(0,Math.round(Number(pos.z)||0)),device_layouts:layouts,card,design:c.design||{},display:c.display||{},therm_scale:this.externalVariant(c)==='rotapfel_simple_thermcard'&&Number(pos.thermScale)>0?Number(pos.thermScale):null});
       }
       const path=this.tabRoute(tab);
-      const presentation={...d.canvas?.presentation,
-        background:this.backgroundFor(d.canvas,tab),tabs,path};
+      const presentation=this.presentationFor(d,tab);
       views.push({title:tab.name||'Tab',path,type:'panel',cards:[{
         type:'custom:rotapfel-canvas-card',canvas_width:canvas.width,canvas_height:canvas.height,
         device_profiles:this.normalizedProfiles(d.deviceProfiles,canvas),
@@ -1116,6 +1126,7 @@ class RotapfelDashboardManager extends HTMLElement {
     if(config?.rotapfel_publication_id!==publication.owner_key){
       throw Error(this.t("Die Veröffentlichungskennung stimmt nicht überein.","The publication identifier does not match."));
     }
+    return config;
   }
   async deletePublishedDashboard(publication){
     const target=await this.findPublication(publication.url_path);
@@ -1265,6 +1276,7 @@ class RotapfelDashboardManager extends HTMLElement {
     }
   }
   async closeLayoutEditor(){
+    if(this._savingLayout)return;
     if(!this.dirty){this.editing=null;this.layout=null;this.render();return;}
     const root=this.shadowRoot;
     if(root.querySelector('#rotapfel-close-dialog'))return;
@@ -1283,12 +1295,8 @@ class RotapfelDashboardManager extends HTMLElement {
     save.onclick=async()=>{
       save.disabled=true;discard.disabled=true;cancel.disabled=true;save.textContent=this.t("Speichert …","Saving …");
       try{
-        const profile=this._deviceLayoutProfile||'fire_hd';
-        this.eachLayoutCard(c=>{if(c.position){c.deviceLayouts=c.deviceLayouts||{};c.deviceLayouts[profile]=JSON.parse(JSON.stringify(c.position));}});
-        const tabs=this.layout.map(t=>({...t,rooms:(t.rooms||[]).map(room=>({...room,cards:(room.cards||[]).map(c=>({...c,position:c.deviceLayouts?.fire_hd||c.position}))}))}));
-        const response=await this.api('save_layout',{id:this.editing,tabs,theme:this.theme,canvas:this.canvas,deviceProfiles:this.deviceProfiles});
-        this.items=response.dashboards;
-        this.error='';this.dirty=false;this.editing=null;this.layout=null;
+        await this.persistLayout();
+        this.error='';this.editing=null;this.layout=null;
         close();this.render();
       }catch(err){
         const message=backdrop.querySelector('#close-error');
@@ -1298,7 +1306,68 @@ class RotapfelDashboardManager extends HTMLElement {
     };
     cancel.focus();
   }
-  async saveLayout(){const profile=this._deviceLayoutProfile||'fire_hd';this.eachLayoutCard(c=>{if(c.position){c.deviceLayouts=c.deviceLayouts||{};c.deviceLayouts[profile]=JSON.parse(JSON.stringify(c.position));}});if(await this.act('save_layout',{id:this.editing,tabs:this.layout.map(t=>({...t,rooms:(t.rooms||[]).map(r=>({...r,cards:(r.cards||[]).map(c=>({...c,position:c.deviceLayouts?.fire_hd||c.position}))}))})),theme:this.theme,canvas:this.canvas,deviceProfiles:this.deviceProfiles})){this.dirty=false;this.render();}}
+  async persistLayout(){
+    const previous=this.items.find(item=>item.id===this.editing);
+    const profile=this._deviceLayoutProfile||'fire_hd';
+    this.eachLayoutCard(card=>{
+      if(!card.position)return;
+      card.deviceLayouts||={};
+      card.deviceLayouts[profile]=structuredClone(card.position);
+    });
+    const tabs=this.layout.map(tab=>({...tab,rooms:(tab.rooms||[]).map(room=>({
+      ...room,cards:(room.cards||[]).map(card=>({...card,position:card.deviceLayouts?.fire_hd||card.position}))
+    }))}));
+    const response=await this.api('save_layout',{id:this.editing,tabs,theme:this.theme,canvas:this.canvas,deviceProfiles:this.deviceProfiles});
+    this.items=response.dashboards;
+    this.dirty=false;
+    const saved=this.items.find(item=>item.id===this.editing);
+    const presentation=d=>[d.canvas?.presentation,d.canvas?.background,d.tabs?.map(tab=>[tab.id,tab.background,tab.navigationLabel])];
+    if(!saved?.publication||(this._appearancePending!==saved.id&&JSON.stringify(presentation(previous))===JSON.stringify(presentation(saved))))return;
+    try{
+      await this.syncPublishedPresentation(saved);
+      this._appearancePending=null;
+    }catch(error){
+      alert(this.t('Layout gespeichert. Darstellung der Veröffentlichung konnte nicht aktualisiert werden. Aktualisiere die Veröffentlichung in der Übersicht.','Layout saved. Could not update the published appearance. Update the publication from the overview.')+' '+(error?.message||String(error)));
+    }
+  }
+  async syncPublishedPresentation(d){
+    const publication=d.publication;
+    const shared=publication.access==='selected';
+    const target=shared?null:await this.findPublication(publication.url_path);
+    if(!shared&&!target)throw Error(this.t('Veröffentlichung fehlt.','Publication not found.'));
+    const config=shared?publication.layout:await this.verifyPublication(publication,target);
+    const tabs=new Map((d.tabs||[]).map(tab=>[this.tabRoute(tab),tab]));
+    const publishedPaths=new Set(config.views.map(view=>view.path));
+    const views=config.views.map(view=>{
+      const tab=tabs.get(view.path);
+      const card=view.cards?.[0];
+      if(!tab||card?.type!=='custom:rotapfel-canvas-card')return view;
+      const presentation=this.presentationFor(d,tab);
+      presentation.tabs=presentation.tabs.filter(item=>publishedPaths.has(item.path));
+      return {...view,cards:[{...card,presentation},...view.cards.slice(1)]};
+    });
+    if(shared){
+      const response=await this.api('shared_publication',{id:d.id,user_ids:publication.user_ids,layout:{...config,views}});
+      this.items=response.dashboards;
+    }else{
+      await this._hass.callWS({type:'lovelace/config/save',url_path:publication.url_path,config:{...config,views}});
+    }
+  }
+  async saveLayout(){
+    if(this._savingLayout)return;
+    this._savingLayout=true;
+    const button=this.shadowRoot.querySelector('#save-layout');
+    if(button)button.disabled=true;
+    try{
+      await this.persistLayout();
+      this.error='';
+    }catch(error){
+      this.error=error?.body?.message||error?.message||String(error);
+    }finally{
+      this._savingLayout=false;
+      this.render();
+    }
+  }
   render(){if(!this.isConnected)return;this._previewResizeObserver?.disconnect();if(!this.shadowRoot)this.attachShadow({mode:'open'});
     const e=s=>this.esc(s), d=this.items?.find(x=>x.id===this.editing);
     this.shadowRoot.innerHTML=`<style>
@@ -1566,7 +1635,7 @@ class RotapfelDashboardManager extends HTMLElement {
     root.querySelector('#resource-manager')?.addEventListener('click',()=>this.resourceManager());
     root.querySelector('#import-dashboard-backup')?.addEventListener('click',()=>root.querySelector('#dashboard-backup-file')?.click());root.querySelector('#dashboard-backup-file')?.addEventListener('change',async ev=>{const file=ev.target.files?.[0];ev.target.value='';await this.importDashboardBackup(file);});
     root.querySelector('#create')?.addEventListener('click',()=>open());root.querySelector('#save').onclick=async()=>{const name=root.querySelector('[name=name]').value.trim(),profile=root.querySelector('[name=profile]').value;if(!name)return;dlg.close();await this.act(this.editId?'update':'create',{id:this.editId,name,profile});this.render();};
-    root.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const id=b.closest('article').dataset.id,x=this.items.find(y=>y.id===id),a=b.dataset.action;if(a==='history'){await this.manageDashboardHistory(x);}else if(a==='export'){this.downloadExport(x);}else if(a==='backup'){this.downloadDashboardBackup(x);}else if(['publish','update','remove','repair-publish'].includes(a)){await this.publicationAction(x,a==='repair-publish'?'publish':a);}else if(a==='open'){window.location.href=x.publication.access==='selected'?'/rotapfel-shared-'+encodeURIComponent(x.id):'/'+x.publication.url_path;}else if(a==='layout'){this.editing=id;this._deviceLayoutProfile='fire_hd';this.layout=JSON.parse(JSON.stringify(x.tabs||[]));this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});this.tabId=this.layout[0]?.id;this._roomTestMode=false;this.dirty=false;this.theme=x.theme||'light';this.canvas=JSON.parse(JSON.stringify(x.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8}));this.deviceProfiles=JSON.parse(JSON.stringify(x.deviceProfiles||{}));const migrated=this.migrateLegacyThermCards(this.layout);this.dirty=migrated>0;this._migrationMessage='';this.render();if(migrated)await this.persistMigration(migrated);}else if(a==='edit')open(x);else if(a==='delete'){await this.deleteManagedDashboard(x);}else if(a==='duplicate'){if(await this.act('duplicate',{id})){this.render();window.location.reload();}}});
+    root.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const id=b.closest('article').dataset.id,x=this.items.find(y=>y.id===id),a=b.dataset.action;if(a==='history'){await this.manageDashboardHistory(x);}else if(a==='export'){this.downloadExport(x);}else if(a==='backup'){this.downloadDashboardBackup(x);}else if(['publish','update','remove','repair-publish'].includes(a)){await this.publicationAction(x,a==='repair-publish'?'publish':a);}else if(a==='open'){window.location.href=x.publication.access==='selected'?'/rotapfel-shared-'+encodeURIComponent(x.id):'/'+x.publication.url_path;}else if(a==='layout'){this.editing=id;this._appearancePending=null;this._deviceLayoutProfile='fire_hd';this.layout=JSON.parse(JSON.stringify(x.tabs||[]));this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});this.tabId=this.layout[0]?.id;this._roomTestMode=false;this.dirty=false;this.theme=x.theme||'light';this.canvas=JSON.parse(JSON.stringify(x.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8}));this.deviceProfiles=JSON.parse(JSON.stringify(x.deviceProfiles||{}));const migrated=this.migrateLegacyThermCards(this.layout);this.dirty=migrated>0;this._migrationMessage='';this.render();if(migrated)await this.persistMigration(migrated);}else if(a==='edit')open(x);else if(a==='delete'){await this.deleteManagedDashboard(x);}else if(a==='duplicate'){if(await this.act('duplicate',{id})){this.render();window.location.reload();}}});
     if(d){this.bindEditor();this.bindToggles();this.bindClimateControls();this.mountExternalCards();this.watchCanvasPreview();this.watchRoomCardPreviews();}
   }
   normalizedProfiles(profiles,canvas){
@@ -2286,7 +2355,8 @@ class RotapfelDashboardManager extends HTMLElement {
 
   openPositionEditor(tab){
     this.refreshCustomCardCatalog();
-    const cv=this.effectiveCanvas(tab),width=Math.max(320,Number(cv.width)||1920),height=Math.max(240,Number(cv.height)||1080),dynamicHeight=this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false,gap=Math.max(0,Number(cv.gap)||0),cols=Math.max(1,Number(cv.columns)||12);
+    const cv=this.effectiveCanvas(tab),width=Math.max(320,Number(cv.width)||1920),displayHeight=Math.max(240,Number(cv.height)||1080),dynamicHeight=this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false,gap=Math.max(0,Number(cv.gap)||0),cols=Math.max(1,Number(cv.columns)||12);
+    let height=displayHeight;
     if(cv.mode!=='fixed'){alert(this.t("Bitte zuerst unter Dashboard-Maße / Raster eine feste Pixelgröße wählen.","First select fixed pixel dimensions under Dashboard dimensions / grid."));return;}
     const rooms=tab.rooms||[];
     const activeRoom=rooms.find(r=>r.id===this._activeRoomByTab?.[tab.id])||rooms[0];
@@ -2517,11 +2587,21 @@ class RotapfelDashboardManager extends HTMLElement {
     const canvasPane=overlay.querySelector('.position-canvas-pane');
     const heightLabel=overlay.querySelector('#position-height-label');
     const refreshCanvasHeight=()=>{
-      const bottom=dynamicHeight?Math.max(height,...[...positions.values()].map(q=>q.y+q.h+24)):height;
+      const bottom=dynamicHeight||height<displayHeight?Math.max(height,...[...positions.values()].map(q=>q.y+q.h+(dynamicHeight?16:0))):height;
       canvasWorkspace.style.height=Math.ceil(bottom)+'px';
-      if(heightLabel)heightLabel.textContent=`${width} × ${Math.ceil(bottom)} CSS-px (${dynamicHeight?this.t("Höhe dynamisch","Expandable height"):this.t("feste Displaygröße","fixed display size")})`;
+      if(heightLabel)heightLabel.textContent=`${width} × ${Math.ceil(dynamicHeight?bottom:height)} CSS-px (${dynamicHeight?this.t("Höhe dynamisch","Expandable height"):this.t("feste Displaygröße","fixed display size")})`;
     };
     const canvasWorkspace=overlay.querySelector('.position-workspace');
+    const presentation=this.presentationFor({canvas:this.canvas,tabs:this.layout},tab);
+    const navigation=renderRotapfelNavigation(presentation,{
+      german:this.t('de','en')==='de',preview:true,wide:width>=870
+    });
+    if(navigation){
+      const navStyle=document.createElement('style');
+      navStyle.textContent=rotapfelNavigationCss;
+      overlay.append(navStyle);
+      canvasWorkspace.before(navigation);
+    }
     const guideX=document.createElement('div'),guideY=document.createElement('div');
     guideX.className='rotapfel-snap-guide-x';guideY.className='rotapfel-snap-guide-y';
     for(const guide of [guideX,guideY]){guide.style.cssText='position:absolute;pointer-events:none;z-index:10001;display:none;background:#ff9800;box-shadow:0 0 2px #222';canvasWorkspace.append(guide);}
@@ -2599,6 +2679,12 @@ class RotapfelDashboardManager extends HTMLElement {
       const usableW=Math.max(1,canvasPane.clientWidth-24);
       workspaceScale=Math.min(usableW/width,1);
       canvasWorkspace.style.transform=`scale(${workspaceScale})`;
+      if(navigation){
+        navigation.style.width=`${width*workspaceScale}px`;
+        const navHeight=Math.ceil(navigation.offsetHeight/workspaceScale);
+        height=Math.max(1,displayHeight-navHeight);
+        refreshCanvasHeight();
+      }
     };
     const testToggle=overlay.querySelector('#position-test-toggle');
     let positionTestActive=false;

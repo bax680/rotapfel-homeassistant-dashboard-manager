@@ -86,6 +86,55 @@ class RotapfelLabelCard extends HTMLElement {
 }
 if(!customElements.get('rotapfel-label-card'))customElements.define('rotapfel-label-card',RotapfelLabelCard);
 
+export const rotapfelNavigationCss=`
+      .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
+      .rotapfel-tabs :is(a,span),.rotapfel-menu{box-sizing:border-box;padding:8px 12px;color:var(--primary-text-color);text-decoration:none;font:inherit}
+      .rotapfel-tabs[data-mode="manager"] :is(a,span),.rotapfel-menu{border:1px solid var(--divider-color);border-radius:4px;background:var(--card-background-color)}
+      .rotapfel-tabs[data-mode="bar"]{border-bottom:1px solid var(--divider-color);gap:0}
+      .rotapfel-tabs[data-mode="bar"] :is(a,span)[aria-current]{border-bottom:3px solid var(--primary-color)}
+      .rotapfel-tabs[data-mode="buttons"] :is(a,span){border:1px solid var(--divider-color);border-radius:14px;background:var(--card-background-color)}
+      .rotapfel-tabs :is(a,span)[aria-current]{font-weight:bold;color:var(--primary-color)}
+      .rotapfel-menu{cursor:pointer}
+      .rotapfel-tabs[data-wide] .rotapfel-menu{display:none}
+      .rotapfel-tabs[data-wide]:not(:has(a,span)){display:none}
+`;
+
+export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,onMenu}={}){
+  if(!cfg)return;
+  const url=new URL(location.href);
+  const kiosk=cfg.kiosk===true&&!url.searchParams.has('rotapfel_exit_kiosk');
+  const nav=document.createElement('nav');
+  nav.className='rotapfel-tabs';
+  nav.toggleAttribute('data-wide',wide);
+  nav.dataset.mode=['manager','bar','buttons','none'].includes(cfg.navigation)?cfg.navigation:'manager';
+  nav.setAttribute('aria-label',german?'Dashboard-Tabs':'Dashboard tabs');
+  if(!kiosk&&!cfg.shared){
+    const menu=document.createElement('button');
+    menu.className='rotapfel-menu';
+    menu.type='button';
+    menu.textContent='☰';
+    menu.setAttribute('aria-label',german?'Home Assistant Menü öffnen':'Open Home Assistant menu');
+    if(preview)menu.disabled=true;
+    else menu.onclick=onMenu;
+    nav.append(menu);
+  }
+  const tabs=Array.isArray(cfg.tabs)?cfg.tabs:[];
+  if(nav.dataset.mode!=='none'&&tabs.length>1){
+    for(const tab of tabs){
+      if(typeof tab?.path!=='string'||!/^[a-z0-9_-]+$/i.test(tab.path))continue;
+      const link=document.createElement(preview?'span':'a');
+      const target=new URL(url);
+      if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
+      else target.pathname='/'+url.pathname.split('/')[1]+'/'+encodeURIComponent(tab.path);
+      if(!preview)link.href=target.pathname+target.search+target.hash;
+      link.textContent=tab.label||tab.path;
+      if(tab.path===cfg.path)link.setAttribute('aria-current','page');
+      nav.append(link);
+    }
+  }
+  if(nav.childElementCount)return nav;
+}
+
 class RotapfelCanvasCard extends HTMLElement {
   setConfig(config){
     if(!config||!Array.isArray(config.elements))throw new Error(rotapfelCardLanguage(this._hass)==='de'?'Rotapfel Canvas: elements erforderlich':'Rotapfel Canvas requires elements');
@@ -137,41 +186,6 @@ class RotapfelCanvasCard extends HTMLElement {
       node=host;
     }
   }
-  _renderPresentation(root){
-    const cfg=this._config.presentation;
-    if(!cfg)return;
-    const url=new URL(location.href);
-    const kiosk=cfg.kiosk===true&&!url.searchParams.has('rotapfel_exit_kiosk');
-    const nav=document.createElement('nav');
-    nav.className='rotapfel-tabs';
-    nav.dataset.mode=['manager','bar','buttons','none'].includes(cfg.navigation)?cfg.navigation:'manager';
-    const german=this._language==='de';
-    nav.setAttribute('aria-label',german?'Dashboard-Tabs':'Dashboard tabs');
-    if(!kiosk&&!cfg.shared){
-      const menu=document.createElement('button');
-      menu.className='rotapfel-menu';
-      menu.type='button';
-      menu.textContent='☰';
-      menu.setAttribute('aria-label',german?'Home Assistant Menü öffnen':'Open Home Assistant menu');
-      menu.onclick=()=>this.dispatchEvent(new Event('hass-toggle-menu',{bubbles:true,composed:true}));
-      nav.append(menu);
-    }
-    const tabs=Array.isArray(cfg.tabs)?cfg.tabs:[];
-    if(nav.dataset.mode!=='none'&&tabs.length>1){
-      for(const tab of tabs){
-        if(typeof tab?.path!=='string'||!/^[a-z0-9_-]+$/i.test(tab.path))continue;
-        const link=document.createElement('a');
-        const target=new URL(url);
-        if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
-        else target.pathname='/'+url.pathname.split('/')[1]+'/'+encodeURIComponent(tab.path);
-        link.href=target.pathname+target.search+target.hash;
-        link.textContent=tab.label||tab.path;
-        if(tab.path===cfg.path)link.setAttribute('aria-current','page');
-        nav.append(link);
-      }
-    }
-    if(nav.childElementCount)root.append(nav);
-  }
   async _setBackground(layer,background){
     let path=background?.image;
     if(typeof path!=='string'||!path)return;
@@ -205,22 +219,17 @@ class RotapfelCanvasCard extends HTMLElement {
       const candidates=[...custom,'iphone','fire_hd','desktop'];
       return candidates.reduce((best,key)=>Math.abs((profiles[key]?.width||baseWidth)-screen)<Math.abs((profiles[best]?.width||baseWidth)-screen)?key:best,screen<=600?'iphone':screen>=1600?'desktop':'fire_hd');
     };
-    const style=document.createElement('style');style.textContent=`:host{display:block;width:100%;min-width:0;overflow:visible!important}.viewport{width:100%;overflow-x:hidden;overflow-y:visible;position:relative;background:transparent!important}.canvas{position:relative;transform-origin:top left;background:transparent!important;background-image:none!important}.tile{position:absolute;box-sizing:border-box;overflow:hidden}.tile>*{width:100%;box-sizing:border-box}.tile>rotapfel-entity-card{height:100%}.external-fit{position:absolute;left:0;top:0;transform-origin:top left;overflow:visible}.external-fit>*{display:block;width:100%;box-sizing:border-box}`;
+    const style=document.createElement('style');style.textContent=`:host{display:block;width:100%;min-width:0;overflow:visible!important}.viewport{width:100%;overflow-x:hidden;overflow-y:visible;position:relative}.canvas{position:relative;transform-origin:top left;background:transparent!important;background-image:none!important}.tile{position:absolute;box-sizing:border-box;overflow:hidden}.tile>*{width:100%;box-sizing:border-box}.tile>rotapfel-entity-card{height:100%}.external-fit{position:absolute;left:0;top:0;transform-origin:top left;overflow:visible}.external-fit>*{display:block;width:100%;box-sizing:border-box}`;
     root.append(style);
     style.textContent+=`
-      .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
-      .rotapfel-tabs a,.rotapfel-menu{box-sizing:border-box;padding:8px 12px;color:var(--primary-text-color);text-decoration:none;font:inherit}
-      .rotapfel-tabs[data-mode="manager"] a,.rotapfel-menu{border:1px solid var(--divider-color);border-radius:4px;background:var(--card-background-color)}
-      .rotapfel-tabs[data-mode="bar"]{border-bottom:1px solid var(--divider-color);gap:0}
-      .rotapfel-tabs[data-mode="bar"] a[aria-current]{border-bottom:3px solid var(--primary-color)}
-      .rotapfel-tabs[data-mode="buttons"] a{border:1px solid var(--divider-color);border-radius:14px;background:var(--card-background-color)}
-      .rotapfel-tabs a[aria-current]{font-weight:bold;color:var(--primary-color)}
-      .rotapfel-menu{cursor:pointer}
-      @media(min-width:870px){.rotapfel-menu{display:none}.rotapfel-tabs[data-mode="none"]{padding:0}}
+      ${rotapfelNavigationCss}
       .rotapfel-background{position:absolute;inset:0;pointer-events:none;z-index:-1}
       .viewport{isolation:isolate}
     `;
-    this._renderPresentation(root);
+    const navigation=renderRotapfelNavigation(this._config.presentation,{
+      german,wide:window.innerWidth>=870,
+      onMenu:()=>this.dispatchEvent(new Event('hass-toggle-menu',{bubbles:true,composed:true}))
+    });
     this._applyChrome();
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
     if(rooms.length>1){
@@ -241,9 +250,11 @@ class RotapfelCanvasCard extends HTMLElement {
     const profileSelect=document.createElement('select');profileSelect.setAttribute('aria-label',german?'Geräteprofil':'Device profile');profileSelect.style.cssText='max-width:180px;padding:5px;border-radius:6px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#bbb)';
     for(const [value,label] of [['auto',german?'Automatisch':'Automatic'],...Object.entries(profiles).map(([key,p])=>[key,p.name||key])]){const o=document.createElement('option');o.value=value;o.textContent=label;profileSelect.append(o);}
     profileSelect.value=this._manualProfile||'auto';profileSelect.onchange=()=>{this._manualProfile=profileSelect.value==='auto'?null:profileSelect.value;fit();};
-    controls.append(profileLabel,profileSelect);root.append(controls);
+    controls.append(profileLabel,profileSelect);
     this.style.background='transparent';this.style.backgroundImage='none';
     const viewport=document.createElement('div');viewport.className='viewport';
+    if(navigation)viewport.append(navigation);
+    viewport.append(controls);
     const background=this._config.presentation?.background;
     this._backgroundLayer=null;
     if(background){
@@ -253,7 +264,7 @@ class RotapfelCanvasCard extends HTMLElement {
       layer.style.backgroundSize=background.size==='stretch'?'100% 100%':['cover','contain','auto'].includes(background.size)?background.size:'cover';
       layer.style.backgroundRepeat=['repeat','repeat-x','repeat-y'].includes(background.repeat)?background.repeat:'no-repeat';
       layer.style.opacity=rotapfelNumber(background.opacity,0,100,100)/100;
-      if(/^#[a-f0-9]{6}$/i.test(background.color||''))viewport.style.setProperty('background-color',background.color,'important');
+      if(/^#[a-f0-9]{6}$/i.test(background.color||''))viewport.style.backgroundColor=background.color;
       viewport.append(layer);
       this._backgroundLayer=layer;
     }
@@ -273,13 +284,17 @@ class RotapfelCanvasCard extends HTMLElement {
         tile.style.zIndex=String(rotapfelNumber(p.z,0,9999,0));
         maxBottom=Math.max(maxBottom,y+h);
       }
-      // Every device profile supports a vertically growing canvas.
-      const effectiveHeight=profiles[profile]?.fixed===false||profile==='iphone'?Math.max(height,maxBottom+16):height;
-      canvas.style.height=effectiveHeight+'px';
       const availableWidth=viewport.clientWidth||width;
       const scale=Math.min(1,availableWidth/width);
       canvas.style.transform=`scale(${scale})`;
-      viewport.style.height=Math.ceil(effectiveHeight*scale)+'px';
+      navigation?.toggleAttribute('data-wide',width>=870);
+      const navigationHeight=navigation?.offsetHeight||0;
+      const usableHeight=Math.max(1,height-Math.ceil(navigationHeight/scale));
+      const expandable=profiles[profile]?.fixed===false||profile==='iphone';
+      const effectiveHeight=expandable||navigationHeight
+        ?Math.max(usableHeight,maxBottom+(expandable?16:0)):usableHeight;
+      canvas.style.height=effectiveHeight+'px';
+      viewport.style.height=(Math.ceil(effectiveHeight*scale)+navigationHeight+controls.offsetHeight)+'px';
       this.style.minHeight='0';
       this.style.height='auto';
       viewport.style.overflowX='hidden';
