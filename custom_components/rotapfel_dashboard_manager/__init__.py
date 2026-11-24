@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.56, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.57, isolated from existing dashboards."""
 import asyncio
 import base64
 import binascii
@@ -17,7 +17,7 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13956"
+VERSION = "0.2.0a13957"
 
 SHARED_PANEL = "rotapfel-shared"
 BACKGROUND_LIMIT = 640 * 1024

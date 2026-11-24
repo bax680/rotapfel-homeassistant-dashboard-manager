@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.56 · **Integrationsversion:** `0.2.0a13956` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.57 · **Integrationsversion:** `0.2.0a13957` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -206,6 +206,10 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 ### Alpha 13.9.54
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
+
+### Alpha 13.9.57
+
+- Die Frontend-Anzeigen in der Übersicht und im Layout-Editor melden die korrekte Buildnummer.
 
 ### Alpha 13.9.56
 
