@@ -125,7 +125,7 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   externalVariant(c){return ['equinox','climate_cluster','rotapfel_simple_thermcard'].includes(c.variant)?c.variant:null;}
   autoCardHeight(c){return this.externalVariant(c)?c.design?.auto_height!==false:false;}
-  cardHeightLabel(c){return this.autoCardHeight(c)?'Automatisch':this.design(c).height+'px';}
+  cardHeightLabel(c){return this.autoCardHeight(c)?this.t("Automatisch","Automatic"):this.design(c).height+'px';}
   externalConfig(c){
     const base={entity:c.entity_id,name:c.title};
     if(c.variant==='equinox')return {type:'custom:equinox-card',...base,theme:'liquid_glow',display_mode:'compact',primary_display:'sensors',setpoint_selector:'slider',disable_name:false,show_fan_mode:false,show_swing_mode:false,hide_lock_button:true,additional_dashboards:'auto',state_icons_layout:'vertical',show_power_value:true,show_current_temperature:true,show_humidity:true,show_setpoint:true,show_hvac_mode:true,show_preset_mode:false,show_auto_start_stop:true,show_power_info:true,show_hvac_action:true,show_events:true,show_menu:true,border_glow_on_action:true,card_background_opacity:8,card_background_color:'light-blue',mode_customizations:{hvac:{sleep:{hidden:true}}},...c.external_options};
@@ -550,8 +550,8 @@ class RotapfelDashboardManager extends HTMLElement {
     const fields=c.variant==='equinox'?[['temperature_entity','Temperatursensor'],['humidity_entity','Feuchtigkeitssensor'],['power_entity','Energiesensor'],['name','Anzeigename in der Karte']]:
       c.variant==='climate_cluster'?[['name','Anzeigename in der Karte']]:
       c.variant==='rotapfel_simple_thermcard'?[['card_name','Kurzer Anzeigename (z. B. Heizung)']]:[];
-    const thermFields=c.variant==='rotapfel_simple_thermcard'?`<label>Darstellung<select data-opt="card_footprint"><option value="">Standard der Karte</option>${['compact','standard','featured'].map(v=>`<option value="${v}" ${opts.card_footprint===v?'selected':''}>${v==='compact'?'Kompakt':v==='standard'?'Standard':'Hervorgehoben'}</option>`).join('')}</select></label><label>Temperatursteuerung<select data-opt="card_show_control"><option value="">Standard der Karte</option><option value="true" ${opts.card_show_control===true?'selected':''}>Anzeigen</option><option value="false" ${opts.card_show_control===false?'selected':''}>Ausblenden</option></select></label><label>Verlauf<select data-opt="card_history"><option value="">Standard der Karte</option><option value="true" ${opts.card_history===true?'selected':''}>Aktivieren</option><option value="false" ${opts.card_history===false?'selected':''}>Deaktivieren</option></select></label><label>Uhrzeit anzeigen<select data-opt="show_time"><option value="">Standard der Karte</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.show_time)===v?"selected":""}>${v==="true"?"Ja":"Nein"}</option>`).join("")}</select></label><label>Reduzierte Darstellung<select data-opt="quiet"><option value="">Standard der Karte</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.quiet)===v?"selected":""}>${v==="true"?"Aktivieren":"Deaktivieren"}</option>`).join("")}</select></label>`:'';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(550px,96vw);max-height:90vh;overflow:auto"><h2>Thermostatkarte konfigurieren</h2><p>${esc(this.resourceNames()[c.variant]||c.variant)} · ${esc(c.entity_id)}</p>${fields.map(([k,label])=>`<label>${label}<input data-opt="${k}" value="${esc(opts[k]||'')}" placeholder="sensor...."></label>`).join('')}${thermFields}${c.variant==='rotapfel_simple_thermcard'?'<strong>Live-Vorschau (70 %)</strong><div id="thermo-live-preview" style="margin:12px 0;min-height:110px;overflow:hidden"></div>':''}<p class="muted">Die Originalkarte wird über ihre Home-Assistant-Ressource geladen. Bei Rotapfel Simple ThermCard wirkt der kurze Anzeigename auf neu angelegte Karten ohne eigene rows-Konfiguration.</p><div class="actions"><button id="thermo-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="thermo-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
+    const thermFields=c.variant==='rotapfel_simple_thermcard'?`<label>${this.t("Darstellung","Appearance")}<select data-opt="card_footprint"><option value="">${this.t("Standard der Karte","Card default")}</option>${['compact','standard','featured'].map(v=>`<option value="${v}" ${opts.card_footprint===v?'selected':''}>${v==='compact'?'Kompakt':v==='standard'?'Standard':'Hervorgehoben'}</option>`).join('')}</select></label><label>Temperatursteuerung<select data-opt="card_show_control"><option value="">${this.t("Standard der Karte","Card default")}</option><option value="true" ${opts.card_show_control===true?'selected':''}>Anzeigen</option><option value="false" ${opts.card_show_control===false?'selected':''}>Ausblenden</option></select></label><label>Verlauf<select data-opt="card_history"><option value="">${this.t("Standard der Karte","Card default")}</option><option value="true" ${opts.card_history===true?'selected':''}>Aktivieren</option><option value="false" ${opts.card_history===false?'selected':''}>Deaktivieren</option></select></label><label>Uhrzeit anzeigen<select data-opt="show_time"><option value="">${this.t("Standard der Karte","Card default")}</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.show_time)===v?"selected":""}>${v==="true"?"Ja":"Nein"}</option>`).join("")}</select></label><label>Reduzierte Darstellung<select data-opt="quiet"><option value="">${this.t("Standard der Karte","Card default")}</option>${["true","false"].map(v=>`<option value="${v}" ${String(opts.quiet)===v?"selected":""}>${v==="true"?"Aktivieren":"Deaktivieren"}</option>`).join("")}</select></label>`:'';
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(550px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Thermostatkarte konfigurieren","Configure thermostat card")}</h2><p>${esc(this.resourceNames()[c.variant]||c.variant)} · ${esc(c.entity_id)}</p>${fields.map(([k,label])=>`<label>${label}<input data-opt="${k}" value="${esc(opts[k]||'')}" placeholder="sensor...."></label>`).join('')}${thermFields}${c.variant==='rotapfel_simple_thermcard'?'<strong>Live-Vorschau (70 %)</strong><div id="thermo-live-preview" style="margin:12px 0;min-height:110px;overflow:hidden"></div>':''}<p class="muted">Die Originalkarte wird über ihre Home-Assistant-Ressource geladen. Bei Rotapfel Simple ThermCard wirkt der kurze Anzeigename auf neu angelegte Karten ohne eigene rows-Konfiguration.</p><div class="actions"><button id="thermo-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="thermo-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const readOptions=()=>{
       const next={...opts};
@@ -1348,7 +1348,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13952</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13953</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1357,7 +1357,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     </section>
     ${this.layout?.length?this.renderTab():`<p class="muted">${this.t("Noch keine Tabs. Lege den ersten Tab an.","No tabs yet. Add a tab to get started.")}</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.52</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13952</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.53</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13953</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
       <option value="auto">${this.t('Automatisch','Automatic')}</option><option value="de">Deutsch</option><option value="en">English</option>
     </select></label><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">${this.t("Custom-Card-Ressourcen","Custom card resources")}</button><button class="secondary" id="import-dashboard-backup">${this.t("JSON importieren","Import JSON")}</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">${this.t("+ Dashboard erstellen","+ Create dashboard")}</button></div></div>
     <div class="rotapfel-update-info" aria-label="Update-Info"><span>${this.t("Installiert","Installed")} <strong id="rotapfel-installed-version">${e(this._installedVersion||this.t("Nicht ermittelt","Unknown"))}</strong></span><span>${this.t("Verfügbares Update","Available update")} <strong id="rotapfel-offered-version">${e(this.availableUpdate()||this.t("Kein konkretes Update gemeldet","No update reported"))}</strong></span></div>
@@ -1641,10 +1641,10 @@ class RotapfelDashboardManager extends HTMLElement {
     let plan=initial,drag=null,accepted=false;
     const dialog=document.createElement('dialog');
     dialog.style.cssText='width:min(900px,94vw);max-height:90vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
-    dialog.innerHTML=`<h2>Einfügevorschau</h2><p>${this.esc(card.title)} · ${this.esc(room.name)}</p>
+    dialog.innerHTML=`<h2>${this.t("Einfügevorschau","Insertion preview")}</h2><p>${this.esc(card.title)} · ${this.esc(room.name)}</p>
       <div id="insertion-map" tabindex="0" aria-label="Kartenposition mit den Pfeiltasten einstellen" style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)"></div>
       <p id="insertion-status" role="status"></p>
-      <div class="actions"><button id="insertion-apply">Einfügen</button><button id="insertion-reset" class="secondary">Vorschlag zurücksetzen</button><button id="insertion-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button></div>`;
+      <div class="actions"><button id="insertion-apply">${this.t("Einfügen","Insert")}</button><button id="insertion-reset" class="secondary">Vorschlag zurücksetzen</button><button id="insertion-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button></div>`;
     this.shadowRoot.append(dialog);
     const map=dialog.querySelector('#insertion-map'),status=dialog.querySelector('#insertion-status');
     const apply=dialog.querySelector('#insertion-apply');
@@ -1653,7 +1653,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const existing=valid&&plan.moves.length?plan.moves:initial.occupied;
       map.innerHTML=existing.map(p=>box(p,p.c.title,'border:1px solid var(--divider-color,#999);background:var(--secondary-background-color,#eee);pointer-events:none')).join('')
         +box(candidate,card.title,'touch-action:none;cursor:grab;background:var(--card-background-color,#fff);border:2px dashed '+(valid?'var(--primary-color,#168fc0)':'var(--error-color,#c33)'),true);
-      status.textContent=valid?(plan.moves.length?`${plan.moves.length} vorhandene Karten würden verschoben.`:'Rahmen ziehen oder mit den Pfeiltasten verschieben.'):'An dieser Stelle ist kein Platz.';
+      status.textContent=valid?(plan.moves.length?`${plan.moves.length} vorhandene Karten würden verschoben.`:this.t("Rahmen ziehen oder mit den Pfeiltasten verschieben.","Drag the frame or move it with the arrow keys.")):this.t("An dieser Stelle ist kein Platz.","There is no room at this position.");
       apply.disabled=!valid||!!drag;
     };
     const point=ev=>{
@@ -1686,7 +1686,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const target={x:plan.position.x+offset[0]*step,y:plan.position.y+offset[1]*step};
       const next=this.planCardPlacement(room,card,initial.position,target);
       if(next){plan=next;draw();}
-      else status.textContent='An dieser Stelle ist kein Platz.';
+      else status.textContent=this.t("An dieser Stelle ist kein Platz.","There is no room at this position.");
     };
     map.onpointermove=move;
     map.onpointerup=ev=>{
@@ -1743,7 +1743,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const inserted=new Set(cards);
     const dialog=document.createElement('dialog');
     dialog.style.cssText='width:min(900px,94vw);max-height:90vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:12px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)';
-    dialog.innerHTML=`<h2>Einfügevorschau</h2><p>${cards.length} Karten · ${this.esc(tab.name)} / ${this.esc(room.name)}</p>
+    dialog.innerHTML=`<h2>Einfügevorschau</h2><p>${cards.length} ${cards.length===1?this.t("Karte","card"):this.t("Karten","cards")} · ${this.esc(tab.name)} / ${this.esc(room.name)}</p>
       <p>Gestrichelt: neue Karten.${moves.length?' Farblich umrandet: verschobene Karten.':''}</p>
       <div style="position:relative;width:100%;aspect-ratio:${width}/${height};outline:1px solid var(--divider-color,#999)">
       ${positions.map(({c,x,y,w,h})=>{
@@ -2115,18 +2115,18 @@ class RotapfelDashboardManager extends HTMLElement {
     ${this.renderCanvasPreview(t,cv)}
     </section>
     <details class="edit-room-list layout-band layout-band-rooms" open><summary>${this.t("Räume und Karten","Rooms and cards")}</summary>
-    ${(t.rooms||[]).map(r=>this.renderRoomEditor(r,r.id===selectedRoom?.id)).join('')}${!t.rooms?.length?'<p class="muted">Noch keine Räume in diesem Tab.</p>':''}</details>`;}
+    ${(t.rooms||[]).map(r=>this.renderRoomEditor(r,r.id===selectedRoom?.id)).join('')}${!t.rooms?.length?`<p class="muted">${this.t("Noch keine Räume in diesem Tab.","No rooms in this tab yet.")}</p>`:''}</details>`;}
   renderRoomEditor(r,isActive=false){
     const e=s=>this.esc(s),cards=r.cards||[],sort=this._roomSort?.[r.id]||'position';
     const ordered=[...cards];if(sort==='az')ordered.sort((a,b)=>a.title.localeCompare(b.title,'de'));if(sort==='za')ordered.sort((a,b)=>b.title.localeCompare(a.title,'de'));
     const selectedId=this._selectedCards?.[r.id];const active=cards.find(c=>c.id===selectedId)||cards[0];
     const info=active?this.design(active):null;
-    return `<details class="room room-collapsible" data-room="${e(r.id)}" ${isActive?'open':''}><summary class="room-summary"><span class="room-disclosure" aria-hidden="true"></span><strong>${e(r.name)}</strong><span class="muted">${cards.length} Karten · ${isActive?'Aktiver Raum':'Aufklappen zum Bearbeiten'}</span></summary><div class="editor-actions room-management"><button data-room-action="add-type">${this.t("+ Karte hinzufügen","+ Add card")}</button><button class="secondary" data-room-action="library">${this.t("Gespeicherte Vorlagen","Saved templates")}</button><button class="secondary" data-room-action="paste" ${this._cardClipboard?'':'disabled'}>${this.t("Karte einfügen","Paste card")}</button><details class="editor-action-menu"><summary>${this.t("Raumaktionen","Room actions")}</summary><div class="editor-menu-items"><button class="secondary" data-room-action="rename">${this.t("Umbenennen","Rename")}</button><button class="secondary" data-room-action="duplicate">Raum duplizieren</button><button class="secondary" data-room-action="transfer">In anderen Tab…</button><button class="secondary layout-action-danger" data-room-action="remove">Löschen</button></div></details></div>
-      <div class="room-editor layout-band layout-band-cards"><div><div class="room-sort-bar"><strong>Karten (${cards.length})</strong><select class="room-sort" aria-label="Karten sortieren"><option value="position" ${sort==='position'?'selected':''}>${this.t("Reihenfolge","Order")}</option><option value="az" ${sort==='az'?'selected':''}>Name A–Z</option><option value="za" ${sort==='za'?'selected':''}>Name Z–A</option></select></div><div class="room-card-list">${ordered.map(c=>`<div class="room-card-item ${active?.id===c.id?'selected':''}" data-card="${e(c.id)}" title="${e(c.title)}" role="button" tabindex="0" aria-pressed="${active?.id===c.id}"><div class="room-card-head"><input type="checkbox" tabindex="-1" aria-label="Karte auswählen" ${active?.id===c.id?'checked':''}><span><strong>${e(c.title)}</strong><br><span class="muted">${e(this.cardKind(c))}</span></span></div>${this.renderPreview(c)}<div class="room-card-meta">${this.design(c).width}/4 Spalten · ${this.cardHeightLabel(c)}</div></div>`).join('')}</div>${!cards.length?'<p class="muted">Noch keine Karten. Füge oben eine Karte hinzu.</p>':''}</div>
+    return `<details class="room room-collapsible" data-room="${e(r.id)}" ${isActive?'open':''}><summary class="room-summary"><span class="room-disclosure" aria-hidden="true"></span><strong>${e(r.name)}</strong><span class="muted">${cards.length} ${cards.length===1?this.t("Karte","card"):this.t("Karten","cards")} · ${isActive?this.t("Aktiver Raum","Active room"):this.t("Aufklappen zum Bearbeiten","Expand to edit")}</span></summary><div class="editor-actions room-management"><button data-room-action="add-type">${this.t("+ Karte hinzufügen","+ Add card")}</button><button class="secondary" data-room-action="library">${this.t("Gespeicherte Vorlagen","Saved templates")}</button><button class="secondary" data-room-action="paste" ${this._cardClipboard?'':'disabled'}>${this.t("Karte einfügen","Paste card")}</button><details class="editor-action-menu"><summary>${this.t("Raumaktionen","Room actions")}</summary><div class="editor-menu-items"><button class="secondary" data-room-action="rename">${this.t("Umbenennen","Rename")}</button><button class="secondary" data-room-action="duplicate">${this.t("Raum duplizieren","Duplicate room")}</button><button class="secondary" data-room-action="transfer">${this.t("In anderen Tab…","Move to another tab…")}</button><button class="secondary layout-action-danger" data-room-action="remove">${this.t("Löschen","Delete")}</button></div></details></div>
+      <div class="room-editor layout-band layout-band-cards"><div><div class="room-sort-bar"><strong>${this.t("Karten","Cards")} (${cards.length})</strong><select class="room-sort" aria-label="${this.t("Karten sortieren","Sort cards")}"><option value="position" ${sort==='position'?'selected':''}>${this.t("Reihenfolge","Order")}</option><option value="az" ${sort==='az'?'selected':''}>Name A–Z</option><option value="za" ${sort==='za'?'selected':''}>Name Z–A</option></select></div><div class="room-card-list">${ordered.map(c=>`<div class="room-card-item ${active?.id===c.id?'selected':''}" data-card="${e(c.id)}" title="${e(c.title)}" role="button" tabindex="0" aria-pressed="${active?.id===c.id}"><div class="room-card-head"><input type="checkbox" tabindex="-1" aria-label="${this.t("Karte auswählen","Select card")}" ${active?.id===c.id?'checked':''}><span><strong>${e(c.title)}</strong><br><span class="muted">${e(this.cardKind(c))}</span></span></div>${this.renderPreview(c)}<div class="room-card-meta">${this.design(c).width}/4 ${this.t("Spalten","columns")} · ${this.cardHeightLabel(c)}</div></div>`).join('')}</div>${!cards.length?`<p class="muted">${this.t("Noch keine Karten. Füge oben eine Karte hinzu.","No cards yet. Add a card above.")}</p>`:''}</div>
       <aside class="room-editor-side">${active?`<h4 class="editor-card-title">${e(active.title)}</h4>
-      <p class="entity-label">${e(active.custom_config?.entity||active.entity_id||this.cardKind(active))} · ${info.width}/4 Spalten · ${this.cardHeightLabel(active)}</p>
-      <div class="editor-actions">${active.type==='entity'?`<button class="secondary" data-side-action="entity">${this.t("Entität ändern","Change entity")}</button>`:''}${active.type==='custom'?'<button class="secondary" data-side-action="custom">Karte konfigurieren</button>':''}${this.externalVariant(active)?'<button class="secondary" data-side-action="thermostat">Thermostat konfigurieren</button>':''}<button class="secondary" data-side-action="design">Design</button><button class="secondary" data-side-action="position">Position</button></div>
-      <div class="editor-actions editor-card-actions" role="group" aria-label="Karte verwalten"><button class="secondary" data-side-action="rename">${this.t("Umbenennen","Rename")}</button><button class="secondary" data-side-action="duplicate">${this.t("Karte duplizieren","Duplicate card")}</button><button class="secondary" data-side-action="save-library">${this.t("In Kartenbibliothek speichern","Save to card library")}</button><button class="secondary" data-side-action="copy">${this.t("Karte kopieren","Copy card")}</button><button class="secondary" data-side-action="transfer">${this.t("In anderen Raum/Tab…","Move or copy to another room/tab…")}</button><button class="secondary" data-side-action="left" ${cards.indexOf(active)===0?'disabled':''}>← Zurück</button><button class="secondary" data-side-action="right" ${cards.indexOf(active)===cards.length-1?'disabled':''}>Weiter →</button><button class="secondary layout-action-danger" data-side-action="remove">${this.t("Karte entfernen","Remove card")}</button></div>`:'<p class="muted">Wähle links eine Karte aus.</p>'}</aside></div></details>`;
+      <p class="entity-label">${e(active.custom_config?.entity||active.entity_id||this.cardKind(active))} · ${info.width}/4 ${this.t("Spalten","columns")} · ${this.cardHeightLabel(active)}</p>
+      <div class="editor-actions">${active.type==='entity'?`<button class="secondary" data-side-action="entity">${this.t("Entität ändern","Change entity")}</button>`:''}${active.type==='custom'?`<button class="secondary" data-side-action="custom">${this.t("Karte konfigurieren","Configure card")}</button>`:''}${this.externalVariant(active)?`<button class="secondary" data-side-action="thermostat">${this.t("Thermostat konfigurieren","Configure thermostat")}</button>`:''}<button class="secondary" data-side-action="design">Design</button><button class="secondary" data-side-action="position">Position</button></div>
+      <div class="editor-actions editor-card-actions" role="group" aria-label="${this.t("Karte verwalten","Manage card")}"><button class="secondary" data-side-action="rename">${this.t("Umbenennen","Rename")}</button><button class="secondary" data-side-action="duplicate">${this.t("Karte duplizieren","Duplicate card")}</button><button class="secondary" data-side-action="save-library">${this.t("In Kartenbibliothek speichern","Save to card library")}</button><button class="secondary" data-side-action="copy">${this.t("Karte kopieren","Copy card")}</button><button class="secondary" data-side-action="transfer">${this.t("In anderen Raum/Tab…","Move or copy to another room/tab…")}</button><button class="secondary" data-side-action="left" ${cards.indexOf(active)===0?'disabled':''}>${this.t("← Zurück","← Previous")}</button><button class="secondary" data-side-action="right" ${cards.indexOf(active)===cards.length-1?'disabled':''}>${this.t("Weiter →","Next →")}</button><button class="secondary layout-action-danger" data-side-action="remove">${this.t("Karte entfernen","Remove card")}</button></div>`:`<p class="muted">${this.t("Wähle links eine Karte aus.","Select a card on the left.")}</p>`}</aside></div></details>`;
   }
 
   openPositionEditor(tab){
@@ -3367,7 +3367,7 @@ class RotapfelDashboardManager extends HTMLElement {
     if(this._undoInsertion&&this.layout?.some(tab=>tab.rooms?.includes(this._undoInsertion.room))){
       const undo=document.createElement('button');
       undo.className='secondary';
-      undo.textContent='Einfügen rückgängig';
+      undo.textContent=this.t("Einfügen rückgängig","Undo insertion");
       undo.onclick=()=>this.undoCardInsertion();
       root.querySelector('#save-layout').after(undo);
     }
@@ -3405,12 +3405,12 @@ class RotapfelDashboardManager extends HTMLElement {
       else if(a==='position')this.openPositionEditor(t);
       else if(a==='custom')this.configureCustomCard(c,change);
       else if(a==='thermostat')this.configureThermostat(c,change);
-      else if(a==='rename'){const title=ask('Kartentitel',c.title);if(title){this.applyCardTitle(c,title);change();}}
+      else if(a==='rename'){const title=ask(this.t("Kartentitel","Card title"),c.title);if(title){this.applyCardTitle(c,title);change();}}
       else if(a==='entity')this.pickEntity(c.entity_id,eid=>{c.entity_id=eid;change();});
       else if(a==='transfer'){this.openCardTransferDialog(t,r,c);}
       else if(a==='save-library'){this.saveCardToLibrary(c);}
       else if(a==='copy'){this._cardClipboard=JSON.parse(JSON.stringify(c));this.render();}
-      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);this.previewCardInsertion(r,copy,change,size);}else if(a==='remove'){if(confirm(`Karte „${c.title}“ entfernen?`)){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
+      else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(c));copy.id=this.uid();delete copy.groupId;copy.title=(c.title||'Karte')+' (Kopie)';delete copy.position;delete copy.deviceLayouts;const size=this.cardPositions(t,this.effectiveCanvas(t),r).find(p=>p.c===c);this.previewCardInsertion(r,copy,change,size);}else if(a==='remove'){if(confirm(this.t(`Karte „${c.title}“ entfernen?`,`Remove card “${c.title}”?`))){r.cards=r.cards.filter(x=>x!==c);this._selectedCards={...(this._selectedCards||{}),[r.id]:r.cards[0]?.id};change();}}
       else if(a==='left'||a==='right'){const i=r.cards.indexOf(c),j=i+(a==='left'?-1:1);if(j>=0&&j<r.cards.length){r.cards.splice(i,1);r.cards.splice(j,0,c);change();}}
     });
   }
@@ -3456,16 +3456,16 @@ class RotapfelDashboardManager extends HTMLElement {
   async openCardLibrary(room,change){
     let cards;
     try{cards=(await this.api('card_library')).cards||[];}
-    catch(err){window.alert('Kartenbibliothek konnte nicht geladen werden: '+String(err?.message||err));return;}
+    catch(err){window.alert(this.t("Kartenbibliothek konnte nicht geladen werden: ","Could not load the card library: ")+String(err?.message||err));return;}
     this.shadowRoot.querySelector('#rotapfel-card-library-dialog')?.remove();
     const dialog=document.createElement('dialog');
     dialog.id='rotapfel-card-library-dialog';
     dialog.style.cssText='width:min(840px,96vw);max-width:96vw;max-height:88vh;overflow:auto;border:1px solid var(--divider-color,#999);border-radius:14px;padding:20px;box-sizing:border-box;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);box-shadow:0 12px 50px #0005';
-    dialog.innerHTML='<h2 style="margin:0 0 10px">Rotapfel Kartenbibliothek</h2>'
-      +'<p class="muted">Vorlagen durchsuchen, bearbeiten und in einen Zielraum einfügen. Bereits eingefügte Karten bleiben bei Änderungen an Vorlagen unverändert.</p>'
-      +'<input id="rl-search" type="search" placeholder="Kartenname, Kartentyp oder Entität suchen …" style="width:100%;box-sizing:border-box;padding:10px;margin:8px 0 16px">'
+    dialog.innerHTML=`<h2 style="margin:0 0 10px">${this.t("Rotapfel Kartenbibliothek","Rotapfel card library")}</h2>`
+      +`<p class="muted">${this.t("Vorlagen durchsuchen, bearbeiten und in einen Zielraum einfügen. Bereits eingefügte Karten bleiben bei Änderungen an Vorlagen unverändert.","Find, edit and insert templates into a room. Template changes leave previously inserted cards unchanged.")}</p>`
+      +`<input id="rl-search" type="search" placeholder="${this.t("Kartenname, Kartentyp oder Entität suchen …","Search by card name, type or entity …")}" style="width:100%;box-sizing:border-box;padding:10px;margin:8px 0 16px">`
       +'<div id="rl-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;max-height:55vh;overflow:auto"></div>'
-      +`<div class="actions" style="margin-top:18px"><label>Zielraum<select id="rl-room"></select></label><button type="button" id="rl-batch" disabled>Auswahl einfügen</button><button type="button" id="rl-close" class="secondary">${this.t("Schließen","Close")}</button></div>`;
+      +`<div class="actions" style="margin-top:18px"><label>${this.t("Zielraum","Destination room")}<select id="rl-room"></select></label><button type="button" id="rl-batch" disabled>${this.t("Auswahl einfügen","Insert selection")}</button><button type="button" id="rl-close" class="secondary">${this.t("Schließen","Close")}</button></div>`;
     this.shadowRoot.append(dialog);
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     dialog.querySelector('#rl-close').onclick=()=>dialog.close();
@@ -3478,7 +3478,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const updateSelection=()=>{
       const count=cards.filter(item=>selected.has(item.id)).length;
       batch.disabled=!count;
-      batch.textContent=count?`Auswahl einfügen (${count})`:'Auswahl einfügen';
+      batch.textContent=count?`${this.t("Auswahl einfügen","Insert selection")} (${count})`:this.t("Auswahl einfügen","Insert selection");
     };
     const insert=(items)=>{
       const destination=targets[Number(targetSelect.value)];
@@ -3518,8 +3518,8 @@ class RotapfelDashboardManager extends HTMLElement {
         +'<label><input style="width:auto;display:inline" type="checkbox" data-rl-select '+(selected.has(x.item.id)?'checked':'')+'> '+this.esc(x.item.name)+'</label>'
         +'<div class="muted" style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.type)+'</div>'
         +'<div style="font-size:12px;overflow-wrap:anywhere">'+this.esc(x.entity||'Ohne direkte Entität')+'</div>'
-        +`<div style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" data-rl-action="insert">Einfügen</button><button type="button" class="secondary" data-rl-action="rename">${this.t("Umbenennen","Rename")}</button><button type="button" class="secondary" data-rl-action="edit">${this.t("Bearbeiten","Edit")}</button><button type="button" class="secondary" data-rl-action="delete">Löschen</button></div></section>`).join('')
-        :'<p class="muted">'+(cards.length?'Keine passenden Vorlagen.':'Noch keine Kartenvorlagen gespeichert.')+'</p>';
+        +`<div style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" data-rl-action="insert">${this.t("Einfügen","Insert")}</button><button type="button" class="secondary" data-rl-action="rename">${this.t("Umbenennen","Rename")}</button><button type="button" class="secondary" data-rl-action="edit">${this.t("Bearbeiten","Edit")}</button><button type="button" class="secondary" data-rl-action="delete">${this.t("Löschen","Delete")}</button></div></section>`).join('')
+        :'<p class="muted">'+(cards.length?this.t("Keine passenden Vorlagen.","No matching templates."):this.t("Noch keine Kartenvorlagen gespeichert.","No saved card templates yet."))+'</p>';
       updateSelection();
       list.querySelectorAll('[data-rl-select]').forEach(input=>input.onchange=()=>{
         const item=cards[Number(input.closest('[data-rl-index]').dataset.rlIndex)];
@@ -3534,14 +3534,14 @@ class RotapfelDashboardManager extends HTMLElement {
         if(action==='insert'){
           insert([item]);
         }else if(action==='rename'){
-          const name=window.prompt('Neuer Name der Kartenvorlage',item.name);
+          const name=window.prompt(this.t("Neuer Name der Kartenvorlage","New card template name"),item.name);
           if(!name?.trim())return;
-          if(cards.some((other,i)=>i!==index&&other.name.toLocaleLowerCase('de')===name.trim().toLocaleLowerCase('de'))){window.alert('Der Name ist bereits vergeben.');return;}
+          if(cards.some((other,i)=>i!==index&&other.name.toLocaleLowerCase('de')===name.trim().toLocaleLowerCase('de'))){window.alert(this.t("Der Name ist bereits vergeben.","This name is already in use."));return;}
           const next=JSON.parse(JSON.stringify(cards));next[index].name=name.trim();
-          try{await persist(next);}catch(err){window.alert('Umbenennen fehlgeschlagen: '+String(err));}
+          try{await persist(next);}catch(err){window.alert(this.t("Umbenennen fehlgeschlagen: ","Could not rename: ")+String(err));}
         }else if(action==='delete'){
-          if(!window.confirm('Kartenvorlage „'+item.name+'“ wirklich löschen? Bereits eingefügte Karten bleiben bestehen.'))return;
-          try{await persist(cards.filter((_entry,i)=>i!==index));}catch(err){window.alert('Löschen fehlgeschlagen: '+String(err));}
+          if(!window.confirm(this.t(`Kartenvorlage „${item.name}“ wirklich löschen? Bereits eingefügte Karten bleiben bestehen.`,`Delete card template “${item.name}”? Previously inserted cards are preserved.`)))return;
+          try{await persist(cards.filter((_entry,i)=>i!==index));}catch(err){window.alert(this.t("Löschen fehlgeschlagen: ","Could not delete: ")+String(err));}
         }else if(action==='edit'){
           const draft=JSON.parse(JSON.stringify(item.card));
           dialog.close();
@@ -3551,12 +3551,12 @@ class RotapfelDashboardManager extends HTMLElement {
             if(position<0)return;
             next[position].card=this.libraryCardData(draft);
             try{await this.api('save_card_library',{cards:next});}
-            catch(err){window.alert('Vorlage konnte nicht gespeichert werden: '+String(err));return;}
+            catch(err){window.alert(this.t("Vorlage konnte nicht gespeichert werden: ","Could not save the template: ")+String(err));return;}
             this.openCardLibrary(room,change);
           };
           if(draft.type==='custom'||draft.custom_config)this.configureCustomCard(draft,saveDraft);
           else{
-            const title=window.prompt('Kartentitel bearbeiten',draft.title||item.name);
+            const title=window.prompt(this.t("Kartentitel bearbeiten","Edit card title"),draft.title||item.name);
             if(title===null){this.openCardLibrary(room,change);return;}
             draft.title=title.trim()||draft.title;
             saveDraft();
@@ -3571,18 +3571,18 @@ class RotapfelDashboardManager extends HTMLElement {
     const esc=v=>this.esc(String(v??''));
     const dialog=document.createElement('dialog');
     dialog.style.cssText='border:1px solid var(--divider-color,#999);border-radius:14px;padding:22px;width:min(500px,94vw);max-width:94vw;color:var(--primary-text-color,#222);background:var(--card-background-color,#fff);box-shadow:0 12px 50px #0005';
-    dialog.innerHTML=`<form method="dialog" style="display:grid;gap:12px"><h3 style="margin:0">Karte verschieben oder kopieren</h3><p style="margin:0">${esc(sourceCard.title||'Karte')} · ${esc(sourceTab.name)} / ${esc(sourceRoom.name)}</p><label>Aktion<select id="transfer-mode" style="width:100%;padding:9px"><option value="copy">Kopieren (Original behalten)</option><option value="move">Verschieben (Original entfernen)</option></select></label><label>Ziel-Tab<select id="transfer-tab" style="width:100%;padding:9px"></select></label><label>Ziel-Raum<select id="transfer-room" style="width:100%;padding:9px"></select></label><p class="muted" style="margin:0">Kartenkonfiguration und Positionen sämtlicher Geräteprofile werden übernommen. Bei Überlagerungen kannst du die Karte anschließend im Positionierungseditor verschieben.</p><p id="transfer-error" style="color:var(--error-color,#c33);margin:0"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="transfer-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="transfer-apply">Kopieren</button></div></form>`;
+    dialog.innerHTML=`<form method="dialog" style="display:grid;gap:12px"><h3 style="margin:0">${this.t("Karte verschieben oder kopieren","Move or copy card")}</h3><p style="margin:0">${esc(sourceCard.title||'Karte')} · ${esc(sourceTab.name)} / ${esc(sourceRoom.name)}</p><label>${this.t("Aktion","Action")}<select id="transfer-mode" style="width:100%;padding:9px"><option value="copy">${this.t("Kopieren (Original behalten)","Copy (keep original)")}</option><option value="move">${this.t("Verschieben (Original entfernen)","Move (remove original)")}</option></select></label><label>${this.t("Ziel-Tab","Destination tab")}<select id="transfer-tab" style="width:100%;padding:9px"></select></label><label>${this.t("Ziel-Raum","Destination room")}<select id="transfer-room" style="width:100%;padding:9px"></select></label><p class="muted" style="margin:0">${this.t("Kartenkonfiguration und Positionen sämtlicher Geräteprofile werden übernommen. Bei Überlagerungen kannst du die Karte anschließend im Positionierungseditor verschieben.","The card configuration and positions for all device profiles are carried over. If cards overlap, move the card in the positioning editor.")}</p><p id="transfer-error" style="color:var(--error-color,#c33);margin:0"></p><div style="display:flex;justify-content:flex-end;gap:8px"><button type="button" id="transfer-cancel" class="secondary">${this.t("Abbrechen","Cancel")}</button><button type="submit" id="transfer-apply">${this.t("Kopieren","Copy")}</button></div></form>`;
     this.shadowRoot.append(dialog);
     const tabSelect=dialog.querySelector('#transfer-tab'),roomSelect=dialog.querySelector('#transfer-room'),mode=dialog.querySelector('#transfer-mode');
     tabSelect.innerHTML=(this.layout||[]).map(t=>`<option value="${esc(t.id)}" ${t.id===sourceTab.id?'selected':''}>${esc(t.name)}</option>`).join('');
     const updateRooms=()=>{const tab=this.layout.find(t=>t.id===tabSelect.value);roomSelect.innerHTML=(tab?.rooms||[]).map(r=>`<option value="${esc(r.id)}" ${r.id===sourceRoom.id?'selected':''}>${esc(r.name)}</option>`).join('');dialog.querySelector('#transfer-apply').disabled=!roomSelect.options.length;};
-    tabSelect.onchange=updateRooms;mode.onchange=()=>dialog.querySelector('#transfer-apply').textContent=mode.value==='copy'?'Kopieren':'Verschieben';
+    tabSelect.onchange=updateRooms;mode.onchange=()=>dialog.querySelector('#transfer-apply').textContent=mode.value==='copy'?this.t("Kopieren","Copy"):this.t("Verschieben","Move");
     dialog.querySelector('#transfer-cancel').onclick=()=>dialog.close();
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     dialog.querySelector('form').onsubmit=ev=>{
       ev.preventDefault();const targetTab=this.layout.find(t=>t.id===tabSelect.value),targetRoom=targetTab?.rooms?.find(r=>r.id===roomSelect.value);
-      if(!targetRoom){dialog.querySelector('#transfer-error').textContent='Bitte einen Zielraum auswählen.';return;}
-      if(mode.value==='move'&&targetRoom===sourceRoom){dialog.querySelector('#transfer-error').textContent='Die Karte befindet sich bereits in diesem Raum.';return;}
+      if(!targetRoom){dialog.querySelector('#transfer-error').textContent=this.t("Bitte einen Zielraum auswählen.","Select a destination room.");return;}
+      if(mode.value==='move'&&targetRoom===sourceRoom){dialog.querySelector('#transfer-error').textContent=this.t("Die Karte befindet sich bereits in diesem Raum.","This card is already in that room.");return;}
       const card=mode.value==='copy'?JSON.parse(JSON.stringify(sourceCard)):sourceCard;
       if(mode.value==='copy'){card.id=this.uid();delete card.groupId;card.title=(card.title||'Karte')+' (Kopie)';}
       if(mode.value==='move')sourceRoom.cards.splice(sourceRoom.cards.indexOf(sourceCard),1);
@@ -3793,7 +3793,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const knownTypes=[...new Set([...catalog,initialType].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
     const typeOptions=knownTypes.map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('');
     const initialText=stored?JSON.stringify(stored,null,2):legacy.configuration||'{}';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Eigene Custom Card","Custom card")}</h2><p class="muted">Kartentyp auswählen, um eine YAML-Vorlage einzufügen, oder eine vollständige YAML-/JSON-Konfiguration übernehmen. Beispiel-Entitäten bitte durch vorhandene Entitäten ersetzen.</p><label>Titel<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>Installierte Custom Cards<select id="custom-type-select" style="width:100%"><option value="">Kartentyp auswählen …</option>${typeOptions}<option value="__manual__">Anderen Kartentyp manuell eingeben …</option></select></label><p id="custom-marketplace-status" class="muted" style="font-size:12px;margin:6px 0">Kartenabgleich läuft automatisch im Hintergrund.</p><label>Home-Assistant-Entität <button class="secondary" type="button" id="custom-pick-entity">Entität auswählen …</button> <span id="custom-entity-label" class="muted"></span></label><label>Custom-Card-Typ<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><div id="custom-quick-fields" style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:10px 0"><strong>Schnelleinstellungen</strong><p class="muted" style="font-size:12px;margin:6px 0">Nur für unterstützte Kartentypen. YAML bleibt frei bearbeitbar.</p><label>Anzeigename<input id="custom-quick-name" placeholder="Kartenname"></label><label>Icon<select id="custom-quick-icon"></select></label><label>Iconfarbe<select id="custom-quick-color"><option value="">Nicht festlegen</option><option value="blue">Blau</option><option value="green">Grün</option><option value="red">Rot</option><option value="orange">Orange</option><option value="purple">Violett</option></select></label></div><label>Konfiguration (YAML oder JSON, mit oder ohne type)<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="custom-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(620px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Eigene Custom Card","Custom card")}</h2><p class="muted">${this.t("Kartentyp auswählen, um eine YAML-Vorlage einzufügen, oder eine vollständige YAML-/JSON-Konfiguration übernehmen. Beispiel-Entitäten bitte durch vorhandene Entitäten ersetzen.","Select a card type to insert a YAML template, or provide a complete YAML or JSON configuration. Replace example entities with existing entities.")}</p><label>${this.t("Titel","Title")}<input id="custom-title" value="${esc(c.title)}" maxlength="80"></label><label>${this.t("Installierte Custom Cards","Installed custom cards")}<select id="custom-type-select" style="width:100%"><option value="">${this.t("Kartentyp auswählen …","Select card type …")}</option>${typeOptions}<option value="__manual__">${this.t("Anderen Kartentyp manuell eingeben …","Enter another card type …")}</option></select></label><p id="custom-marketplace-status" class="muted" style="font-size:12px;margin:6px 0">${this.t("Kartenabgleich läuft automatisch im Hintergrund.","Card discovery runs in the background.")}</p><label>${this.t("Home-Assistant-Entität","Home Assistant entity")} <button class="secondary" type="button" id="custom-pick-entity">${this.t("Entität auswählen …","Select entity …")}</button> <span id="custom-entity-label" class="muted"></span></label><label>${this.t("Custom-Card-Typ","Custom card type")}<input id="custom-type" value="${esc(initialType)}" placeholder="custom:..."></label><div id="custom-quick-fields" style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:10px 0"><strong>${this.t("Schnelleinstellungen","Quick settings")}</strong><p class="muted" style="font-size:12px;margin:6px 0">${this.t("Nur für unterstützte Kartentypen. YAML bleibt frei bearbeitbar.","Available for supported card types. You can still edit the YAML directly.")}</p><label>${this.t("Anzeigename","Display name")}<input id="custom-quick-name" placeholder="${this.t("Kartenname","Card name")}"></label><label>Icon<select id="custom-quick-icon"></select></label><label>${this.t("Iconfarbe","Icon color")}<select id="custom-quick-color"><option value="">${this.t("Nicht festlegen","Use default")}</option><option value="blue">${this.t("Blau","Blue")}</option><option value="green">${this.t("Grün","Green")}</option><option value="red">${this.t("Rot","Red")}</option><option value="orange">Orange</option><option value="purple">${this.t("Violett","Purple")}</option></select></label></div><label>${this.t("Konfiguration (YAML oder JSON, mit oder ohne type)","Configuration (YAML or JSON, with or without type)")}<textarea id="custom-config" rows="11" style="width:100%;box-sizing:border-box;font-family:monospace">${esc(initialText)}</textarea></label><p id="custom-error" style="color:var(--error-color,#c33)" role="alert"></p><div class="actions"><button id="custom-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="custom-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
     this.shadowRoot.appendChild(overlay);
     const select=overlay.querySelector('#custom-type-select'),typeInput=overlay.querySelector('#custom-type');
     if(knownTypes.includes(initialType))select.value=initialType;
@@ -3842,7 +3842,7 @@ class RotapfelDashboardManager extends HTMLElement {
     select.dispatchEvent(new Event('change'));
     const fillTypes=types=>{
       const current=typeInput.value.trim();
-      select.innerHTML='<option value="">Kartentyp auswählen …</option>'+[...new Set([...types,current].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('')+'<option value="__manual__">Anderen Kartentyp manuell eingeben …</option>';
+      select.innerHTML=`<option value="">${this.t("Kartentyp auswählen …","Select card type …")}</option>`+[...new Set([...types,current].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')).map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('')+`<option value="__manual__">${this.t("Anderen Kartentyp manuell eingeben …","Enter another card type …")}</option>`;
       select.value=current&&[...select.options].some(o=>o.value===current)?current:'__manual__';
       select.dispatchEvent(new Event('change'));
     };
@@ -3920,21 +3920,21 @@ class RotapfelDashboardManager extends HTMLElement {
     const quickIcon=overlay.querySelector('#custom-quick-icon');
     const quickColor=overlay.querySelector('#custom-quick-color');
     const iconChoices=[
-      ['mdi:home','Haus'],['mdi:lightbulb','Licht'],['mdi:power','Ein/Aus'],
-      ['mdi:thermometer','Temperatur'],['mdi:radiator','Heizung'],
-      ['mdi:water-percent','Luftfeuchtigkeit'],['mdi:window-closed','Fenster'],
-      ['mdi:door','Tür'],['mdi:motion-sensor','Bewegung'],
-      ['mdi:flash','Energie'],['mdi:battery','Batterie'],['mdi:fan','Lüfter']
+      ['mdi:home',this.t("Haus","Home")],['mdi:lightbulb',this.t("Licht","Light")],['mdi:power',this.t("Ein/Aus","On/off")],
+      ['mdi:thermometer',this.t("Temperatur","Temperature")],['mdi:radiator',this.t("Heizung","Heating")],
+      ['mdi:water-percent',this.t("Luftfeuchtigkeit","Humidity")],['mdi:window-closed',this.t("Fenster","Window")],
+      ['mdi:door',this.t("Tür","Door")],['mdi:motion-sensor',this.t("Bewegung","Motion")],
+      ['mdi:flash',this.t("Energie","Energy")],['mdi:battery',this.t("Batterie","Battery")],['mdi:fan',this.t("Lüfter","Fan")]
     ];
     const showQuickIcon=current=>{
-      const options=[new Option('Standard der Karte','')];
+      const options=[new Option(this.t("Standard der Karte","Card default"),'')];
       for(const [value,label] of iconChoices){
         options.push(new Option(label+' ('+value+')',value));
       }
       if(current&&!iconChoices.some(([value])=>value===current)){
         options.push(new Option(current,current));
       }
-      options.push(new Option('Anderes MDI-Icon eingeben …','__manual__'));
+      options.push(new Option(this.t("Anderes MDI-Icon eingeben …","Enter another MDI icon …"),'__manual__'));
       quickIcon.replaceChildren(...options);
       quickIcon.value=current;
     };
@@ -3993,10 +3993,10 @@ class RotapfelDashboardManager extends HTMLElement {
       const current=yamlScalar(profile.icon);
       let value=quickIcon.value;
       if(value==='__manual__'){
-        value=window.prompt('MDI-Icon eingeben (z. B. mdi:home)',current)?.trim();
+        value=window.prompt(this.t("MDI-Icon eingeben (z. B. mdi:home)","Enter an MDI icon (e.g. mdi:home)"),current)?.trim();
         if(!value){showQuickIcon(current);return;}
         if(!/^mdi:[a-z0-9-]+$/.test(value)){
-          window.alert('Bitte einen gültigen MDI-Namen eingeben, z. B. mdi:home.');
+          window.alert(this.t("Bitte einen gültigen MDI-Namen eingeben, z. B. mdi:home.","Enter a valid MDI name, such as mdi:home."));
           showQuickIcon(current);
           return;
         }
@@ -4021,8 +4021,8 @@ class RotapfelDashboardManager extends HTMLElement {
         fillTypes(types);
         const report=this._marketplaceCardReport;
         overlay.querySelector('#custom-marketplace-status').textContent=report
-          ?'Marketplace: '+report.installed+' installierte Dashboard-Erweiterungen, '+report.matched+' anhand der Ressourcen zugeordnet. Eine Erweiterung kann mehrere Kartentypen enthalten.'
-          :'Kartentypen automatisch aus Lovelace-Ressourcen und Browserregistrierung erkannt; Marketplace-Abgleich nicht verfügbar.';
+          ?this.t(`Marketplace: ${report.installed} installierte Dashboard-Erweiterungen, ${report.matched} anhand der Ressourcen zugeordnet. Eine Erweiterung kann mehrere Kartentypen enthalten.`,`Marketplace: ${report.installed} installed dashboard extensions, ${report.matched} matched to resources. An extension can contain multiple card types.`)
+          :this.t("Kartentypen automatisch aus Lovelace-Ressourcen und Browserregistrierung erkannt; Marketplace-Abgleich nicht verfügbar.","Card types detected from Lovelace resources and browser registrations. Marketplace lookup is unavailable.");
       }
     });
     detectType();
@@ -4030,7 +4030,7 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#custom-save').onclick=async()=>{
       const title=overlay.querySelector('#custom-title').value.trim(),selectedType=overlay.querySelector('#custom-type').value.trim(),configuration=overlay.querySelector('#custom-config').value.trim();
       const error=overlay.querySelector('#custom-error');
-      if(!title){error.textContent='Bitte einen Kartentitel eingeben.';return;}
+      if(!title){error.textContent=this.t("Bitte einen Kartentitel eingeben.","Enter a card title.");return;}
       const button=overlay.querySelector('#custom-save');button.disabled=true;error.textContent='';
       try{
         let options={};
@@ -4041,15 +4041,15 @@ class RotapfelDashboardManager extends HTMLElement {
             options=result.config;
           }
         }
-        if(!options||typeof options!=='object'||Array.isArray(options))throw Error('Die Konfiguration muss ein YAML-/JSON-Objekt sein.');
+        if(!options||typeof options!=='object'||Array.isArray(options))throw Error(this.t("Die Konfiguration muss ein YAML-/JSON-Objekt sein.","The configuration must be a YAML or JSON object."));
         const card_type=typeof options.type==='string'&&options.type.trim()?options.type.trim():selectedType;
-        if(!/^custom:[a-z0-9_-]+$/i.test(card_type))throw Error('Kein gültiger Kartentyp gefunden. Bitte type: custom:... im YAML angeben oder einen Kartentyp auswählen.');
+        if(!/^custom:[a-z0-9_-]+$/i.test(card_type))throw Error(this.t("Kein gültiger Kartentyp gefunden. Bitte type: custom:... im YAML angeben oder einen Kartentyp auswählen.","No valid card type found. Specify type: custom:... in YAML or select a card type."));
         c.title=title.slice(0,80);
         c.custom_config={...options,type:card_type};
         delete c.custom;
         overlay.remove();change();
       }catch(e){
-        error.textContent='Konfiguration konnte nicht übernommen werden: '+((typeof e?.body?.message==='string'?e.body.message:typeof e?.message==='string'?e.message:JSON.stringify(e?.body||e)));
+        error.textContent=this.t("Konfiguration konnte nicht übernommen werden: ","Could not apply the configuration: ")+((typeof e?.body?.message==='string'?e.body.message:typeof e?.message==='string'?e.message:JSON.stringify(e?.body||e)));
       }finally{button.disabled=false;}
     };
   }
@@ -4058,16 +4058,16 @@ class RotapfelDashboardManager extends HTMLElement {
     // Unknown custom cards must never be assigned guessed properties.
     const profiles={
       equinox:{label:'Equinox',fields:[
-        {key:'card_background_color',label:'Hintergrundfarbe',kind:'color',fallback:'light-blue',presets:['light-blue','indigo','blue','cyan','teal','green','amber','orange','red','purple','white','black']},
-        {key:'card_background_opacity',label:'Hintergrund-Deckkraft',kind:'number',min:0,max:100,step:1,fallback:8}
+        {key:'card_background_color',label:this.t("Hintergrundfarbe","Background color"),kind:'color',fallback:'light-blue',presets:['light-blue','indigo','blue','cyan','teal','green','amber','orange','red','purple','white','black']},
+        {key:'card_background_opacity',label:this.t("Hintergrund-Deckkraft","Background opacity"),kind:'number',min:0,max:100,step:1,fallback:8}
       ]},
       climate_cluster:{label:'Climate Cluster',fields:[
-        {key:'appearance',label:'Darstellung',kind:'enum',values:['theme','glass-dark'],fallback:'glass-dark'},
-        {key:'glass_opacity',label:'Glas-Deckkraft',kind:'number',min:0,max:1,step:0.05,fallback:0.5}
+        {key:'appearance',label:this.t("Darstellung","Appearance"),kind:'enum',values:['theme','glass-dark'],fallback:'glass-dark'},
+        {key:'glass_opacity',label:this.t("Glas-Deckkraft","Glass opacity"),kind:'number',min:0,max:1,step:0.05,fallback:0.5}
       ]},
       rotapfel_simple_thermcard:{label:'Rotapfel Simple ThermCard',fields:[
-        {key:'theme',label:'Kartenthema',kind:'enum',values:['home-assistant','auto','light','dark'],fallback:'light'},
-        {key:'viewing',label:'Betrachtungsabstand',kind:'enum',values:['near','far'],fallback:'near'}
+        {key:'theme',label:this.t("Kartenthema","Card theme"),kind:'enum',values:['home-assistant','auto','light','dark'],fallback:'light'},
+        {key:'viewing',label:this.t("Betrachtungsabstand","Viewing distance"),kind:'enum',values:['near','far'],fallback:'near'}
       ]}
     };
     return profiles[c.variant]||null;
@@ -4078,8 +4078,8 @@ class RotapfelDashboardManager extends HTMLElement {
     const x=this.design(c),profile=this.customDesignProfile(c),external=!!(profile||c.type==='custom'||this.externalVariant(c));
     const externalMode=c.design?.external_mode||'original';
     const cardConfig=profile?this.externalConfig(c):null;
-    const thermColors=c.variant==='rotapfel_simple_thermcard'?'<fieldset style="border:1px solid #8885;border-radius:10px;padding:12px;margin:12px 0"><legend>Individuelle Kartenfarben</legend>'+[['therm_background','Kartenhintergrund','#faf9f5'],['therm_text','Schriftfarbe','#1c1a17']].map(([key,label,fallback])=>'<label style="display:flex;align-items:center;gap:10px;margin:10px 0">'+label+' <input type="color" data-design-color="'+key+'" value="'+(/^#[0-9a-fA-F]{6}$/.test(c.external_options?.[key]||'')?c.external_options[key]:fallback)+'" style="width:56px;height:34px"><input type="checkbox" data-design-color-on="'+key+'" '+(c.external_options?.[key]?'checked':'')+'> Eigene Farbe</label>').join('')+'</fieldset>':'';
-    const thermAccent=c.variant==='rotapfel_simple_thermcard'?'<label>Akzentfarbe<select id="d-therm-accent"><option value="">Standard der Karte</option>'+['yellow','sage','coral','sky','lilac'].map(v=>'<option value="'+v+'" '+(c.external_options?.accent===v?'selected':'')+'>'+({yellow:'Gelb',sage:'Salbeigrün',coral:'Koralle',sky:'Himmelblau',lilac:'Flieder'})[v]+'</option>').join('')+'</select></label>':'';
+    const thermColors=c.variant==='rotapfel_simple_thermcard'?`<fieldset style="border:1px solid #8885;border-radius:10px;padding:12px;margin:12px 0"><legend>${this.t("Individuelle Kartenfarben","Custom card colors")}</legend>`+[['therm_background',this.t("Kartenhintergrund","Card background"),'#faf9f5'],['therm_text',this.t("Schriftfarbe","Text color"),'#1c1a17']].map(([key,label,fallback])=>'<label style="display:flex;align-items:center;gap:10px;margin:10px 0">'+label+' <input type="color" data-design-color="'+key+'" value="'+(/^#[0-9a-fA-F]{6}$/.test(c.external_options?.[key]||'')?c.external_options[key]:fallback)+'" style="width:56px;height:34px"><input type="checkbox" data-design-color-on="'+key+'" '+(c.external_options?.[key]?'checked':'')+`> ${this.t("Eigene Farbe","Custom color")}</label>`).join('')+'</fieldset>':'';
+    const thermAccent=c.variant==='rotapfel_simple_thermcard'?`<label>${this.t("Akzentfarbe","Accent color")}<select id="d-therm-accent"><option value="">${this.t("Standard der Karte","Card default")}</option>`+['yellow','sage','coral','sky','lilac'].map(v=>'<option value="'+v+'" '+(c.external_options?.accent===v?'selected':'')+'>'+({yellow:'Gelb',sage:'Salbeigrün',coral:'Koralle',sky:'Himmelblau',lilac:'Flieder'})[v]+'</option>').join('')+'</select></label>':'';
     const profileFields=profile?.fields||[];
     const profileFieldMarkup=profileFields.map(f=>{
       const value=c.external_options?.[f.key]??cardConfig?.[f.key]??f.fallback;
@@ -4087,7 +4087,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(f.kind==='color'){
         const raw=String(value),hex=/^#[0-9a-f]{6}$/i.test(raw);
         const presets=[...new Set([raw,...(f.presets||[])])];
-        return `<div class="profile-color-field"><label>${this.esc(f.label)}<select id="${id}-preset"><option value="__hex__" ${hex?'selected':''}>Eigene Farbe (HEX)</option>${presets.filter(v=>!/^#[0-9a-f]{6}$/i.test(v)).map(v=>`<option value="${this.esc(v)}" ${!hex&&raw===v?'selected':''}>${this.esc(v)}</option>`).join('')}</select></label><div style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="color" id="${id}-picker" value="${hex?this.esc(raw):'#008000'}" style="width:62px;min-width:62px;height:40px;padding:2px;${hex?'':'display:none;'}"><input type="text" id="${id}" value="${this.esc(raw)}" aria-label="HEX-Farbwert oder Farbname" style="flex:1;min-width:0"></div><small class="muted">Voreingestellte Farbnamen sind Beispiele, keine abschließende Liste. Für frei wählbare Farben HEX verwenden.</small></div>`;
+        return `<div class="profile-color-field"><label>${this.esc(f.label)}<select id="${id}-preset"><option value="__hex__" ${hex?'selected':''}>${this.t("Eigene Farbe (HEX)","Custom color (HEX)")}</option>${presets.filter(v=>!/^#[0-9a-f]{6}$/i.test(v)).map(v=>`<option value="${this.esc(v)}" ${!hex&&raw===v?'selected':''}>${this.esc(v)}</option>`).join('')}</select></label><div style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="color" id="${id}-picker" value="${hex?this.esc(raw):'#008000'}" style="width:62px;min-width:62px;height:40px;padding:2px;${hex?'':'display:none;'}"><input type="text" id="${id}" value="${this.esc(raw)}" aria-label="${this.t("HEX-Farbwert oder Farbname","HEX color value or color name")}" style="flex:1;min-width:0"></div><small class="muted">${this.t("Voreingestellte Farbnamen sind Beispiele, keine abschließende Liste. Für frei wählbare Farben HEX verwenden.","The presets are examples. Enter a HEX value for any other color.")}</small></div>`;
       }
       if(f.kind==='enum')return `<label>${this.esc(f.label)}<select id="${id}">${[...new Set([String(value),...f.values])].map(v=>`<option value="${this.esc(v)}" ${String(value)===v?'selected':''}>${this.esc(v)}</option>`).join('')}</select></label>`;
       if(f.kind==='number')return `<label>${this.esc(f.label)}<input id="${id}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${this.esc(value)}"></label>`;
@@ -4099,44 +4099,44 @@ class RotapfelDashboardManager extends HTMLElement {
     const color=(v,def)=>/^#[0-9a-f]{6}$/i.test(v||'')?v:def;
     const selected=(v,expected)=>v===expected?'selected':'';
     overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:16px;width:min(800px,96vw);max-height:92vh;overflow:auto;box-sizing:border-box">
-      <h2 style="margin:0 0 8px">Design bearbeiten · ${this.esc(c.title)}</h2>
-      <p class="muted">${external?'Externe Custom Card: Rahmen- und Vorschau-Effekte; die interne Darstellung wird weiterhin von der Custom Card gesteuert.':'Rotapfel-Karte: Farben, Text und Kartenrahmen können angepasst werden.'}</p>
-      ${external?`<div style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:12px 0"><strong>${profile?this.esc(profile.label)+' · karteneigene Designparameter':'Externe Custom Card · Design'}</strong>
-        ${profile?`<div id="d-profile-fields">${profileFieldMarkup}</div><p class="muted">Diese Felder ändern ausschließlich bekannte Parameter der Custom Card. Farbwerte werden nicht ungeprüft in andere Formate umgerechnet.</p>`:'<p class="muted">Für diesen Kartentyp ist kein verifiziertes Designprofil hinterlegt. Interne Farbparameter werden nicht geraten. Du kannst optional den äußeren Container gestalten.</p>'}
-        <label>Äußerer Kartencontainer<select id="d-external-mode"><option value="original" ${selected(externalMode,'original')}>Originalkarte ohne zusätzliche Rotapfel-Farben</option><option value="wrapper" ${selected(externalMode,'wrapper')}>Rotapfel-Rahmen separat gestalten</option></select></label>
+      <h2 style="margin:0 0 8px">${this.t("Design bearbeiten","Edit design")} · ${this.esc(c.title)}</h2>
+      <p class="muted">${external?this.t("Externe Custom Card: Rahmen- und Vorschau-Effekte; die interne Darstellung wird weiterhin von der Custom Card gesteuert.","Custom card: Adjust the frame and preview. The card controls its internal appearance."):this.t("Rotapfel-Karte: Farben, Text und Kartenrahmen können angepasst werden.","Rotapfel card: Adjust colors, text and frame.")}</p>
+      ${external?`<div style="border:1px solid var(--divider-color,#9995);border-radius:10px;padding:12px;margin:12px 0"><strong>${profile?this.esc(profile.label)+' · karteneigene Designparameter':this.t("Externe Custom Card · Design","Custom card design")}</strong>
+        ${profile?`<div id="d-profile-fields">${profileFieldMarkup}</div><p class="muted">${this.t("Diese Felder ändern ausschließlich bekannte Parameter der Custom Card. Farbwerte werden nicht ungeprüft in andere Formate umgerechnet.","These fields update supported custom-card settings. Color values keep their original format.")}</p>`:`<p class="muted">${this.t("Für diesen Kartentyp ist kein verifiziertes Designprofil hinterlegt. Interne Farbparameter werden nicht geraten. Du kannst optional den äußeren Container gestalten.","This card type has no verified design profile. You can customize its outer container.")}</p>`}
+        <label>${this.t("Äußerer Kartencontainer","Outer card container")}<select id="d-external-mode"><option value="original" ${selected(externalMode,'original')}>${this.t("Originalkarte ohne zusätzliche Rotapfel-Farben","Original card colors")}</option><option value="wrapper" ${selected(externalMode,'wrapper')}>${this.t("Rotapfel-Rahmen separat gestalten","Customize the Rotapfel frame")}</option></select></label>
       </div>`:''}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
       <div>
-      <div id="d-wrapper-options" style="display:${external&&externalMode!=='wrapper'?'none':'block'}"><details open><summary><strong>${external?'Äußerer Rahmen & Farben':'Hintergrund & Farben'}</strong></summary>
-        ${[['bg','Hintergrund',x.bg],['fg','Schrift',x.fg],['accent','Akzent',x.accent],['border_color','Rahmen',color(original.border_color,'#64748b')]].map(([key,label,val])=>`<label class="color-row"><span>${label}</span><input type="color" id="d-${key}" value="${val}"><span id="v-${key}">${val}</span></label>`).join('')}
-        <label>Transparenz des Hintergrunds <input type="range" id="d-opacity" min="0" max="100" value="${num(original.opacity,0,100,100)}"><span id="v-opacity"></span></label>
+      <div id="d-wrapper-options" style="display:${external&&externalMode!=='wrapper'?'none':'block'}"><details open><summary><strong>${external?this.t("Äußerer Rahmen & Farben","Outer frame and colors"):this.t("Hintergrund & Farben","Background and colors")}</strong></summary>
+        ${[['bg',this.t("Hintergrund","Background"),x.bg],['fg',this.t("Schrift","Text"),x.fg],['accent',this.t("Akzent","Accent"),x.accent],['border_color',this.t("Rahmen","Border"),color(original.border_color,'#64748b')]].map(([key,label,val])=>`<label class="color-row"><span>${label}</span><input type="color" id="d-${key}" value="${val}"><span id="v-${key}">${val}</span></label>`).join('')}
+        <label>${this.t("Transparenz des Hintergrunds","Background transparency")} <input type="range" id="d-opacity" min="0" max="100" value="${num(original.opacity,0,100,100)}"><span id="v-opacity"></span></label>
       </details>
-      <details open><summary><strong>Rahmen & Effekte</strong></summary>
-        <label>Rahmenstärke (px)<input type="number" id="d-border_width" min="0" max="12" value="${num(original.border_width,0,12,0)}"></label>
-        <label>Eckenrundung (px)<input type="number" id="d-radius" min="0" max="48" value="${num(original.radius,0,48,12)}"></label>
-        <label>${this.t("Schatten","Shadow")}<select id="d-shadow"><option value="none" ${selected(original.shadow||'none','none')}>${this.t("Kein Schatten","No shadow")}</option><option value="soft" ${selected(original.shadow,'soft')}>Dezent</option><option value="strong" ${selected(original.shadow,'strong')}>Stark</option></select></label>
+      <details open><summary><strong>${this.t("Rahmen & Effekte","Border and effects")}</strong></summary>
+        <label>${this.t("Rahmenstärke (px)","Border width (px)")}<input type="number" id="d-border_width" min="0" max="12" value="${num(original.border_width,0,12,0)}"></label>
+        <label>${this.t("Eckenrundung (px)","Corner radius (px)")}<input type="number" id="d-radius" min="0" max="48" value="${num(original.radius,0,48,12)}"></label>
+        <label>${this.t("Schatten","Shadow")}<select id="d-shadow"><option value="none" ${selected(original.shadow||'none','none')}>${this.t("Kein Schatten","No shadow")}</option><option value="soft" ${selected(original.shadow,'soft')}>${this.t("Dezent","Subtle")}</option><option value="strong" ${selected(original.shadow,'strong')}>${this.t("Stark","Strong")}</option></select></label>
       </details>
-      </div><details style="display:${external?'none':''}"><summary><strong>Text & Anzeige</strong></summary>
-        <label>Schriftgröße (px)<input type="number" id="d-font_size" min="10" max="32" value="${num(original.font_size,10,32,14)}"></label>
-        <label>Textausrichtung<select id="d-text_align"><option value="left" ${selected(original.text_align||'left','left')}>Links</option><option value="center" ${selected(original.text_align,'center')}>Zentriert</option><option value="right" ${selected(original.text_align,'right')}>Rechts</option></select></label>
-        <label><input id="d-show-name" type="checkbox" style="width:auto" ${c.display?.show_name!==false?'checked':''}> Kartenname anzeigen</label>
-        <label><input id="d-show-id" type="checkbox" style="width:auto" ${c.display?.show_entity_id===true?'checked':''}> Entitäts-ID anzeigen</label>
+      </div><details style="display:${external?'none':''}"><summary><strong>${this.t("Text & Anzeige","Text and display")}</strong></summary>
+        <label>${this.t("Schriftgröße (px)","Font size (px)")}<input type="number" id="d-font_size" min="10" max="32" value="${num(original.font_size,10,32,14)}"></label>
+        <label>${this.t("Textausrichtung","Text alignment")}<select id="d-text_align"><option value="left" ${selected(original.text_align||'left','left')}>${this.t("Links","Left")}</option><option value="center" ${selected(original.text_align,'center')}>${this.t("Zentriert","Centered")}</option><option value="right" ${selected(original.text_align,'right')}>${this.t("Rechts","Right")}</option></select></label>
+        <label><input id="d-show-name" type="checkbox" style="width:auto" ${c.display?.show_name!==false?'checked':''}> ${this.t("Kartenname anzeigen","Show card name")}</label>
+        <label><input id="d-show-id" type="checkbox" style="width:auto" ${c.display?.show_entity_id===true?'checked':''}> ${this.t("Entitäts-ID anzeigen","Show entity ID")}</label>
       </details>
       <details open><summary><strong>${this.t("Größe","Size")}</strong></summary>
-        <label>Breite (1–4 Spalten)<select id="d-width">${[1,2,3,4].map(n=>`<option value="${n}" ${n===x.width?'selected':''}>${n} von 4</option>`).join('')}</select></label>
-        ${external?`<label><input id="d-auto-height" type="checkbox" style="width:auto" ${this.autoCardHeight(c)?'checked':''}> Automatische Kartenhöhe</label>`:''}
-        <label>Höhe (px)<input id="d-height" type="number" min="76" max="${external?1200:320}" value="${num(original.height,76,external?1200:320,x.height)}"></label>
+        <label>${this.t("Breite (1–4 Spalten)","Width (1–4 columns)")}<select id="d-width">${[1,2,3,4].map(n=>`<option value="${n}" ${n===x.width?'selected':''}>${n} ${this.t("von 4","of 4")}</option>`).join('')}</select></label>
+        ${external?`<label><input id="d-auto-height" type="checkbox" style="width:auto" ${this.autoCardHeight(c)?'checked':''}> ${this.t("Automatische Kartenhöhe","Automatic card height")}</label>`:''}
+        <label>${this.t("Höhe (px)","Height (px)")}<input id="d-height" type="number" min="76" max="${external?1200:320}" value="${num(original.height,76,external?1200:320,x.height)}"></label>
       </details>
       </div>
       <div style="min-width:0">
         ${thermColors}${thermAccent}<strong>${this.t("Live-Vorschau","Live preview")}</strong>
         <div id="d-preview" style="margin-top:12px;padding:18px;border:1px dashed var(--divider-color,#888);border-radius:12px;min-height:140px;overflow:hidden"></div>
-        <p class="muted">Die Vorschau verändert noch keine gespeicherten Einstellungen. Bei der Rotapfel Simple ThermCard wird die echte Karte ohne Bedienfunktion angezeigt. Andere externe Karten nutzen weiterhin eine stilisierte Vorschau.</p>
+        <p class="muted">${this.t("Die Vorschau verändert noch keine gespeicherten Einstellungen. Bei der Rotapfel Simple ThermCard wird die echte Karte ohne Bedienfunktion angezeigt. Andere externe Karten nutzen weiterhin eine stilisierte Vorschau.","The preview does not change saved settings. Rotapfel Simple ThermCard shows a non-interactive preview of the actual card. Other external cards show a simplified preview.")}</p>
         <button class="secondary" id="d-reset" type="button">${this.t("Auf Standard zurücksetzen","Reset to defaults")}</button>
-        <div style="${external?'display:none;':''}margin-top:16px;border-top:1px solid #8885;padding-top:12px"><strong>Designvorlagen</strong>
-          <label>Vorlage<select id="d-template"><option value="">Vorlage auswählen …</option></select></label>
-          <div class="actions" style="flex-wrap:wrap"><button class="secondary" id="d-template-load" type="button">Vorlage laden</button><button class="secondary" id="d-template-save" type="button">Als Vorlage speichern</button><button class="secondary" id="d-template-delete" type="button">Vorlage löschen</button></div>
-          <p class="muted">Vorlagen enthalten nur Design und Anzeigeoptionen. Kartengröße, Entität und Position bleiben unverändert.</p><p id="d-template-status" class="muted" role="status"></p>
+        <div style="${external?'display:none;':''}margin-top:16px;border-top:1px solid #8885;padding-top:12px"><strong>${this.t("Designvorlagen","Design templates")}</strong>
+          <label>${this.t("Vorlage","Template")}<select id="d-template"><option value="">${this.t("Vorlage auswählen …","Select template …")}</option></select></label>
+          <div class="actions" style="flex-wrap:wrap"><button class="secondary" id="d-template-load" type="button">${this.t("Vorlage laden","Load template")}</button><button class="secondary" id="d-template-save" type="button">${this.t("Als Vorlage speichern","Save as template")}</button><button class="secondary" id="d-template-delete" type="button">${this.t("Vorlage löschen","Delete template")}</button></div>
+          <p class="muted">${this.t("Vorlagen enthalten nur Design und Anzeigeoptionen. Kartengröße, Entität und Position bleiben unverändert.","Templates contain design and display settings. Card size, entity and position are preserved.")}</p><p id="d-template-status" class="muted" role="status"></p>
         </div>
       </div></div>
       <div class="actions" style="margin-top:18px"><button id="d-save">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="d-cancel">${this.t("Abbrechen","Cancel")}</button></div></div>`;
@@ -4186,7 +4186,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const style=`background:rgba(${rgb.join(',')},${d.opacity/100});color:${d.fg};border:${d.border_width}px solid ${d.border_color};border-radius:${d.radius}px;box-shadow:${shadow};font-size:${d.font_size}px;text-align:${d.text_align};padding:16px;min-height:90px;box-sizing:border-box;`;
       const name=el('show-name').checked?`<strong>${this.esc(c.title)}</strong>`:'';
       const id=el('show-id').checked?`<small style="display:block">${this.esc(c.entity_id||'Keine Entität')}</small>`:'';
-      box.innerHTML=external&&el('external-mode').value!=='wrapper'?`<div style="padding:16px;border:1px dashed #888;border-radius:8px">${this.esc(profile?.label||'Custom Card')} – Originaldarstellung wird von der Karte selbst erzeugt.<div class="muted">Farbvorschau oben ist eine Browser-Näherung. Die echte Karte wird nach Übernehmen neu geladen.</div></div>`:`<div style="${style}">${name}${id}<div style="margin-top:12px;color:${d.fg}">${external?'Äußerer Kartencontainer – Vorschau':this.esc(this.stateLabel(c))}</div><span style="display:inline-block;margin-top:10px;background:${d.accent};color:white;padding:5px 12px;border-radius:8px">${this.t("Akzent","Accent")}</span></div>`;
+      box.innerHTML=external&&el('external-mode').value!=='wrapper'?`<div style="padding:16px;border:1px dashed #888;border-radius:8px">${this.esc(profile?.label||'Custom Card')} – Originaldarstellung wird von der Karte selbst erzeugt.<div class="muted">Farbvorschau oben ist eine Browser-Näherung. Die echte Karte wird nach Übernehmen neu geladen.</div></div>`:`<div style="${style}">${name}${id}<div style="margin-top:12px;color:${d.fg}">${external?this.t("Äußerer Kartencontainer – Vorschau","Outer card container preview"):this.esc(this.stateLabel(c))}</div><span style="display:inline-block;margin-top:10px;background:${d.accent};color:white;padding:5px 12px;border-radius:8px">${this.t("Akzent","Accent")}</span></div>`;
       if(c.variant==='rotapfel_simple_thermcard'){
         // Preview is read-only: never attach the live Home Assistant service client.
         const config=this.externalConfig(c);
@@ -4255,7 +4255,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const templateSelect=el('template'),templateStatus=el('template-status');
     let templates=[];
     const setStatus=msg=>{templateStatus.textContent=msg;};
-    const populate=()=>{const current=templateSelect.value;templateSelect.replaceChildren(new Option('Vorlage auswählen …',''),...templates.map((t,i)=>new Option(t.name,String(i))));if(templates[Number(current)]&&current!=='')templateSelect.value=current;};
+    const populate=()=>{const current=templateSelect.value;templateSelect.replaceChildren(new Option(this.t("Vorlage auswählen …","Select template …"),''),...templates.map((t,i)=>new Option(t.name,String(i))));if(templates[Number(current)]&&current!=='')templateSelect.value=current;};
     // Use the authenticated Home Assistant API client already used for dashboards.
     // This avoids accessing undocumented auth internals and prevents silent failures.
     const storeTemplates=async(next)=>{
@@ -4337,7 +4337,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const entries=Object.keys(states).filter(id=>allowed.includes(id.split('.')[0])).sort();
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>Home Assistant Entität auswählen</h2><label>${this.t("Suche","Search")}<input id="entity-search" placeholder="Name oder entity_id" autocomplete="off"></label><label>Entitätstyp<select id="entity-domain"><option value="">Alle Typen</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Entität<select id="entity-select" size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="entity-cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.</p></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>${this.t("Home Assistant Entität auswählen","Select a Home Assistant entity")}</h2><label>${this.t("Suche","Search")}<input id="entity-search" placeholder="${this.t("Name oder entity_id","Name or entity ID")}" autocomplete="off"></label><label>Entitätstyp<select id="entity-domain"><option value="">Alle Typen</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>${this.t("Entität","Entity")}<select id="entity-select" size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="entity-cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.</p></div>`;
     this.shadowRoot.appendChild(overlay);
     const search=overlay.querySelector('#entity-search'),domain=overlay.querySelector('#entity-domain'),select=overlay.querySelector('#entity-select');
     const refresh=()=>{const q=search.value.toLocaleLowerCase(),d=domain.value;const filtered=entries.filter(id=>(!d||id.startsWith(d+'.'))&&(id.toLowerCase().includes(q)||String(states[id]?.attributes?.friendly_name||'').toLowerCase().includes(q))).slice(0,500);select.replaceChildren(...filtered.map(id=>{const o=document.createElement('option');o.value=id;o.textContent=`${states[id]?.attributes?.friendly_name||id} · ${id}`;if(id===current)o.selected=true;return o;}));};
