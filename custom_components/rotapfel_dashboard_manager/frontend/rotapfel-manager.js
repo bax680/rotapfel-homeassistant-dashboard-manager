@@ -99,7 +99,7 @@ class RotapfelDashboardManager extends HTMLElement {
   disconnectedCallback(){this._previewResizeObserver?.disconnect();}
   esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   cardKind(c){
-    if(c.type==='label')return this.t("Beschriftung","Label");
+    if(c.type==='label')return 'label';
     if(c.type==='custom')return 'custom';
     if(c.type!=='entity'||!c.entity_id)return 'placeholder';
     if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(c.variant))return 'climate';
@@ -111,6 +111,10 @@ class RotapfelDashboardManager extends HTMLElement {
     if(domain==='climate')return 'climate';
     if(domain==='cover')return 'cover';
     return 'entity';
+  }
+  cardKindLabel(c){
+    const kind=this.cardKind(c);
+    return kind==='label'?this.t("Beschriftung","Label"):kind;
   }
   cardState(c){return this._hass?.states?.[c.entity_id];}
   stateLabel(c){
@@ -2112,7 +2116,7 @@ class RotapfelDashboardManager extends HTMLElement {
       // The transformed element keeps its original layout width; the scrollable spacer
       // provides the correct scroll extent without changing original card coordinates.
       scaled.style.marginBottom=-(height-displayHeight)+'px';
-      status.textContent=`${Math.round(scale*100)} % · Vorschau ${displayWidth} × ${displayHeight} px`;
+      status.textContent=`${Math.round(scale*100)} % · ${this.t("Vorschau","Preview")} ${displayWidth} × ${displayHeight} px`;
     };
     select.addEventListener('change',()=>{this._previewZoomMode=select.value;apply();});
     this._previewResizeObserver=new ResizeObserver(apply);
@@ -2131,9 +2135,9 @@ class RotapfelDashboardManager extends HTMLElement {
     const selectedId=this._selectedCards?.[r.id];const active=cards.find(c=>c.id===selectedId)||cards[0];
     const info=active?this.design(active):null;
     return `<details class="room room-collapsible" data-room="${e(r.id)}" ${isActive?'open':''}><summary class="room-summary"><span class="room-disclosure" aria-hidden="true"></span><strong>${e(r.name)}</strong><span class="muted">${cards.length} ${cards.length===1?this.t("Karte","card"):this.t("Karten","cards")} · ${isActive?this.t("Aktiver Raum","Active room"):this.t("Aufklappen zum Bearbeiten","Expand to edit")}</span></summary><div class="editor-actions room-management"><button data-room-action="add-type">${this.t("+ Karte hinzufügen","+ Add card")}</button><button class="secondary" data-room-action="library">${this.t("Gespeicherte Vorlagen","Saved templates")}</button><button class="secondary" data-room-action="paste" ${this._cardClipboard?'':'disabled'}>${this.t("Karte einfügen","Paste card")}</button><details class="editor-action-menu"><summary>${this.t("Raumaktionen","Room actions")}</summary><div class="editor-menu-items"><button class="secondary" data-room-action="rename">${this.t("Umbenennen","Rename")}</button><button class="secondary" data-room-action="duplicate">${this.t("Raum duplizieren","Duplicate room")}</button><button class="secondary" data-room-action="transfer">${this.t("In anderen Tab…","Move to another tab…")}</button><button class="secondary layout-action-danger" data-room-action="remove">${this.t("Löschen","Delete")}</button></div></details></div>
-      <div class="room-editor layout-band layout-band-cards"><div><div class="room-sort-bar"><strong>${this.t("Karten","Cards")} (${cards.length})</strong><select class="room-sort" aria-label="${this.t("Karten sortieren","Sort cards")}"><option value="position" ${sort==='position'?'selected':''}>${this.t("Reihenfolge","Order")}</option><option value="az" ${sort==='az'?'selected':''}>Name A–Z</option><option value="za" ${sort==='za'?'selected':''}>Name Z–A</option></select></div><div class="room-card-list">${ordered.map(c=>`<div class="room-card-item ${active?.id===c.id?'selected':''}" data-card="${e(c.id)}" title="${e(c.title)}" role="button" tabindex="0" aria-pressed="${active?.id===c.id}"><div class="room-card-head"><input type="checkbox" tabindex="-1" aria-label="${this.t("Karte auswählen","Select card")}" ${active?.id===c.id?'checked':''}><span><strong>${e(c.title)}</strong><br><span class="muted">${e(this.cardKind(c))}</span></span></div>${this.renderPreview(c)}<div class="room-card-meta">${this.design(c).width}/4 ${this.t("Spalten","columns")} · ${this.cardHeightLabel(c)}</div></div>`).join('')}</div>${!cards.length?`<p class="muted">${this.t("Noch keine Karten. Füge oben eine Karte hinzu.","No cards yet. Add a card above.")}</p>`:''}</div>
+      <div class="room-editor layout-band layout-band-cards"><div><div class="room-sort-bar"><strong>${this.t("Karten","Cards")} (${cards.length})</strong><select class="room-sort" aria-label="${this.t("Karten sortieren","Sort cards")}"><option value="position" ${sort==='position'?'selected':''}>${this.t("Reihenfolge","Order")}</option><option value="az" ${sort==='az'?'selected':''}>Name A–Z</option><option value="za" ${sort==='za'?'selected':''}>Name Z–A</option></select></div><div class="room-card-list">${ordered.map(c=>`<div class="room-card-item ${active?.id===c.id?'selected':''}" data-card="${e(c.id)}" title="${e(c.title)}" role="button" tabindex="0" aria-pressed="${active?.id===c.id}"><div class="room-card-head"><input type="checkbox" tabindex="-1" aria-label="${this.t("Karte auswählen","Select card")}" ${active?.id===c.id?'checked':''}><span><strong>${e(c.title)}</strong><br><span class="muted">${e(this.cardKindLabel(c))}</span></span></div>${this.renderPreview(c)}<div class="room-card-meta">${this.design(c).width}/4 ${this.t("Spalten","columns")} · ${this.cardHeightLabel(c)}</div></div>`).join('')}</div>${!cards.length?`<p class="muted">${this.t("Noch keine Karten. Füge oben eine Karte hinzu.","No cards yet. Add a card above.")}</p>`:''}</div>
       <aside class="room-editor-side">${active?`<h4 class="editor-card-title">${e(active.title)}</h4>
-      <p class="entity-label">${e(active.custom_config?.entity||active.entity_id||this.cardKind(active))} · ${info.width}/4 ${this.t("Spalten","columns")} · ${this.cardHeightLabel(active)}</p>
+      <p class="entity-label">${e(active.custom_config?.entity||active.entity_id||this.cardKindLabel(active))} · ${info.width}/4 ${this.t("Spalten","columns")} · ${this.cardHeightLabel(active)}</p>
       <div class="editor-actions">${active.type==='entity'?`<button class="secondary" data-side-action="entity">${this.t("Entität ändern","Change entity")}</button>`:''}${active.type==='custom'?`<button class="secondary" data-side-action="custom">${this.t("Karte konfigurieren","Configure card")}</button>`:''}${this.externalVariant(active)?`<button class="secondary" data-side-action="thermostat">${this.t("Thermostat konfigurieren","Configure thermostat")}</button>`:''}<button class="secondary" data-side-action="design">Design</button><button class="secondary" data-side-action="position">Position</button></div>
       <div class="editor-actions editor-card-actions" role="group" aria-label="${this.t("Karte verwalten","Manage card")}"><button class="secondary" data-side-action="rename">${this.t("Umbenennen","Rename")}</button><button class="secondary" data-side-action="duplicate">${this.t("Karte duplizieren","Duplicate card")}</button><button class="secondary" data-side-action="save-library">${this.t("In Kartenbibliothek speichern","Save to card library")}</button><button class="secondary" data-side-action="copy">${this.t("Karte kopieren","Copy card")}</button><button class="secondary" data-side-action="transfer">${this.t("In anderen Raum/Tab…","Move or copy to another room/tab…")}</button><button class="secondary" data-side-action="left" ${cards.indexOf(active)===0?'disabled':''}>${this.t("← Zurück","← Previous")}</button><button class="secondary" data-side-action="right" ${cards.indexOf(active)===cards.length-1?'disabled':''}>${this.t("Weiter →","Next →")}</button><button class="secondary layout-action-danger" data-side-action="remove">${this.t("Karte entfernen","Remove card")}</button></div>`:`<p class="muted">${this.t("Wähle links eine Karte aus.","Select a card on the left.")}</p>`}</aside></div></details>`;
   }
@@ -2912,7 +2916,9 @@ class RotapfelDashboardManager extends HTMLElement {
         return {members,w,h,left,top,local,group:true};
       }).sort((a,b)=>Math.min(...a.members.map(v=>v.i))-Math.min(...b.members.map(v=>v.i)));
       // Sort remaining single cards by their actual rendered card type.
-      const cardType=v=>this.externalVariant(v.c)||this.cardKind(v.c)||v.c.type||'other';
+      const cardType=({c})=>this.externalVariant(c)
+        ||(c.type==='custom'&&(c.custom_config?.type||c.custom?.card_type))
+        ||this.cardKind(c);
       // The first single-card type should be the type already used by a group.
       // This makes the next card of that type continue immediately after its group.
       const groupTypes=[...new Set(blocks.flatMap(b=>b.members.map(cardType)))];
