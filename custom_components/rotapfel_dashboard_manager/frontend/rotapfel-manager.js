@@ -1346,7 +1346,7 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13950</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="Home Assistant Seitenleiste öffnen" title="Home Assistant Menü">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="Frontend-Build der installierten Integration">Rotapfel Control Manager · Alpha 13.9.33 · Build 0.2.0a13951</div>${d?`<div class="top"><div><button class="secondary" id="back">← Übersicht</button><h1>${e(d.name)}</h1><div class="muted">Layout-Editor · V0.2 Alpha 13.9.33 · ${e(d.profile)} ${this.dirty?'· Ungespeicherte Änderungen':''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
 <div class="layout-control-panel">
         ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>01 · Design & Raster</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">Kartendesign pro Dashboard · Farben und Maße pro Karte</span></div></details>
         <details class="layout-control-group" open><summary>02 · Geräteprofile & Vorlagen</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen</span></label><span id="device-profile-status" class="muted">Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.</span></div></details>
@@ -1355,7 +1355,7 @@ class RotapfelDashboardManager extends HTMLElement {
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     </section>
     ${this.layout?.length?this.renderTab():`<p class="muted">${this.t("Noch keine Tabs. Lege den ersten Tab an.","No tabs yet. Add a tab to get started.")}</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.50</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13950</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">Dashboard-Verwaltung · Version 0.2 Alpha 13.9.51</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13951</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
       <option value="auto">${this.t('Automatisch','Automatic')}</option><option value="de">Deutsch</option><option value="en">English</option>
     </select></label><button class="secondary" id="frontend-reload" title="Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)">↻ Frontend neu laden</button><button class="secondary" id="resource-manager">${this.t("Custom-Card-Ressourcen","Custom card resources")}</button><button class="secondary" id="import-dashboard-backup">${this.t("JSON importieren","Import JSON")}</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">${this.t("+ Dashboard erstellen","+ Create dashboard")}</button></div></div>
     <div class="rotapfel-update-info" aria-label="Update-Info"><span>${this.t("Installiert","Installed")} <strong id="rotapfel-installed-version">${e(this._installedVersion||this.t("Nicht ermittelt","Unknown"))}</strong></span><span>${this.t("Verfügbares Update","Available update")} <strong id="rotapfel-offered-version">${e(this.availableUpdate()||this.t("Kein konkretes Update gemeldet","No update reported"))}</strong></span></div>
@@ -1816,6 +1816,12 @@ class RotapfelDashboardManager extends HTMLElement {
       const preview=tile.querySelector('.external-card-preview');
       if(preview){preview.style.setProperty('height','100%','important');preview.style.setProperty('min-height','0','important');preview.style.setProperty('overflow','hidden','important');preview.style.setProperty('padding','0','important');preview.style.position='relative';}
       const host=slot.firstElementChild;
+      if(card.variant==='ha-native'){
+        // Native Lovelace cards reflow at the selected width. Keep their
+        // natural height measurable even when the saved frame clips them.
+        slot.style.cssText='position:absolute;inset:0 auto auto 0;width:100%;height:auto;min-height:0;max-height:none;overflow:visible;transform:none';
+        continue;
+      }
       const surface=kind==='equinox'?this.findExternalSurface(host):null;
       // Equinox uses its own responsive shadow-DOM surface. Its actual
       // dimensions, not a guessed 430 x 310 box, define the scaling ratio.
@@ -1986,6 +1992,17 @@ class RotapfelDashboardManager extends HTMLElement {
     const preferred=type==='custom:mushroom-entity-card'?320:Math.max(220,currentWidth);
     return Math.min(available,preferred);
   }
+  nativeFrameHeight(tile){
+    const host=tile?.querySelector('.external-card-slot')?.firstElementChild;
+    if(!host||host.matches('hui-error-card,hui-warning'))return null;
+    const surface=this.findExternalSurface(host);
+    if(!surface&&!host.childElementCount&&!host.shadowRoot?.childElementCount)return null;
+    // Use layout dimensions instead of visual bounds, which may be zoomed.
+    const contentHeight=Math.max(host.offsetHeight,host.scrollHeight,
+      surface?.offsetHeight||0,surface?.scrollHeight||0);
+    if(contentHeight<8)return null;
+    return Math.max(60,Math.ceil(contentHeight)+Math.max(0,tile.offsetHeight-tile.clientHeight));
+  }
   fittedFrameHeight(card,tile,w){
     const size=this.externalCardSize(card,tile);
     if(!size)return null;
@@ -2010,14 +2027,16 @@ class RotapfelDashboardManager extends HTMLElement {
       const slot=tile.querySelector('.external-card-slot');
       const host=slot?.firstElementChild;
       let genericHeight=0;
-      if(generic&&host){
+      const native=card.variant==='ha-native';
+      if(generic&&!native&&host){
         const surface=host.shadowRoot?.querySelector('ha-card')||host;
         // The unscaled ha-card is the source of truth. The outer wrapper
         // can be stretched to the saved frame and must not be measured.
         genericHeight=Math.max(surface.offsetHeight||0,surface.scrollHeight||0);
       }
-      const size=generic?{nativeWidth:old.w,nativeHeight:genericHeight}:this.externalCardSize(card,tile);
-      if(!size||generic&&genericHeight<8)continue;
+      const nativeHeight=native?this.nativeFrameHeight(tile):null;
+      const size=generic?{nativeWidth:old.w,nativeHeight:nativeHeight??genericHeight}:this.externalCardSize(card,tile);
+      if(!size||generic&&size.nativeHeight<8)continue;
       const therm=this.externalVariant(card)==='rotapfel_simple_thermcard';
       // ThermCard: the button fits both axes to the measured visible card.
       // Other card types retain their established height-only behavior.
@@ -2026,7 +2045,7 @@ class RotapfelDashboardManager extends HTMLElement {
       // Fit the frame to the *current visible size*, never to unscaled native
       // dimensions. Keep the scale stable after the frame has been resized.
       const desiredW=therm?Math.max(76,Math.min(width,Math.ceil(size.nativeWidth*scale)+8)):old.w;
-      const desiredH=generic?Math.max(36,Math.ceil(genericHeight)+8):therm?Math.max(60,Math.ceil(size.nativeHeight*scale)+12):this.fittedFrameHeight(card,tile,old.w);
+      const desiredH=native?nativeHeight:generic?Math.max(36,Math.ceil(genericHeight)+8):therm?Math.max(60,Math.ceil(size.nativeHeight*scale)+12):this.fittedFrameHeight(card,tile,old.w);
       const fittedH=this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false?desiredH:Math.min(height,desiredH);
       if(Math.abs(desiredW-old.w)>2||Math.abs(fittedH-old.h)>2){
         update(card,{...old,w:desiredW,h:fittedH},false);
@@ -2476,28 +2495,7 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelectorAll('.position-tile .external-card-slot').forEach(slot=>{
       if(slot.firstElementChild)positionObserver.observe(slot.firstElementChild);
     });
-    // Fit existing card frames after custom elements have completed their
-    // initial render. Never move cards automatically on editor entry.
-    let initialFrameFitDone=false;
-    const fitOnOpen=()=>{
-      if(initialFrameFitDone||!overlay.isConnected)return;
-      const pending=[...overlay.querySelectorAll('.position-tile[data-id]')].some(tile=>{
-        const card=cards.find(item=>item.c.id===tile.dataset.id)?.c;
-        return card?.type==='custom'&&tile.querySelector('.external-card-slot')&&!tile.querySelector('.external-card-slot')?.firstElementChild;
-      });
-      if(pending)return;
-      initialFrameFitDone=true;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        if(!overlay.isConnected)return;
-        this.autoFitExternalFrames(tab,overlay,positions,update,true);
-        scheduleFit();
-      }));
-    };
-    scheduleFit();
-    requestAnimationFrame(()=>requestAnimationFrame(fitOnOpen));
-    const openingFitObserver=new MutationObserver(fitOnOpen);
-    openingFitObserver.observe(overlay,{childList:true,subtree:true});
-    setTimeout(()=>{fitOnOpen();openingFitObserver.disconnect();},2500);
+
     const editorEntryDirty=this.dirty;
     const capturePositions=()=>new Map(cards.map(({c})=>[c.id,{q:{...positions.get(c.id)},position:c.position?{...c.position}:null,groupId:c.groupId||null}]));
     const initialPositions=capturePositions();
@@ -2632,7 +2630,7 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.querySelector('#auto-fit-frames').onclick=()=>{
       const protectedCount=[...overlay.querySelectorAll('.position-tile[data-id]')].filter(tile=>{
         const card=cards.find(v=>v.c.id===tile.dataset.id)?.c;
-        return card&&this.externalVariant(card)&&card.position?.manualSize===true&&!isEditorLocked(card);
+        return card&&(this.externalVariant(card)||card.type==='custom')&&card.position?.manualSize===true&&!isEditorLocked(card);
       }).length;
       const includeProtected=protectedCount>0&&confirm(`${protectedCount} Karte(n) haben eine manuell geschützte Größe. Sollen diese Größen für diese einmalige automatische Anpassung ausdrücklich überschrieben werden? Die manuelle Größensperre bleibt anschließend bestehen.`);
       rememberChange();const count=this.autoFitExternalFrames(tab,overlay,positions,update,includeProtected);
@@ -3163,7 +3161,9 @@ class RotapfelDashboardManager extends HTMLElement {
     };
     overlay.querySelector('#apply-pos').onclick=()=>{if(!active)return;const q={};for(const k of ['x','y','w','h'])q[k]=Number(overlay.querySelector('#pos-'+k).value);if(Object.values(q).some(v=>!Number.isFinite(v)))return;const old=positions.get(active.id);if(old&&q.w!==old.w&&q.h===old.h){const h=heightForWidth(active,old,q.w);if(h!==null)q.h=h;}rememberChange();update(active,q);};
     overlay.querySelectorAll('.position-tile').forEach(el=>{el.addEventListener('click',ev=>{if(mobileMultiSelect&&!positionTestActive&&!overlay.classList.contains('position-touch-drag')){ev.stopPropagation();selectCard(el.dataset.id,{ctrlKey:true});}});});
-    overlay.querySelectorAll('.position-tile').forEach(el=>{let start=null;el.addEventListener('pointerdown',ev=>{if(positionTestActive||ev.target.closest('button'))return;if(ev.pointerType==='touch'&&window.matchMedia('(max-width:767px)').matches&&!overlay.classList.contains('position-touch-drag'))return;const c=cards.find(v=>v.c.id===el.dataset.id)?.c;if(!c)return;selectCard(c.id,ev);if(isEditorLocked(c)||(!ev.target.closest('[data-resize-axis]')&&groupMembers(c.id).some(isEditorLocked))){start=null;return;}start={px:ev.clientX,py:ev.clientY,q:{...positions.get(c.id)},c,historyCaptured:false,resizeAxis:ev.target.closest('[data-resize-axis]')?.dataset.resizeAxis||'',groupStart:new Map(groupMembers(c.id).map(member=>[member.id,{...positions.get(member.id)}])),pushBase:new Map([...positions].map(([id,v])=>[id,{...v}]))};el.setPointerCapture(ev.pointerId);ev.preventDefault();});el.addEventListener('pointermove',ev=>{if(!start)return;const dx=(ev.clientX-start.px)/workspaceScale,dy=(ev.clientY-start.py)/workspaceScale;if(Math.abs(dx)+Math.abs(dy)<4)return;if(!start.historyCaptured){rememberChange();start.historyCaptured=true;}let q={...start.q};if(start.resizeAxis){if(start.resizeAxis.includes('x'))q.w+=dx;if(start.resizeAxis.includes('y'))q.h+=dy;if(start.resizeAxis==='x'){const h=heightForWidth(start.c,start.q,q.w);if(h!==null)q.h=h;}}else{q.x+=dx;q.y+=dy;}const gridActive=overlay.querySelector('#snap').checked&&!ev.altKey;
+    overlay.querySelectorAll('.position-tile').forEach(el=>{let start=null;el.addEventListener('pointerdown',ev=>{if(start||ev.button!==0||positionTestActive||ev.target.closest('button'))return;if(ev.pointerType==='touch'&&window.matchMedia('(max-width:767px)').matches&&!overlay.classList.contains('position-touch-drag'))return;const c=cards.find(v=>v.c.id===el.dataset.id)?.c;if(!c)return;selectCard(c.id,ev);if(isEditorLocked(c)||(!ev.target.closest('[data-resize-axis]')&&groupMembers(c.id).some(isEditorLocked))){start=null;return;}start={pointerId:ev.pointerId,px:ev.clientX,py:ev.clientY,q:{...positions.get(c.id)},c,historyCaptured:false,resizeAxis:ev.target.closest('[data-resize-axis]')?.dataset.resizeAxis||'',groupStart:new Map(groupMembers(c.id).map(member=>[member.id,{...positions.get(member.id)}])),pushBase:new Map([...positions].map(([id,v])=>[id,{...v}]))};el.setPointerCapture(ev.pointerId);ev.preventDefault();});el.addEventListener('pointermove',ev=>{
+          if(start?.pointerId!==ev.pointerId)return;
+          if(!(ev.buttons&1)){start=null;hideGuides();return;}const dx=(ev.clientX-start.px)/workspaceScale,dy=(ev.clientY-start.py)/workspaceScale;if(Math.abs(dx)+Math.abs(dy)<4)return;if(!start.historyCaptured){rememberChange();start.historyCaptured=true;}let q={...start.q};if(start.resizeAxis){if(start.resizeAxis.includes('x'))q.w+=dx;if(start.resizeAxis.includes('y'))q.h+=dy;if(start.resizeAxis==='x'){const h=heightForWidth(start.c,start.q,q.w);if(h!==null)q.h=h;}}else{q.x+=dx;q.y+=dy;}const gridActive=overlay.querySelector('#snap').checked&&!ev.altKey;
         const magnetActive=overlay.querySelector('#magnet').checked&&!ev.altKey;
         // Apply grid first, then magnet alignment independently. The magnet
         // wins when a nearby card edge is within its acquisition threshold.
@@ -3277,20 +3277,24 @@ class RotapfelDashboardManager extends HTMLElement {
           const dx2=clamp(deltaX,minDx,maxDx),dy2=clamp(deltaY,minDy,maxDy);
           for(const [id,original] of start.groupStart){const member=cards.find(v=>v.c.id===id)?.c;if(member)update(member,{...original,x:original.x+dx2,y:original.y+dy2});}
         }
-        });const finishResize=()=>{
+        });const finishResize=ev=>{
+          if(start?.pointerId!==ev.pointerId)return;
           const finished=start;
           start=null;hideGuides();
-          if(!finished?.resizeAxis||!finished.historyCaptured)return;
+          if(ev.type!=='pointerup'||!finished.resizeAxis||!finished.historyCaptured)return;
+          if(finished.c.variant==='ha-native'&&finished.resizeAxis!=='x')return;
+          const applied=positions.get(finished.c.id);
           // After the drag, measure the real card content once the browser has
           // completed layout. Do not resize other cards or alter the chosen width.
           requestAnimationFrame(()=>requestAnimationFrame(()=>{
-            if(!overlay.isConnected)return;
+            if(!overlay.isConnected||positions.get(finished.c.id)!==applied)return;
             this.autoFitExternalFrames(tab,overlay,positions,update,true,finished.c.id);
             scheduleFit();
           }));
         };
         el.addEventListener('pointerup',finishResize);
-        el.addEventListener('pointercancel',finishResize);});
+        el.addEventListener('pointercancel',finishResize);
+        el.addEventListener('lostpointercapture',finishResize);});
     // Keyboard undo/redo is scoped to the open positioning editor. Never
     // intercept text-field undo, and remove the listener when the editor closes.
     const onPositionHistoryKey=ev=>{
