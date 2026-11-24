@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.54 · **Integrationsversion:** `0.2.0a13954` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.55 · **Integrationsversion:** `0.2.0a13955` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -77,6 +77,16 @@ Equinox, Climate Cluster Card und Mushroom sind optionale Erweiterungen. Install
 | Climate Cluster Card | [Im Marketplace öffnen](https://my.home-assistant.io/redirect/marketplace_repository/?owner=rickyfont94&repository=climate-cluster-card&category=plugin) · [Original-Repository](https://github.com/rickyfont94/climate-cluster-card) |
 
 Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen. Der Custom-Card-Editor bietet für unterstützte Typen Schnelleinstellungen für Anzeigename, Icon und Iconfarbe. Individuelle Optionen stehen in der YAML- oder JSON-Konfiguration.
+
+## Darstellung veröffentlichter Dashboards
+
+Im Layoutmanager stehen **Dashboard-Darstellung** und **Tab-Darstellung** zur Verfügung. Der Dashboard-Hintergrund gilt für alle Tabs, die ihn übernehmen. Jeder Tab kann stattdessen seine eigene Hintergrundfarbe und ein eigenes Bild verwenden. Bilder lassen sich in Home Assistant auswählen, über einen lokalen Bildpfad eintragen oder als PNG, JPEG und WebP bis 640 KiB hochladen. Bildgröße, Position, Wiederholung und Deckkraft sind einstellbar. Die Bilddeckkraft wirkt nur auf das Bild. Hochgeladene Dateien werden auf dieser Home-Assistant-Instanz über einen statischen Bildpfad bereitgestellt. Beim Umzug auf eine andere Instanz müssen die Bilddateien mit übernommen werden.
+
+Unter **Dashboard-Darstellung** kannst du zwischen Manager-Leiste, Navigationsleiste, einzelnen Tab-Schaltflächen oder keiner Tab-Navigation wählen. Die Anzeigenamen entsprechen standardmäßig den Tab-Namen und lassen sich unter **Tab-Darstellung** separat bearbeiten. Die Raumauswahl bleibt verfügbar. Dashboard- und Tab-Titel erscheinen in der veröffentlichten Ansicht ohne zusätzliche Überschrift.
+
+**Kiosk-Modus auf allen Tabs** blendet die Home-Assistant-Seitenleiste und die native Dashboard-Kopfzeile aus. Die gewählte Rotapfel-Tab-Navigation kann weiterhin angezeigt werden. Mit `?rotapfel_exit_kiosk=1` am Ende der URL öffnest du das Dashboard mit Home-Assistant-Seitenleiste. Bei einer URL mit vorhandenen Parametern verwende `&rotapfel_exit_kiosk=1`.
+
+Speichere das Layout und aktualisiere die Veröffentlichung, um die Einstellungen zu übernehmen.
 
 ## Dashboard veröffentlichen
 
@@ -196,3 +206,7 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 ### Alpha 13.9.54
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
+
+### Alpha 13.9.55
+
+Ergänzt Hintergründe für das ganze Dashboard oder einzelne Tabs, globalen Kiosk-Modus und konfigurierbare Tab-Navigation. Entfernt doppelte Überschriften und übernimmt die Korrekturen für die Vorschau und die automatische Anordnung nach Kartentyp.

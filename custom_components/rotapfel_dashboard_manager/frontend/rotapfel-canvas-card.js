@@ -96,11 +96,96 @@ class RotapfelCanvasCard extends HTMLElement {
     this._render();
   }
   set hass(hass){
+    const firstHass=!this._hass;
     this._hass=hass;
+    if(firstHass&&this._backgroundLayer)this._setBackground(this._backgroundLayer,this._config?.presentation?.background);
     if(this._config&&this._language!==rotapfelCardLanguage(hass))this._render();
     for(const card of this._cards||[])card.hass=hass;
   }
   getCardSize(){return 8;}
+  connectedCallback(){
+    this._panelPath=location.pathname.split('/')[1];
+    this._onRoute=()=>this._applyChrome();
+    window.addEventListener('location-changed',this._onRoute);
+    window.addEventListener('popstate',this._onRoute);
+    if(this._config)this._render();
+  }
+  _applyChrome(){
+    for(const style of this._chromeStyles||[])style.remove();
+    this._chromeStyles=[];
+    const settings=this._config?.presentation;
+    if(!this.isConnected||!settings||location.pathname.split('/')[1]!==this._panelPath)return;
+    const kiosk=settings.kiosk===true&&!new URLSearchParams(location.search).has('rotapfel_exit_kiosk');
+    const inject=(root,css)=>{
+      const style=document.createElement('style');
+      style.textContent=css;
+      root.append(style);
+      this._chromeStyles.push(style);
+    };
+    for(let node=this;node;){
+      const tree=node.getRootNode();
+      const host=tree.host;
+      if(!host)break;
+      if(host.localName==='hui-root'){
+        inject(tree,'.header{display:none!important} hui-view-container,hui-view-container.has-tab-bar{padding-top:var(--safe-area-inset-top,0px)!important}');
+      }
+      if(kiosk&&host.localName==='home-assistant-main'){
+        const drawer=tree.querySelector('ha-drawer');
+        inject(tree,'ha-sidebar{display:none!important} ha-drawer{--ha-sidebar-width:0px;--ha-top-app-bar-width:100%}');
+        if(drawer?.shadowRoot)inject(drawer.shadowRoot,'.sidebar-shell,wa-drawer{display:none!important} .app-content{padding-inline-start:0!important}');
+      }
+      node=host;
+    }
+  }
+  _renderPresentation(root){
+    const cfg=this._config.presentation;
+    if(!cfg)return;
+    const url=new URL(location.href);
+    const kiosk=cfg.kiosk===true&&!url.searchParams.has('rotapfel_exit_kiosk');
+    const nav=document.createElement('nav');
+    nav.className='rotapfel-tabs';
+    nav.dataset.mode=['manager','bar','buttons','none'].includes(cfg.navigation)?cfg.navigation:'manager';
+    const german=this._language==='de';
+    nav.setAttribute('aria-label',german?'Dashboard-Tabs':'Dashboard tabs');
+    if(!kiosk&&!cfg.shared){
+      const menu=document.createElement('button');
+      menu.className='rotapfel-menu';
+      menu.type='button';
+      menu.textContent='☰';
+      menu.setAttribute('aria-label',german?'Home Assistant Menü öffnen':'Open Home Assistant menu');
+      menu.onclick=()=>this.dispatchEvent(new Event('hass-toggle-menu',{bubbles:true,composed:true}));
+      nav.append(menu);
+    }
+    const tabs=Array.isArray(cfg.tabs)?cfg.tabs:[];
+    if(nav.dataset.mode!=='none'&&tabs.length>1){
+      for(const tab of tabs){
+        if(typeof tab?.path!=='string'||!/^[a-z0-9_-]+$/i.test(tab.path))continue;
+        const link=document.createElement('a');
+        const target=new URL(url);
+        if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
+        else target.pathname='/'+url.pathname.split('/')[1]+'/'+encodeURIComponent(tab.path);
+        link.href=target.pathname+target.search+target.hash;
+        link.textContent=tab.label||tab.path;
+        if(tab.path===cfg.path)link.setAttribute('aria-current','page');
+        nav.append(link);
+      }
+    }
+    if(nav.childElementCount)root.append(nav);
+  }
+  async _setBackground(layer,background){
+    let path=background?.image;
+    if(typeof path!=='string'||!path)return;
+    try{
+      if(path.startsWith('media-source://')){
+        if(!this._hass)return;
+        const resource=await this._hass.callWS({type:'media_source/resolve_media',media_content_id:path});
+        path=resource.url;
+      }else if(!/^\/(?:local\/|api\/image\/serve\/|rotapfel_dashboard_manager\/backgrounds\/)/.test(path))return;
+      const url=new URL(path,location.origin);
+      if(url.origin!==location.origin||!this.shadowRoot?.contains(layer))return;
+      layer.style.backgroundImage='url('+JSON.stringify(url.href)+')';
+    }catch(error){console.warn('Rotapfel: Background unavailable',error);}
+  }
   _render(){
     if(this._windowResizeHandler)window.removeEventListener('resize',this._windowResizeHandler);
     this._resizeObserver?.disconnect();
@@ -122,6 +207,21 @@ class RotapfelCanvasCard extends HTMLElement {
     };
     const style=document.createElement('style');style.textContent=`:host{display:block;width:100%;min-width:0;overflow:visible!important}.viewport{width:100%;overflow-x:hidden;overflow-y:visible;position:relative;background:transparent!important}.canvas{position:relative;transform-origin:top left;background:transparent!important;background-image:none!important}.tile{position:absolute;box-sizing:border-box;overflow:hidden}.tile>*{width:100%;box-sizing:border-box}.tile>rotapfel-entity-card{height:100%}.external-fit{position:absolute;left:0;top:0;transform-origin:top left;overflow:visible}.external-fit>*{display:block;width:100%;box-sizing:border-box}`;
     root.append(style);
+    style.textContent+=`
+      .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
+      .rotapfel-tabs a,.rotapfel-menu{box-sizing:border-box;padding:8px 12px;color:var(--primary-text-color);text-decoration:none;font:inherit}
+      .rotapfel-tabs[data-mode="manager"] a,.rotapfel-menu{border:1px solid var(--divider-color);border-radius:4px;background:var(--card-background-color)}
+      .rotapfel-tabs[data-mode="bar"]{border-bottom:1px solid var(--divider-color);gap:0}
+      .rotapfel-tabs[data-mode="bar"] a[aria-current]{border-bottom:3px solid var(--primary-color)}
+      .rotapfel-tabs[data-mode="buttons"] a{border:1px solid var(--divider-color);border-radius:14px;background:var(--card-background-color)}
+      .rotapfel-tabs a[aria-current]{font-weight:bold;color:var(--primary-color)}
+      .rotapfel-menu{cursor:pointer}
+      @media(min-width:870px){.rotapfel-menu{display:none}.rotapfel-tabs[data-mode="none"]{padding:0}}
+      .rotapfel-background{position:absolute;inset:0;pointer-events:none;z-index:-1}
+      .viewport{isolation:isolate}
+    `;
+    this._renderPresentation(root);
+    this._applyChrome();
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
     if(rooms.length>1){
       const nav=document.createElement('nav');nav.setAttribute('aria-label',german?'Raumauswahl':'Select room');
@@ -144,7 +244,21 @@ class RotapfelCanvasCard extends HTMLElement {
     controls.append(profileLabel,profileSelect);root.append(controls);
     this.style.background='transparent';this.style.backgroundImage='none';
     const viewport=document.createElement('div');viewport.className='viewport';
+    const background=this._config.presentation?.background;
+    this._backgroundLayer=null;
+    if(background){
+      const layer=document.createElement('div');
+      layer.className='rotapfel-background';
+      layer.style.backgroundPosition=['center','top','right','bottom','left'].includes(background.position)?background.position:'center';
+      layer.style.backgroundSize=background.size==='stretch'?'100% 100%':['cover','contain','auto'].includes(background.size)?background.size:'cover';
+      layer.style.backgroundRepeat=['repeat','repeat-x','repeat-y'].includes(background.repeat)?background.repeat:'no-repeat';
+      layer.style.opacity=rotapfelNumber(background.opacity,0,100,100)/100;
+      if(/^#[a-f0-9]{6}$/i.test(background.color||''))viewport.style.setProperty('background-color',background.color,'important');
+      viewport.append(layer);
+      this._backgroundLayer=layer;
+    }
     const canvas=document.createElement('div');canvas.className='canvas';canvas.style.width=width+'px';canvas.style.height=height+'px';viewport.append(canvas);root.append(viewport);
+    if(this._backgroundLayer)this._setBackground(this._backgroundLayer,background);
     const fit=()=>{
       const profile=resolveProfile(),dims=dimensions(profile);
       width=rotapfelNumber(dims.width,320,10000,baseWidth);height=rotapfelNumber(dims.height,240,10000,baseHeight);
@@ -277,6 +391,11 @@ class RotapfelCanvasCard extends HTMLElement {
     };
     renderCards();requestAnimationFrame(fit);
   }
-  disconnectedCallback(){if(this._windowResizeHandler)window.removeEventListener('resize',this._windowResizeHandler);this._resizeObserver?.disconnect();this._cardFitObservers?.forEach(observer=>observer.disconnect());}
+  disconnectedCallback(){
+    window.removeEventListener('location-changed',this._onRoute);
+    window.removeEventListener('popstate',this._onRoute);
+    for(const style of this._chromeStyles||[])style.remove();
+    this._chromeStyles=[];
+    if(this._windowResizeHandler)window.removeEventListener('resize',this._windowResizeHandler);this._resizeObserver?.disconnect();this._cardFitObservers?.forEach(observer=>observer.disconnect());}
 }
 if(!customElements.get('rotapfel-canvas-card'))customElements.define('rotapfel-canvas-card',RotapfelCanvasCard);

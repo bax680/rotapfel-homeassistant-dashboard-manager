@@ -1,5 +1,8 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.54, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.55, isolated from existing dashboards."""
 import asyncio
+import base64
+import binascii
+import hashlib
 import copy
 import json
 import yaml
@@ -7,17 +10,42 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView, StaticPathConfig
 from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13954"
+VERSION = "0.2.0a13955"
 
 SHARED_PANEL = "rotapfel-shared"
+BACKGROUND_LIMIT = 640 * 1024
+
+
+def background_type(image):
+    if image.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if image.startswith(b"\xff\xd8\xff"):
+        return "jpg"
+    if image[:4] == b"RIFF" and image[8:12] == b"WEBP":
+        return "webp"
+    return None
 
 PROFILES = {"fire_hd", "smartphone", "tablet", "desktop"}
+
+def save_background(path, image):
+    if path.exists():
+        return
+    with NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
+        pending = Path(temporary.name)
+        try:
+            temporary.write(image)
+            temporary.close()
+            pending.replace(path)
+        finally:
+            pending.unlink(missing_ok=True)
+
 
 def shared_dashboard_path(dashboard_id):
     return f"{SHARED_PANEL}-{dashboard_id}"
@@ -59,7 +87,10 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = state
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
     js_url = f"/{DOMAIN}/rotapfel-manager.js?v={VERSION}"
+    backgrounds = Path(hass.config.path(".storage", "rotapfel-backgrounds"))
+    await hass.async_add_executor_job(lambda: backgrounds.mkdir(parents=True, exist_ok=True))
     await hass.http.async_register_static_paths([
+        StaticPathConfig(f"/{DOMAIN}/backgrounds", str(backgrounds), cache_headers=False),
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
             str(Path(__file__).parent / "frontend" / "rotapfel-manager.js"),
@@ -241,7 +272,7 @@ class RotapfelView(HomeAssistantView):
         def message(de, en):
             return en if english else de
 
-        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "shared_publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library"}:
+        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "shared_publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library", "upload_background"}:
             raise web.HTTPNotFound()
         try:
             body = await request.json()
@@ -249,6 +280,22 @@ class RotapfelView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Invalid JSON")
         if not isinstance(body, dict):
             raise web.HTTPBadRequest(text="Expected a JSON object")
+        if action == "upload_background":
+            encoded = body.get("image")
+            if not isinstance(encoded, str) or len(encoded) > 4 * ((BACKGROUND_LIMIT + 2) // 3):
+                raise web.HTTPBadRequest(text=message("Bilddatei ist zu groß.", "Image file is too large."))
+            try:
+                image = base64.b64decode(encoded, validate=True)
+            except (ValueError, binascii.Error) as exc:
+                raise web.HTTPBadRequest(text=message("Ungültiges Bild.", "Invalid image.")) from exc
+            extension = background_type(image)
+            if not extension or len(image) > BACKGROUND_LIMIT:
+                raise web.HTTPBadRequest(text=message("Bitte PNG, JPEG oder WebP bis 640 KiB wählen.", "Choose a PNG, JPEG or WebP up to 640 KiB."))
+            filename = f"{hashlib.sha256(image).hexdigest()}.{extension}"
+            path = Path(self.hass.config.path(".storage", "rotapfel-backgrounds", filename))
+            await self.hass.async_add_executor_job(save_background, path, image)
+            return self.json({"url": f"/{DOMAIN}/backgrounds/{filename}"})
+
         if action == "parse_card_yaml":
             source = body.get("yaml")
             if not isinstance(source, str) or len(source) > 100_000:

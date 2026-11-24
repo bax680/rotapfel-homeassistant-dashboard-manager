@@ -730,11 +730,146 @@ class RotapfelDashboardManager extends HTMLElement {
     else{this.dirty=true;this._migrationMessage=this.t("Umwandlung vorbereitet, aber Speichern fehlgeschlagen. Bitte „Layout speichern“ versuchen.","Conversion is ready, but saving failed. Try “Save layout”.");}
     this.render();
   }
+  tabRoute(tab){
+    const slug=(tab.name||'tab').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'tab';
+    return slug+'-'+String(tab.id||'').slice(0,6);
+  }
+  backgroundFor(canvas,tab){
+    return tab?.background??canvas?.background??{};
+  }
+  presentationDialog(tab){
+    const global=this.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8};
+    const original=this.backgroundFor(global,tab);
+    const settings=global.presentation||{};
+    const t=(de,en)=>this.t(de,en),e=value=>this.esc(value);
+    const options=(pairs,value)=>pairs.map(([key,label])=>`<option value="${key}" ${key===value?'selected':''}>${e(label)}</option>`).join('');
+    const dialog=document.createElement('dialog');
+    dialog.style.cssText='width:min(530px,94vw);max-height:88vh;overflow:auto';
+    dialog.innerHTML=`<form method="dialog">
+      <h2>${tab?t('Tab-Darstellung','Tab appearance'):t('Dashboard-Darstellung','Dashboard appearance')}</h2>
+      ${tab?`<label><input type="checkbox" id="bg-inherit" style="width:auto" ${tab.background?'':'checked'}> ${t('Dashboard-Hintergrund übernehmen','Use dashboard background')}</label>`:''}
+      <fieldset id="background"><legend>${t('Hintergrund','Background')}</legend>
+        <label>${t('Hintergrundfarbe','Background color')} <input type="color" id="bg-color" value="${/^#[a-f0-9]{6}$/i.test(original.color||'')?original.color:'#202124'}"></label>
+        <label><input type="checkbox" style="width:auto" id="bg-color-default" ${original.color?'':'checked'}> ${t('Theme-Farbe verwenden','Use theme color')}</label>
+        <label>${t('Bild aus Home Assistant','Image from Home Assistant')}<input type="text" id="bg-image" value="${e(original.image||'')}" placeholder="/local/wallpaper.jpg"></label>
+        <small>${t('Pfad aus /local/ oder eine media-source://-Bild-ID eingeben. Bei Uploads PNG, JPEG oder WebP bis 640 KiB wählen.','Enter a /local/ path or a media-source:// image ID. Uploads accept PNG, JPEG or WebP up to 640 KiB.')}</small>
+        <button type="button" id="bg-media" class="secondary">${t('Home-Assistant-Medien durchsuchen','Browse Home Assistant media')}</button>
+        <div id="bg-media-list" hidden style="max-height:180px;overflow:auto" aria-live="polite"></div>
+        <label>${t('Bild hochladen','Upload image')}<input type="file" id="bg-upload" accept="image/png,image/jpeg,image/webp"></label>
+        <label>${t('Bildgröße','Image fit')}<select id="bg-size">${options([
+          ['cover',t('Ausfüllen','Cover')],['contain',t('Einpassen','Contain')],['stretch',t('Strecken','Stretch')],['auto',t('Originalgröße','Original size')]
+        ],original.size||'cover')}</select></label>
+        <label>${t('Bildposition','Image position')}<select id="bg-position">${options([
+          ['center',t('Mittig','Center')],['top',t('Oben','Top')],['bottom',t('Unten','Bottom')],['left',t('Links','Left')],['right',t('Rechts','Right')]
+        ],original.position||'center')}</select></label>
+        <label>${t('Wiederholung','Repeat')}<select id="bg-repeat">${options([
+          ['no-repeat',t('Keine','None')],['repeat',t('Kacheln','Tile')],['repeat-x',t('Horizontal','Horizontal')],['repeat-y',t('Vertikal','Vertical')]
+        ],original.repeat||'no-repeat')}</select></label>
+        <label>${t('Bilddeckkraft (%)','Image opacity (%)')}<input id="bg-opacity" type="range" min="0" max="100" value="${Number.isFinite(original.opacity)?original.opacity:100}"></label>
+      </fieldset>
+      ${tab?`<label>${t('Anzeigename in der Navigation','Navigation label')}<input id="display-tab-name" maxlength="80" value="${e(tab.navigationLabel||'')}" placeholder="${e(tab.name)}"></label>`:`
+        <label><input type="checkbox" id="presentation-kiosk" style="width:auto" ${settings.kiosk?'checked':''}> ${t('Kiosk-Modus auf allen Tabs','Kiosk mode on all tabs')}</label>
+        <label>${t('Tab-Navigation','Tab navigation')}<select id="presentation-nav">${options([
+          ['manager',t('Manager-Leiste','Manager tab strip')],['bar',t('Navigationsleiste','Navigation bar')],
+          ['buttons',t('Einzelne Schaltflächen','Individual buttons')],['none',t('Keine Tab-Navigation','No tab navigation')]
+        ],settings.navigation||'manager')}</select></label>`}
+      <p data-error role="alert"></p>
+      <div class="actions"><button type="submit" data-apply>${t('Übernehmen','Apply')}</button><button type="button" data-cancel class="secondary">${t('Abbrechen','Cancel')}</button></div>
+    </form>`;
+    this.shadowRoot.append(dialog);
+    const get=id=>dialog.querySelector('#'+id);
+    const inherit=get('bg-inherit');
+    if(inherit){
+      get('background').disabled=inherit.checked;
+      inherit.onchange=()=>{get('background').disabled=inherit.checked;};
+    }
+    const mediaList=get('bg-media-list');
+    const browse=async (id='',parent=null)=>{
+      mediaList.hidden=false;
+      mediaList.textContent=t('Medien werden geladen …','Loading media …');
+      try{
+        const result=await this._hass.callWS({type:'media_source/browse_media',...(id?{media_content_id:id}:{})});
+        mediaList.replaceChildren();
+        const add=(label,action)=>{
+          const button=document.createElement('button');
+          button.type='button';
+          button.className='secondary';
+          button.textContent=label;
+          button.onclick=action;
+          mediaList.append(button);
+        };
+        if(parent!==null)add(t('Zur Medienübersicht','Back to media root'),()=>browse());
+        for(const child of result.children||[]){
+          if(typeof child.media_content_id!=='string'||!child.media_content_id.startsWith('media-source://'))continue;
+          const image=child.media_class==='image'||/^image\//.test(child.media_content_type||'');
+          if(child.can_expand)add('▸ '+child.title,()=>browse(child.media_content_id,id));
+          else if(image)add(child.title,()=>{
+            get('bg-image').value=child.media_content_id;
+            get('bg-upload').value='';
+            mediaList.hidden=true;
+          });
+        }
+        if(!mediaList.childElementCount)mediaList.textContent=t('Keine Bilder gefunden.','No images found.');
+      }catch{
+        mediaList.textContent=t('Medien konnten nicht geladen werden.','Could not load media.');
+      }
+    };
+    get('bg-media').onclick=()=>browse();
+    dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+    dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+    dialog.querySelector('form').onsubmit=async event=>{
+      event.preventDefault();
+      const apply=dialog.querySelector('[data-apply]');
+      apply.disabled=true;
+      try{
+        const background={};
+        if(!inherit?.checked){
+          let image=get('bg-image').value.trim();
+          const file=get('bg-upload').files[0];
+          if(file){
+            if(file.size>640*1024)throw Error(t('Bilddatei überschreitet 640 KiB.','Image exceeds 640 KiB.'));
+            const bytes=new Uint8Array(await file.arrayBuffer());
+            let binary='';
+            for(let index=0;index<bytes.length;index+=8192)binary+=String.fromCharCode(...bytes.subarray(index,index+8192));
+            image=(await this.api('upload_background',{image:btoa(binary)})).url;
+          }
+          if(image&&!/^(?:\/(?:local\/|api\/image\/serve\/|rotapfel_dashboard_manager\/backgrounds\/)|media-source:\/\/)/.test(image)){
+            throw Error(t('Bitte einen Bildpfad aus Home Assistant eingeben.','Enter an image path from Home Assistant.'));
+          }
+          Object.assign(background,{
+            image,color:get('bg-color-default').checked?'':get('bg-color').value,
+            size:get('bg-size').value,position:get('bg-position').value,
+            repeat:get('bg-repeat').value,opacity:Number(get('bg-opacity').value)
+          });
+        }
+        if(!dialog.open)return;
+        if(tab){
+          if(inherit.checked){
+            delete tab.background;
+          }else{
+            tab.background=background;
+          }
+          tab.navigationLabel=get('display-tab-name').value.trim();
+        }else{
+          this.canvas={...global,background,presentation:{
+            kiosk:get('presentation-kiosk').checked,navigation:get('presentation-nav').value
+          }};
+        }
+        dialog.close();
+        this.dirty=true;
+        this.render();
+      }catch(error){
+        dialog.querySelector('[data-error]').textContent=error?.body?.message||error?.message||String(error);
+      }finally{apply.disabled=false;}
+    };
+    dialog.showModal();
+  }
   exportDashboard(d){
     // JSON is a YAML 1.2 subset and is accepted by Home Assistant's YAML loader.
     // Keep the exported document entirely independent from manager storage.
     const fallback={width:1920,height:1080,columns:12,gap:8};
     const warnings=[],views=[];
+    const tabs=(d.tabs||[]).map(tab=>({path:this.tabRoute(tab),label:tab.navigationLabel||tab.name||'Tab'}));
     for(const tab of d.tabs||[]){
       const canvas={...fallback,...(d.canvas||{}),...(tab.canvas||{})};
       const elements=[];
@@ -767,8 +902,15 @@ class RotapfelDashboardManager extends HTMLElement {
         }
         elements.push({room_id:room.id,x,y,w,h,z:Math.max(0,Math.round(Number(pos.z)||0)),device_layouts:layouts,card,design:c.design||{},display:c.display||{},therm_scale:this.externalVariant(c)==='rotapfel_simple_thermcard'&&Number(pos.thermScale)>0?Number(pos.thermScale):null});
       }
-      const path=(tab.name||'tab').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'tab';
-      views.push({title:tab.name||'Tab',path:path+'-'+String(tab.id||'').slice(0,6),type:'panel',cards:[{type:'custom:rotapfel-canvas-card',canvas_width:canvas.width,canvas_height:canvas.height,device_profiles:this.normalizedProfiles(d.deviceProfiles,canvas),show_mobile_layout_selector:canvas.show_mobile_layout_selector===true,rooms:(tab.rooms||[]).map(r=>({id:r.id,name:r.name})),elements}]});
+      const path=this.tabRoute(tab);
+      const presentation={...d.canvas?.presentation,
+        background:this.backgroundFor(d.canvas,tab),tabs,path};
+      views.push({title:tab.name||'Tab',path,type:'panel',cards:[{
+        type:'custom:rotapfel-canvas-card',canvas_width:canvas.width,canvas_height:canvas.height,
+        device_profiles:this.normalizedProfiles(d.deviceProfiles,canvas),
+        show_mobile_layout_selector:canvas.show_mobile_layout_selector===true,presentation,
+        rooms:(tab.rooms||[]).map(r=>({id:r.id,name:r.name})),elements
+      }]});
     }
     return {yaml:{title:d.name,views},warnings};
   }
@@ -1361,16 +1503,16 @@ class RotapfelDashboardManager extends HTMLElement {
     .color-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
     .color-row .color-value{font:12px monospace;min-width:72px}
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
-    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="${this.t("Home Assistant Seitenleiste öffnen","Open Home Assistant sidebar")}" title="${this.t("Home Assistant Menü","Home Assistant menu")}">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="${this.t("Frontend-Build der installierten Integration","Frontend build of the installed integration")}">Rotapfel Control Manager · Alpha 13.9.54 · Build 0.2.0a13954</div>${d?`<div class="top"><div><button class="secondary" id="back">${this.t("← Übersicht","← Overview")}</button><h1>${e(d.name)}</h1><div class="muted">${this.t("Layout-Editor","Layout editor")} · ${e(d.profile)} ${this.dirty?this.t("· Ungespeicherte Änderungen","· Unsaved changes"):''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
+    </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="${this.t("Home Assistant Seitenleiste öffnen","Open Home Assistant sidebar")}" title="${this.t("Home Assistant Menü","Home Assistant menu")}">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="${this.t("Frontend-Build der installierten Integration","Frontend build of the installed integration")}">Rotapfel Control Manager · Alpha 13.9.55 · Build 0.2.0a13955</div>${d?`<div class="top"><div><button class="secondary" id="back">${this.t("← Übersicht","← Overview")}</button><h1>${e(d.name)}</h1><div class="muted">${this.t("Layout-Editor","Layout editor")} · ${e(d.profile)} ${this.dirty?this.t("· Ungespeicherte Änderungen","· Unsaved changes"):''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
 <div class="layout-control-panel">
-        ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>${this.t("01 · Design & Raster","01 · Design & grid")}</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">${this.t("Kartendesign pro Dashboard · Farben und Maße pro Karte","Design per dashboard · Colors and dimensions per card")}</span></div></details>
+        ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>${this.t("01 · Design & Raster","01 · Design & grid")}</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><button class="secondary" id="dashboard-appearance">${this.t("Dashboard-Darstellung","Dashboard appearance")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">${this.t("Kartendesign pro Dashboard · Farben und Maße pro Karte","Design per dashboard · Colors and dimensions per card")}</span></div></details>
         <details class="layout-control-group" open><summary>${this.t("02 · Geräteprofile & Vorlagen","02 · Device profiles & templates")}</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>${this.t("Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen","Show manual layout selection on smartphone dashboards")}</span></label><span id="device-profile-status" class="muted">${this.t("Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.","Alpha 13.7.105: Positions and sizes are stored per profile. Choose “Save layout” to keep your changes.")}</span></div></details>
     </div>
     <section class="layout-band layout-band-tabs" aria-labelledby="rotapfel-tabs-heading"><div class="toolbar"><h2 id="rotapfel-tabs-heading">Tabs</h2><button id="add-tab">${this.t("+ Tab","+ Tab")}</button></div>
     <div class="tabs">${(this.layout||[]).map(t=>`<button class="${t.id===this.tabId?'active':'secondary'}" data-tab="${e(t.id)}">${e(t.name)}</button>`).join('')}</div>
     </section>
     ${this.layout?.length?this.renderTab():`<p class="muted">${this.t("Noch keine Tabs. Lege den ersten Tab an.","No tabs yet. Add a tab to get started.")}</p>`}`:
-    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">${this.t("Dashboard-Verwaltung","Dashboard management")} · Alpha 13.9.54</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13954</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
+    `<div class="top"><div><div class="brand"><img src="/rotapfel_dashboard_manager/red-apple-logo.png" alt="RED APPLE Logo"><div><h1>Rotapfel Control Manager</h1><div class="muted">${this.t("Dashboard-Verwaltung","Dashboard management")} · Alpha 13.9.55</div></div></div><div class="overview-controls"><span class="muted">Frontend 0.2.0a13955</span><label>${this.t('Sprache','Language')}<select id="rotapfel-language">
       <option value="auto">${this.t('Automatisch','Automatic')}</option><option value="de">${this.t("Deutsch","German")}</option><option value="en">English</option>
     </select></label><button class="secondary" id="frontend-reload" title="${this.t("Browseransicht aktualisieren (Frontend-Datei ohne HA-Neustart laden)","Reload the frontend without restarting Home Assistant")}">${this.t("↻ Frontend neu laden","↻ Reload frontend")}</button><button class="secondary" id="resource-manager">${this.t("Custom-Card-Ressourcen","Custom card resources")}</button><button class="secondary" id="import-dashboard-backup">${this.t("JSON importieren","Import JSON")}</button><input id="dashboard-backup-file" type="file" accept=".json,application/json" hidden><button id="create">${this.t("+ Dashboard erstellen","+ Create dashboard")}</button></div></div>
     <div class="rotapfel-update-info" aria-label="${this.t("Update-Info","Update information")}"><span>${this.t("Installiert","Installed")} <strong id="rotapfel-installed-version">${e(this._installedVersion||this.t("Nicht ermittelt","Unknown"))}</strong></span><span>${this.t("Verfügbares Update","Available update")} <strong id="rotapfel-offered-version">${e(this.availableUpdate()||this.t("Kein konkretes Update gemeldet","No update reported"))}</strong></span></div>
@@ -1560,7 +1702,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(tab&&overlay.querySelector('#inherit').checked){delete tab.canvas;overlay.remove();this.dirty=true;this.render();return;}
       const val=id=>Number(overlay.querySelector('#'+id).value),v={mode:overlay.querySelector('#mode').value,width:val('width'),height:val('height'),columns:val('columns'),gap:val('gap')};
       if(!Number.isInteger(v.width)||v.width<320||v.width>7680||!Number.isInteger(v.height)||v.height<240||v.height>4320||!Number.isInteger(v.columns)||v.columns<1||v.columns>24||!Number.isInteger(v.gap)||v.gap<0||v.gap>64){alert(this.t("Bitte gültige Maße und Rasterwerte eingeben.","Enter valid dimensions and grid values."));return;}
-      if(tab)tab.canvas=v;else this.canvas=v;
+      if(tab)tab.canvas=v;else this.canvas={...this.canvas,...v};
       overlay.remove();this.dirty=true;this.render();
     };
   }
@@ -2123,7 +2265,7 @@ class RotapfelDashboardManager extends HTMLElement {
     this._previewResizeObserver.observe(viewport);
     apply();
   }
-  renderTab(){const e=s=>this.esc(s),t=this.layout.find(x=>x.id===this.tabId);if(!t)return'';const selectedRoom=(t.rooms||[]).find(r=>r.id===this._activeRoomByTab?.[t.id])||t.rooms?.[0];const cv=this.effectiveCanvas(t),fixed=cv.mode==='fixed',cols=cv.columns||12;return `<section class="layout-band layout-band-tabs"><div class="toolbar layout-section-heading"><h2>Tab · ${e(t.name)}</h2><div class="editor-actions" aria-label="${this.t("Tab-Aktionen","Tab actions")}"><button class="editor-primary" id="position-editor">${this.t("▦ Positionierungsfläche öffnen","▦ Open positioning canvas")}</button><button id="add-room">${this.t("+ Raum","+ Room")}</button><button class="secondary" id="tab-canvas">${this.t("Tab-Maße / Raster","Tab dimensions / grid")}</button><details class="editor-action-menu"><summary>${this.t("Tab-Aktionen","Tab actions")}</summary><div class="editor-menu-items"><button class="secondary" id="duplicate-tab">${this.t("Tab duplizieren","Duplicate tab")}</button><button class="secondary" id="rename-tab">${this.t("Tab umbenennen","Rename tab")}</button><button class="secondary layout-action-danger" id="remove-tab">${this.t("Tab löschen","Delete tab")}</button></div></details></div></div>
+  renderTab(){const e=s=>this.esc(s),t=this.layout.find(x=>x.id===this.tabId);if(!t)return'';const selectedRoom=(t.rooms||[]).find(r=>r.id===this._activeRoomByTab?.[t.id])||t.rooms?.[0];const cv=this.effectiveCanvas(t),fixed=cv.mode==='fixed',cols=cv.columns||12;return `<section class="layout-band layout-band-tabs"><div class="toolbar layout-section-heading"><h2>Tab · ${e(t.name)}</h2><div class="editor-actions" aria-label="${this.t("Tab-Aktionen","Tab actions")}"><button class="editor-primary" id="position-editor">${this.t("▦ Positionierungsfläche öffnen","▦ Open positioning canvas")}</button><button id="add-room">${this.t("+ Raum","+ Room")}</button><button class="secondary" id="tab-canvas">${this.t("Tab-Maße / Raster","Tab dimensions / grid")}</button><button class="secondary" id="tab-appearance">${this.t("Tab-Darstellung","Tab appearance")}</button><details class="editor-action-menu"><summary>${this.t("Tab-Aktionen","Tab actions")}</summary><div class="editor-menu-items"><button class="secondary" id="duplicate-tab">${this.t("Tab duplizieren","Duplicate tab")}</button><button class="secondary" id="rename-tab">${this.t("Tab umbenennen","Rename tab")}</button><button class="secondary layout-action-danger" id="remove-tab">${this.t("Tab löschen","Delete tab")}</button></div></details></div></div>
     <div class="canvas-meta">${fixed?`${this.t("Arbeitsfläche:","Canvas:")} ${cv.width} × ${cv.height} CSS-Pixel`:this.t("Responsive Arbeitsfläche","Responsive canvas")} · ${cols} ${this.t("Rasterspalten","Grid columns")} · ${cv.gap}${this.t("px Abstand","px spacing")} ${t.canvas?'· Tab-Einstellungen':'· Dashboard-Einstellungen'}</div>
     ${this.renderCanvasPreview(t,cv)}
     </section>
@@ -3399,6 +3541,8 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     root.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{this.tabId=b.dataset.tab;this.render();});
     const t=this.layout.find(x=>x.id===this.tabId);if(!t)return;
     root.querySelector('#tab-canvas').onclick=()=>this.canvasDialog(t);
+    root.querySelector('#tab-appearance').onclick=()=>this.presentationDialog(t);
+    root.querySelector('#dashboard-appearance').onclick=()=>this.presentationDialog();
     root.querySelector('#position-editor').onclick=()=>this.openPositionEditor(t);
     
     root.querySelector('#active-room-preview')?.addEventListener('change',ev=>{
@@ -4410,12 +4554,10 @@ class RotapfelSharedDashboards extends HTMLElement {
       }
       if (this.request !== request) return;
       this.country = result.country;
-      const heading = document.createElement('h1');
-      heading.textContent = result.layout?.title || 'Rotapfel Dashboards';
-      main.replaceChildren(heading);
-      const nav = document.createElement('nav');
-      main.append(nav);
+      main.replaceChildren();
       if (!result.layout) {
+        const nav = document.createElement('nav');
+        main.append(nav);
         for (const dashboard of result.dashboards) {
           const link = document.createElement('a');
           link.href = '/' + dashboard.url_path;
@@ -4425,21 +4567,18 @@ class RotapfelSharedDashboards extends HTMLElement {
         if (!nav.childElementCount) nav.textContent = t('Für dein Konto sind keine Dashboards freigegeben.','No dashboards are shared with your account.');
         return;
       }
-      const mount = view => {
-        const card = document.createElement('rotapfel-canvas-card');
-        card.hass = this._hass;
-        card.setConfig(view.cards[0]);
-        this._card?.remove();
-        this._card = card;
-        main.append(card);
-      };
-      for (const view of result.layout.views) {
-        const button = document.createElement('button');
-        button.textContent = view.title;
-        button.onclick = () => mount(view);
-        nav.append(button);
-      }
-      mount(result.layout.views[0]);
+      const selected = new URLSearchParams(location.search).get('rotapfel_tab');
+      const views=result.layout.views;
+      const view=views.find(item=>item.path===selected)||views[0];
+      const card = document.createElement('rotapfel-canvas-card');
+      card.hass = this._hass;
+      const config=view.cards[0];
+      card.setConfig({...config,presentation:{
+        tabs:views.map(item=>({path:item.path,label:item.title})),path:view.path,
+        ...config.presentation,shared:true
+      }});
+      this._card = card;
+      main.append(card);
     } catch {
       if (this.request !== request) return;
       main.textContent = t('Dashboard nicht verfügbar.','Dashboard unavailable.');
