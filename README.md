@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.59 · **Integrationsversion:** `0.2.0a13959` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.60 · **Integrationsversion:** `0.2.0a13960` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -82,11 +82,17 @@ Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen.
 
 Im Layoutmanager stehen **Dashboard-Darstellung** und **Tab-Darstellung** zur Verfügung. Der Dashboard-Hintergrund gilt für alle Tabs, die ihn übernehmen. Jeder Tab kann stattdessen seine eigene Hintergrundfarbe und ein eigenes Bild verwenden. Bilder lassen sich in Home Assistant auswählen, über einen lokalen Bildpfad eintragen oder als PNG, JPEG und WebP bis 640 KiB hochladen. Bildgröße, Position, Wiederholung und Deckkraft sind einstellbar. Die Bilddeckkraft wirkt nur auf das Bild. Hochgeladene Dateien werden auf dieser Home-Assistant-Instanz über einen statischen Bildpfad bereitgestellt. Beim Umzug auf eine andere Instanz müssen die Bilddateien mit übernommen werden.
 
-Unter **Dashboard-Darstellung** kannst du zwischen Manager-Leiste, Navigationsleiste, einzelnen Tab-Schaltflächen oder keiner Tab-Navigation wählen. Die Anzeigenamen entsprechen standardmäßig den Tab-Namen und lassen sich unter **Tab-Darstellung** separat bearbeiten. Die Raumauswahl bleibt verfügbar. Dashboard- und Tab-Titel erscheinen in der veröffentlichten Ansicht ohne zusätzliche Überschrift.
+### Navigation und Raumtabs einstellen
+
+1. Öffne **Layout bearbeiten → Design & Raster → Navigation konfigurieren**. In der Positionierungsfläche gibt es denselben Button in der Werkzeugleiste und auf Mobilgeräten im Werkzeugmenü.
+2. Wähle unter **Tab-Navigation** zwischen Manager-Leiste, Navigationsleiste, einzelnen Schaltflächen und keiner Tab-Navigation. Die Manager-Leiste steht oben links. Die Navigationsleiste lässt sich oben mittig, oben links, unten mittig, links oder rechts platzieren.
+3. Aktiviere **Raumtabs anzeigen**, wenn Besucher zwischen Räumen wechseln sollen. Bei ausgeblendeten Raumtabs zeigt das Dashboard alle Karten des Tabs an ihren gespeicherten Koordinaten. Im Editor kannst du weiterhin nach Raum arbeiten.
+4. Unter **Stil der Dashboard-Navigation** und **Stil der Raumtabs** stellst du Stil, Schriftgröße und Innenabstand getrennt ein. Für aktive und inaktive Tabs lassen sich Schrift- und Hintergrundfarbe separat eingeben. Farben verwenden `#RRGGBB`, zum Beispiel `#ffffff`. Leere Felder verwenden die Standardwerte.
+5. Wähle **Übernehmen** und anschließend **Layout speichern**. Die Positionierungsfläche zeigt die Leisten innerhalb ihres Außenrahmens an der gewählten Position. Einen abweichenden Anzeigenamen für einen einzelnen Tab vergibst du unter **Tab-Darstellung**.
 
 **Kiosk-Modus auf allen Tabs** blendet die Home-Assistant-Seitenleiste und die native Dashboard-Kopfzeile aus. Die gewählte Rotapfel-Tab-Navigation kann weiterhin angezeigt werden. Mit `?rotapfel_exit_kiosk=1` am Ende der URL öffnest du das Dashboard mit Home-Assistant-Seitenleiste. Bei einer URL mit vorhandenen Parametern verwende `&rotapfel_exit_kiosk=1`.
 
-Speichere das Layout und aktualisiere die Veröffentlichung, um die Einstellungen zu übernehmen.
+**Layout speichern** überträgt die Darstellungsoptionen auch in eine bestehende Veröffentlichung. Verwende **Veröffentlichung aktualisieren**, wenn du auch Karten, Tab-Struktur oder die neuen Tab-Adressen übernehmen möchtest.
 
 ## Dashboard veröffentlichen
 
@@ -94,6 +100,12 @@ Speichere das Layout und aktualisiere die Veröffentlichung, um die Einstellunge
 2. Speichere den Layoutentwurf und wähle in der Rotapfel-Übersicht **Veröffentlichen**.
 3. Wähle **Alle angemeldeten Benutzer**, **Ausgewählte Benutzer** oder **Nur Administratoren**. Bei **Ausgewählte Benutzer** markierst du ein oder mehrere aktive Konten. Das Dashboard erscheint unter seinem Namen direkt in der Seitenleiste. Auch andere Konten können den Namen in der Seitenleiste sehen. Nur ausgewählte Konten können das Layout abrufen.
 4. Nach späteren Layoutänderungen speicherst du den Entwurf und wählst **Veröffentlichung aktualisieren**. Bei einer Benutzerfreigabe kannst du dabei auch die Konten ändern.
+
+### Lesbare Dashboard-Links
+
+Bei Freigaben an ausgewählte Benutzer erhältst du Links wie `/rotapfel-shared/wallpanel/erdgeschoss`. Ein ausgewählter Raum ergänzt den Pfad, etwa `/rotapfel-shared/wallpanel/erdgeschoss/bad`. Der Präfix gehört zum Rotapfel-Bereich in Home Assistant. Vorhandene Freigabe-Links mit der internen Dashboard-ID bleiben erreichbar. Wähle für vorhandene Veröffentlichungen einmal **Veröffentlichung aktualisieren**, damit auch die Tab-Adressen lesbare Namen erhalten. Bei gleichen Namen ergänzt Rotapfel eine laufende Nummer.
+
+Reguläre Lovelace-Veröffentlichungen behalten ihren bestehenden Dashboard-Pfad. Der Tab erhält einen lesbaren Pfadabschnitt und der gewählte Raum die optionale Angabe `?raum=bad`. Nach einem Wechsel des Tab-Pfads sollten entsprechende Lovelace-Lesezeichen aktualisiert werden.
 
 Home Assistant prüft die Benutzerfreigabe beim Abrufen des veröffentlichten Rotapfel-Layouts auf dem Server. Entitätsberechtigungen gelten weiterhin separat. Zum Wechsel zwischen einer Benutzerfreigabe und einem regulären Lovelace-Dashboard entfernst du die Veröffentlichung und veröffentlichst das gespeicherte Layout erneut.
 
@@ -206,6 +218,12 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 ### Alpha 13.9.54
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
+
+### Alpha 13.9.60
+
+- Navigation und Raumtabs liegen im Rahmen der Positionierungsfläche. **Navigation konfigurieren** öffnet die Einstellungen direkt.
+- Freigegebene Dashboards verwenden lesbare Dashboard-, Tab- und Raumadressen.
+- Bedienungsanleitung für Darstellung, Navigation und Veröffentlichung ergänzt.
 
 ### Alpha 13.9.59
 

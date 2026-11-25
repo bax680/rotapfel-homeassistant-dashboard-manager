@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.59, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.60, isolated from existing dashboards."""
 import asyncio
 import base64
 import binascii
@@ -8,6 +8,7 @@ import json
 import yaml
 import re
 import uuid
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -17,7 +18,7 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13959"
+VERSION = "0.2.0a13960"
 FRONTEND_PATH = f"/{DOMAIN}/frontend/{VERSION}"
 MANAGER_MODULE_URL = f"{FRONTEND_PATH}/rotapfel-manager.js"
 
@@ -51,6 +52,26 @@ def save_background(path, image):
 
 def shared_dashboard_path(dashboard_id):
     return f"{SHARED_PANEL}-{dashboard_id}"
+
+
+def shared_dashboard_aliases(dashboards):
+    aliases = {}
+    used = set()
+    for dashboard in dashboards:
+        publication = dashboard.get("publication") or {}
+        if publication.get("access") != "selected":
+            continue
+        title = publication["layout"]["title"].lower()
+        normalized = unicodedata.normalize("NFKD", title)
+        slug = re.sub(r"[^a-z0-9]+", "-", "".join(c for c in normalized if not unicodedata.combining(c))).strip("-") or "dashboard"
+        alias = slug
+        suffix = 2
+        while alias in used or any(item["id"] == alias for item in dashboards):
+            alias = f"{slug}-{suffix}"
+            suffix += 1
+        used.add(alias)
+        aliases[dashboard["id"]] = alias
+    return aliases
 
 
 async def sync_shared_panel(hass, state, dashboard):
@@ -211,20 +232,23 @@ class RotapfelView(HomeAssistantView):
             if state is None:
                 raise web.HTTPNotFound()
             allowed = []
-            for dashboard in state["data"]["dashboards"]:
+            dashboards = state["data"]["dashboards"]
+            aliases = shared_dashboard_aliases(dashboards)
+            for dashboard in dashboards:
                 publication = dashboard.get("publication") or {}
                 if publication.get("access") == "selected" and user.id in publication["user_ids"]:
                     allowed.append((dashboard["id"], publication["layout"]))
             requested = request.query.get("id")
             if requested is not None:
-                layout = next((layout for ident, layout in allowed if ident == requested), None)
-                if layout is None:
+                match = next(((ident, layout) for ident, layout in allowed if ident == requested or aliases[ident] == requested), None)
+                if match is None:
                     raise web.HTTPNotFound()
-                response = self.json({"layout": layout, "country": getattr(self.hass.config, "country", None)})
+                ident, layout = match
+                response = self.json({"layout": layout, "url_path": f"{SHARED_PANEL}/{aliases[ident]}", "country": getattr(self.hass.config, "country", None)})
                 response.headers["Cache-Control"] = "private, no-store"
                 return response
             response = self.json({"dashboards": [
-                {"id": ident, "name": layout["title"], "url_path": shared_dashboard_path(ident)} for ident, layout in allowed
+                {"id": ident, "name": layout["title"], "url_path": f"{SHARED_PANEL}/{aliases[ident]}"} for ident, layout in allowed
             ], "country": getattr(self.hass.config, "country", None)})
             response.headers["Cache-Control"] = "private, no-store"
             return response

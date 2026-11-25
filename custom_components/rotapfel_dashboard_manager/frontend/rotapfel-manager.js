@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13959';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.59';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13960';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.60';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -735,21 +735,36 @@ class RotapfelDashboardManager extends HTMLElement {
     else{this.dirty=true;this._migrationMessage=this.t("Umwandlung vorbereitet, aber Speichern fehlgeschlagen. Bitte „Layout speichern“ versuchen.","Conversion is ready, but saving failed. Try “Save layout”.");}
     this.render();
   }
+  tabSlug(tab){
+    return (tab.name||'tab').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'tab';
+  }
   tabRoute(tab){
-    const slug=(tab.name||'tab').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'tab';
-    return slug+'-'+String(tab.id||'').slice(0,6);
+    return this.tabSlug(tab)+'-'+String(tab.id||'').slice(0,6);
+  }
+  tabRoutes(tabs){
+    const used=new Set(),routes=new Map();
+    for(const tab of tabs){
+      const base=this.tabSlug(tab);
+      let path=base;
+      for(let suffix=2;used.has(path);suffix++)path=base+'-'+suffix;
+      used.add(path);
+      routes.set(tab.id,path);
+    }
+    return routes;
   }
   backgroundFor(canvas,tab){
     return tab?.background??canvas?.background??{};
   }
-  presentationFor(d,tab){
+  presentationFor(d,tab,routes=this.tabRoutes(d.tabs||[])){
     return {...d.canvas?.presentation,
       background:this.backgroundFor(d.canvas,tab),
-      tabs:(d.tabs||[]).map(item=>({path:this.tabRoute(item),label:item.navigationLabel||item.name||'Tab'})),
-      path:this.tabRoute(tab)
+      tabs:(d.tabs||[]).filter(item=>routes.has(item.id)).map(item=>({
+        path:routes.get(item.id),legacyPath:this.tabRoute(item),label:item.navigationLabel||item.name||'Tab'
+      })),
+      path:routes.get(tab.id)
     };
   }
-  presentationDialog(tab){
+  presentationDialog(tab,{navigation=false}={}){
     const global=this.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8};
     const original=this.backgroundFor(global,tab);
     const settings=global.presentation||{};
@@ -802,7 +817,7 @@ class RotapfelDashboardManager extends HTMLElement {
       </fieldset>
       ${tab?`<label>${t('Anzeigename in der Navigation','Navigation label')}<input id="display-tab-name" maxlength="80" value="${e(tab.navigationLabel||'')}" placeholder="${e(tab.name)}"></label>`:`
         <label><input type="checkbox" id="presentation-kiosk" style="width:auto" ${settings.kiosk?'checked':''}> ${t('Kiosk-Modus auf allen Tabs','Kiosk mode on all tabs')}</label>
-        <label>${t('Tab-Navigation','Tab navigation')}<select id="presentation-nav">${options([
+        <label id="presentation-navigation-start">${t('Tab-Navigation','Tab navigation')}<select id="presentation-nav">${options([
           ['manager',t('Manager-Leiste','Manager tab strip')],['bar',t('Navigationsleiste','Navigation bar')],
           ['buttons',t('Einzelne Schaltflächen','Individual buttons')],['none',t('Keine Tab-Navigation','No tab navigation')]
         ],settings.navigation||'manager')}</select></label>
@@ -925,6 +940,10 @@ class RotapfelDashboardManager extends HTMLElement {
       }finally{apply.disabled=false;}
     };
     dialog.showModal();
+    if(navigation){
+      navigationMode?.focus({preventScroll:true});
+      get('presentation-navigation-start')?.scrollIntoView({block:'start'});
+    }
   }
   exportDashboard(d){
     // JSON is a YAML 1.2 subset and is accepted by Home Assistant's YAML loader.
@@ -963,8 +982,8 @@ class RotapfelDashboardManager extends HTMLElement {
         }
         elements.push({room_id:room.id,x,y,w,h,z:Math.max(0,Math.round(Number(pos.z)||0)),device_layouts:layouts,card,design:c.design||{},display:c.display||{},therm_scale:this.externalVariant(c)==='rotapfel_simple_thermcard'&&Number(pos.thermScale)>0?Number(pos.thermScale):null});
       }
-      const path=this.tabRoute(tab);
       const presentation=this.presentationFor(d,tab);
+      const path=presentation.path;
       views.push({title:tab.name||'Tab',path,type:'panel',cards:[{
         type:'custom:rotapfel-canvas-card',canvas_width:canvas.width,canvas_height:canvas.height,
         device_profiles:this.normalizedProfiles(d.deviceProfiles,canvas),
@@ -1386,14 +1405,19 @@ class RotapfelDashboardManager extends HTMLElement {
     const target=shared?null:await this.findPublication(publication.url_path);
     if(!shared&&!target)throw Error(this.t('Veröffentlichung fehlt.','Publication not found.'));
     const config=shared?publication.layout:await this.verifyPublication(publication,target);
-    const tabs=new Map((d.tabs||[]).map(tab=>[this.tabRoute(tab),tab]));
-    const publishedPaths=new Set(config.views.map(view=>view.path));
+    const routes=this.tabRoutes(d.tabs||[]);
+    const tabs=new Map();
+    for(const tab of d.tabs||[]){
+      const candidates=[this.tabRoute(tab),routes.get(tab.id)];
+      const match=candidates.find(path=>config.views.some(view=>view.path===path));
+      if(match)tabs.set(match,tab);
+    }
+    const publishedRoutes=new Map([...tabs].map(([path,tab])=>[tab.id,path]));
     const views=config.views.map(view=>{
       const tab=tabs.get(view.path);
       const card=view.cards?.[0];
       if(!tab||card?.type!=='custom:rotapfel-canvas-card')return view;
-      const presentation=this.presentationFor(d,tab);
-      presentation.tabs=presentation.tabs.filter(item=>publishedPaths.has(item.path));
+      const presentation=this.presentationFor(d,tab,publishedRoutes);
       return {...view,cards:[{...card,presentation},...view.cards.slice(1)]};
     });
     if(shared){
@@ -1624,7 +1648,7 @@ class RotapfelDashboardManager extends HTMLElement {
     input,select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:10px;border-radius:8px;background:var(--primary-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#aaa)}
     </style><div class="rotapfel-mobile-header"><button id="rotapfel-ha-menu" aria-label="${this.t("Home Assistant Seitenleiste öffnen","Open Home Assistant sidebar")}" title="${this.t("Home Assistant Menü","Home Assistant menu")}">☰</button><strong>Rotapfel Control Manager</strong></div><main class="${!d?'overview':''} ${d&&this.theme==='dark'?'theme-dark':''}"><div style="font-size:12px;opacity:.75;margin:0 0 12px" title="${this.t("Frontend-Build der installierten Integration","Frontend build of the installed integration")}">Rotapfel Control Manager · Alpha ${ROTAPFEL_FRONTEND_ALPHA} · Build ${ROTAPFEL_FRONTEND_VERSION}</div>${d?`<div class="top"><div><button class="secondary" id="back">${this.t("← Übersicht","← Overview")}</button><h1>${e(d.name)}</h1><div class="muted">${this.t("Layout-Editor","Layout editor")} · ${e(d.profile)} ${this.dirty?this.t("· Ungespeicherte Änderungen","· Unsaved changes"):''}</div></div><button id="save-layout" ${this.dirty?'':'disabled'}>${this.t("Layout speichern","Save layout")}</button></div>
 <div class="layout-control-panel">
-        ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>${this.t("01 · Design & Raster","01 · Design & grid")}</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><button class="secondary" id="dashboard-appearance">${this.t("Dashboard-Darstellung","Dashboard appearance")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">${this.t("Kartendesign pro Dashboard · Farben und Maße pro Karte","Design per dashboard · Colors and dimensions per card")}</span></div></details>
+        ${this._migrationMessage?`<p class="muted" role="status">${e(this._migrationMessage)}</p>`:""}<details class="layout-control-group" open><summary>${this.t("01 · Design & Raster","01 · Design & grid")}</summary><div class="layout-control-content"><button class="secondary" id="canvas-settings">${this.t("Dashboard-Maße / Raster","Dashboard dimensions / grid")}</button><button class="secondary" id="dashboard-appearance">${this.t("Dashboard-Darstellung","Dashboard appearance")}</button><button class="secondary" id="dashboard-navigation-settings">${this.t("Navigation konfigurieren","Configure navigation")}</button><strong>${this.t("Designprofil","Design profile")}</strong><select id="theme-select"><option value="light" ${this.theme==='light'?'selected':''}>${this.t("Hell","Light")}</option><option value="dark" ${this.theme==='dark'?'selected':''}>${this.t("Dunkel","Dark")}</option></select><span class="muted">${this.t("Kartendesign pro Dashboard · Farben und Maße pro Karte","Design per dashboard · Colors and dimensions per card")}</span></div></details>
         <details class="layout-control-group" open><summary>${this.t("02 · Geräteprofile & Vorlagen","02 · Device profiles & templates")}</summary><div class="layout-control-content"><strong>${this.t("Geräteprofil","Device profile")}</strong><select id="device-layout-profile" style="width:auto;min-width:180px"><option value="fire_hd" ${this._deviceLayoutProfile==='fire_hd'||!this._deviceLayoutProfile?'selected':''}>Fire HD 10 · 1920 × 1080</option><option value="desktop" ${this._deviceLayoutProfile==='desktop'?'selected':''}>Desktop · 1920 × 1080</option><option value="iphone" ${this._deviceLayoutProfile==='iphone'?'selected':''}>iPhone · 402 × 874</option>${Object.entries(this.deviceProfiles||{}).filter(([key])=>!['fire_hd','desktop','iphone'].includes(key)).map(([key,p])=>`<option value="${e(key)}" ${this._deviceLayoutProfile===key?'selected':''}>${e(p.name)} · ${p.width} × ${p.height}</option>`).join('')}</select><button class="secondary" id="manage-device-profiles">${this.t("Profile verwalten","Manage profiles")}</button><button class="secondary" id="manage-layout-templates">${this.t("Layout-Vorlagen","Layout templates")}</button><label style="flex:1 1 100%;display:flex;align-items:center;gap:10px;padding:6px 0;cursor:pointer"><input type="checkbox" id="show-mobile-layout-selector" style="flex:none;width:18px;height:18px;margin:0" ${this.canvas?.show_mobile_layout_selector===true?'checked':''}><span>${this.t("Manuelle Layout-Auswahl im Smartphone-Dashboard anzeigen","Show manual layout selection on smartphone dashboards")}</span></label><span id="device-profile-status" class="muted">${this.t("Alpha 13.7.105: Positionen und Größen sind je Profil getrennt. Änderungen mit „Layout speichern“ sichern.","Alpha 13.7.105: Positions and sizes are stored per profile. Choose “Save layout” to keep your changes.")}</span></div></details>
     </div>
     <section class="layout-band layout-band-tabs" aria-labelledby="rotapfel-tabs-heading"><div class="toolbar"><h2 id="rotapfel-tabs-heading">Tabs</h2><button id="add-tab">${this.t("+ Tab","+ Tab")}</button></div>
@@ -1685,7 +1709,7 @@ class RotapfelDashboardManager extends HTMLElement {
     root.querySelector('#resource-manager')?.addEventListener('click',()=>this.resourceManager());
     root.querySelector('#import-dashboard-backup')?.addEventListener('click',()=>root.querySelector('#dashboard-backup-file')?.click());root.querySelector('#dashboard-backup-file')?.addEventListener('change',async ev=>{const file=ev.target.files?.[0];ev.target.value='';await this.importDashboardBackup(file);});
     root.querySelector('#create')?.addEventListener('click',()=>open());root.querySelector('#save').onclick=async()=>{const name=root.querySelector('[name=name]').value.trim(),profile=root.querySelector('[name=profile]').value;if(!name)return;dlg.close();await this.act(this.editId?'update':'create',{id:this.editId,name,profile});this.render();};
-    root.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const id=b.closest('article').dataset.id,x=this.items.find(y=>y.id===id),a=b.dataset.action;if(a==='history'){await this.manageDashboardHistory(x);}else if(a==='export'){this.downloadExport(x);}else if(a==='backup'){this.downloadDashboardBackup(x);}else if(['publish','update','remove','repair-publish'].includes(a)){await this.publicationAction(x,a==='repair-publish'?'publish':a);}else if(a==='open'){window.location.href=x.publication.access==='selected'?'/rotapfel-shared-'+encodeURIComponent(x.id):'/'+x.publication.url_path;}else if(a==='layout'){this.editing=id;this._appearancePending=null;this._deviceLayoutProfile='fire_hd';this.layout=JSON.parse(JSON.stringify(x.tabs||[]));this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});this.tabId=this.layout[0]?.id;this._roomTestMode=false;this.dirty=false;this.theme=x.theme||'light';this.canvas=JSON.parse(JSON.stringify(x.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8}));this.deviceProfiles=JSON.parse(JSON.stringify(x.deviceProfiles||{}));const migrated=this.migrateLegacyThermCards(this.layout);this.dirty=migrated>0;this._migrationMessage='';this.render();if(migrated)await this.persistMigration(migrated);}else if(a==='edit')open(x);else if(a==='delete'){await this.deleteManagedDashboard(x);}else if(a==='duplicate'){if(await this.act('duplicate',{id})){this.render();window.location.reload();}}});
+    root.querySelectorAll('[data-action]').forEach(b=>b.onclick=async()=>{const id=b.closest('article').dataset.id,x=this.items.find(y=>y.id===id),a=b.dataset.action;if(a==='history'){await this.manageDashboardHistory(x);}else if(a==='export'){this.downloadExport(x);}else if(a==='backup'){this.downloadDashboardBackup(x);}else if(['publish','update','remove','repair-publish'].includes(a)){await this.publicationAction(x,a==='repair-publish'?'publish':a);}else if(a==='open'){window.location.href='/'+x.publication.url_path;}else if(a==='layout'){this.editing=id;this._appearancePending=null;this._deviceLayoutProfile='fire_hd';this.layout=JSON.parse(JSON.stringify(x.tabs||[]));this.eachLayoutCard(c=>{if(c.deviceLayouts?.fire_hd)c.position=JSON.parse(JSON.stringify(c.deviceLayouts.fire_hd));});this.tabId=this.layout[0]?.id;this._roomTestMode=false;this.dirty=false;this.theme=x.theme||'light';this.canvas=JSON.parse(JSON.stringify(x.canvas||{mode:'responsive',width:1920,height:1080,columns:12,gap:8}));this.deviceProfiles=JSON.parse(JSON.stringify(x.deviceProfiles||{}));const migrated=this.migrateLegacyThermCards(this.layout);this.dirty=migrated>0;this._migrationMessage='';this.render();if(migrated)await this.persistMigration(migrated);}else if(a==='edit')open(x);else if(a==='delete'){await this.deleteManagedDashboard(x);}else if(a==='duplicate'){if(await this.act('duplicate',{id})){this.render();window.location.reload();}}});
     if(d){this.bindEditor();this.bindToggles();this.bindClimateControls();this.mountExternalCards();this.watchCanvasPreview();this.watchRoomCardPreviews();}
   }
   normalizedProfiles(profiles,canvas){
@@ -2570,7 +2594,11 @@ class RotapfelDashboardManager extends HTMLElement {
     canvasPane.prepend(preview);
     const navStyle=document.createElement('style');
     navStyle.textContent=rotapfelNavigationCss+`
-      .position-navigation-preview .rotapfel-tabs{background:var(--card-background-color,#fff)}
+      .position-navigation-preview{box-shadow:inset 0 0 0 2px #5a9cb8;padding:2px;box-sizing:border-box}
+      .position-navigation-preview .position-workspace{border:0}
+      .position-navigation-preview .rotapfel-tabs{
+        background:var(--card-background-color,#fff);border:1px solid var(--divider-color,#8885);border-radius:8px
+      }
       .position-navigation-preview .rotapfel-tab-item{line-height:1.4}
     `;
     if(/^#[a-f0-9]{6}$/i.test(presentation.background?.color||'')){
@@ -2606,6 +2634,15 @@ class RotapfelDashboardManager extends HTMLElement {
     mobileDrawerBackdrop.className='position-mobile-backdrop';
     overlay.append(mobileDrawerBackdrop,mobileDrawer);
     const mobileTools=overlay.querySelector('.position-tools');
+    const navigationSettings=document.createElement('button');
+    navigationSettings.type='button';
+    navigationSettings.className='secondary';
+    navigationSettings.textContent=this.t('Navigation konfigurieren','Configure navigation');
+    navigationSettings.onclick=()=>{
+      overlay.querySelector('#close').click();
+      this.presentationDialog(undefined,{navigation:true});
+    };
+    mobileTools.append(navigationSettings);
     const mobileOptionsPane=overlay.querySelector('.position-options-pane');
     const originalOptionsParent=mobileOptionsPane.parentNode;
     const originalOptionsNext=mobileOptionsPane.nextSibling;
@@ -3700,6 +3737,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     root.querySelector('#tab-canvas').onclick=()=>this.canvasDialog(t);
     root.querySelector('#tab-appearance').onclick=()=>this.presentationDialog(t);
     root.querySelector('#dashboard-appearance').onclick=()=>this.presentationDialog();
+    root.querySelector('#dashboard-navigation-settings').onclick=()=>this.presentationDialog(undefined,{navigation:true});
     root.querySelector('#position-editor').onclick=()=>this.openPositionEditor(t);
     
     root.querySelector('#active-room-preview')?.addEventListener('change',ev=>{
@@ -4688,9 +4726,13 @@ class RotapfelSharedDashboards extends HTMLElement {
 
   async load() {
     if (!this.isConnected || !this._hass?.user?.id) return;
-    const directId = this._panel?.config?.dashboard_id || location.pathname.match(/^\/rotapfel-shared-([^/]+)/)?.[1];
-    const id = directId || (this._route?.path ?? location.pathname.replace(/^\/rotapfel-shared/, '')).split('/').filter(Boolean)[0];
-    const key = JSON.stringify([this._hass.user.id, id]);
+    const parts=location.pathname.split('/').filter(Boolean);
+    const legacyId=parts[0]?.match(/^rotapfel-shared-(.+)$/)?.[1];
+    const id=legacyId||parts[1]||this._panel?.config?.dashboard_id;
+    const query=new URLSearchParams(location.search);
+    const selected=legacyId?(query.get('rotapfel_tab')||parts[1]):(parts[2]||query.get('rotapfel_tab'));
+    const room=legacyId?parts[2]:parts[3];
+    const key = JSON.stringify([this._hass.user.id, id, selected, room]);
     if (this.request?.key === key) return;
     const request = {key};
     this.request = request;
@@ -4723,15 +4765,19 @@ class RotapfelSharedDashboards extends HTMLElement {
         if (!nav.childElementCount) nav.textContent = t('Für dein Konto sind keine Dashboards freigegeben.','No dashboards are shared with your account.');
         return;
       }
-      const selected = new URLSearchParams(location.search).get('rotapfel_tab');
       const views=result.layout.views;
-      const view=views.find(item=>item.path===selected)||views[0];
+      const view=views.find(item=>item.path===selected||item.cards[0]?.presentation?.tabs?.some(tab=>tab.path===item.path&&tab.legacyPath===selected))||views[0];
+      const url=new URL(location.href);
+      url.pathname='/'+result.url_path+'/'+view.path+(room?'/'+encodeURIComponent(room):'');
+      url.searchParams.delete('rotapfel_tab');
+      if(url.href!==location.href)history.replaceState(history.state,'',url);
+      this.request.key=JSON.stringify([this._hass.user.id,result.url_path.split('/').at(-1),view.path,room]);
       const card = document.createElement('rotapfel-canvas-card');
       card.hass = this._hass;
       const config=view.cards[0];
       card.setConfig({...config,presentation:{
         tabs:views.map(item=>({path:item.path,label:item.title})),path:view.path,
-        ...config.presentation,shared:true
+        ...config.presentation,shared:true,sharedPath:result.url_path,roomPath:room
       }});
       this._card = card;
       main.append(card);

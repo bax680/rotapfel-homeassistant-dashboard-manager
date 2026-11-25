@@ -190,6 +190,19 @@ export function renderRotapfelRoomTabs(rooms,activeRoom,settings,{german,onRoom}
   return nav;
 }
 
+function roomRoutes(rooms){
+  const used=new Set(),routes=new Map();
+  for(const room of rooms){
+    const base=String(room.name||'room').toLowerCase().normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'room';
+    let path=base;
+    for(let suffix=2;used.has(path);suffix++)path=base+'-'+suffix;
+    used.add(path);
+    routes.set(room.id,path);
+  }
+  return routes;
+}
+
 export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,onMenu}={}){
   if(!cfg)return;
   const url=new URL(location.href);
@@ -220,7 +233,11 @@ export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,on
       const link=document.createElement(preview?'span':'a');
       link.className='rotapfel-tab-item';
       const target=new URL(url);
-      if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
+      target.searchParams.delete('raum');
+      if(cfg.shared&&cfg.sharedPath){
+        target.pathname='/'+cfg.sharedPath+'/'+encodeURIComponent(tab.path);
+        target.searchParams.delete('rotapfel_tab');
+      }else if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
       else target.pathname='/'+url.pathname.split('/')[1]+'/'+encodeURIComponent(tab.path);
       if(!preview)link.href=target.pathname+target.search+target.hash;
       link.textContent=tab.label||tab.path;
@@ -236,7 +253,10 @@ class RotapfelCanvasCard extends HTMLElement {
     if(!config||!Array.isArray(config.elements))throw new Error(rotapfelCardLanguage(this._hass)==='de'?'Rotapfel Canvas: elements erforderlich':'Rotapfel Canvas requires elements');
     this._config=structuredClone(config);
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
-    if(!rooms.some(r=>String(r.id)===String(this._activeRoomId)))this._activeRoomId=rooms[0]?.id??null;
+    const roomPath=config.presentation?.roomPath||new URLSearchParams(location.search).get('raum');
+    const routes=roomRoutes(rooms);
+    const selected=rooms.find(room=>routes.get(room.id)===roomPath);
+    this._activeRoomId=selected?.id??rooms[0]?.id??null;
     if(!this.shadowRoot)this.attachShadow({mode:'open'});
     this._render();
   }
@@ -331,6 +351,17 @@ class RotapfelCanvasCard extends HTMLElement {
     const roomTabs=renderRotapfelRoomTabs(rooms,this._activeRoomId,this._config.presentation,{
       german,onRoom:id=>{
         if(String(this._activeRoomId)===String(id))return;
+        const settings=this._config.presentation;
+        const url=new URL(location.href);
+        const path=roomRoutes(rooms).get(id);
+        if(settings?.sharedPath){
+          url.pathname='/'+settings.sharedPath+'/'+settings.path+'/'+path;
+          url.searchParams.delete('rotapfel_tab');
+          window.location.assign(url);
+          return;
+        }
+        url.searchParams.set('raum',path);
+        history.replaceState(history.state,'',url);
         this._activeRoomId=id;
         this._render();
       }
