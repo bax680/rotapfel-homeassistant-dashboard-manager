@@ -108,10 +108,87 @@ export const rotapfelNavigationCss=`
       .rotapfel-tabs[data-mode="bar"] :is(a,span)[aria-current]{border-bottom:3px solid var(--primary-color)}
       .rotapfel-tabs[data-mode="buttons"] :is(a,span){border:1px solid var(--divider-color);border-radius:14px;background:var(--card-background-color)}
       .rotapfel-tabs :is(a,span)[aria-current]{font-weight:bold;color:var(--primary-color)}
+      .rotapfel-room-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 0;margin:0 0 12px}
+      .rotapfel-room-tabs .rotapfel-tab-item{display:inline-block;box-sizing:border-box;font:inherit;cursor:pointer;
+        text-align:center;padding:9px 14px;border:1px solid var(--divider-color,#bbb);border-radius:8px;
+        background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)}
+      .rotapfel-room-tabs .rotapfel-tab-item[aria-current]{background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)}
+      .rotapfel-tabs .rotapfel-tab-item,.rotapfel-room-tabs .rotapfel-tab-item{
+        font-size:var(--rotapfel-tab-font-size,inherit)
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-padding] .rotapfel-tab-item{
+        padding:var(--rotapfel-tab-padding) calc(1.5 * var(--rotapfel-tab-padding))
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-style="underline"] .rotapfel-tab-item{
+        border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:var(--primary-text-color,#222)
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-style="underline"] .rotapfel-tab-item[aria-current]{
+        border-bottom-color:var(--rotapfel-tab-active-color,var(--primary-color));color:var(--primary-color)
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-style="pill"] .rotapfel-tab-item{
+        border:1px solid var(--divider-color,#bbb);border-radius:999px;
+        background:var(--card-background-color,#fff);color:var(--primary-text-color,#222)
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-style="pill"] .rotapfel-tab-item[aria-current]{
+        background:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff)
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-style="plain"] .rotapfel-tab-item{
+        border:0;border-radius:0;background:transparent;color:var(--primary-text-color,#222)
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-style="plain"] .rotapfel-tab-item[aria-current]{
+        color:var(--primary-color);font-weight:bold
+      }
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-color] .rotapfel-tab-item:not([aria-current]){color:var(--rotapfel-tab-color)}
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-active-color] .rotapfel-tab-item[aria-current]{color:var(--rotapfel-tab-active-color)}
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-background] .rotapfel-tab-item:not([aria-current]){background:var(--rotapfel-tab-background)}
+      :is(.rotapfel-tabs,.rotapfel-room-tabs)[data-tab-active-background] .rotapfel-tab-item[aria-current]{background:var(--rotapfel-tab-active-background)}
       .rotapfel-menu{cursor:pointer}
       .rotapfel-tabs[data-wide] .rotapfel-menu{display:none}
       .rotapfel-tabs[data-wide]:not(:has(a,span)){display:none}
 `;
+
+export function normalizeRotapfelTabStyle(style={}){
+  const normalized={};
+  if(!style||typeof style!=='object')return normalized;
+  if(['underline','pill','plain'].includes(style.variant))normalized.variant=style.variant;
+  for(const field of ['color','activeColor','background','activeBackground']){
+    if(typeof style[field]==='string'&&/^#[a-f0-9]{6}$/i.test(style[field]))normalized[field]=style[field];
+  }
+  for(const [field,min,max] of [['fontSize',10,36],['padding',4,24]]){
+    if(Number.isInteger(style[field])&&style[field]>=min&&style[field]<=max)normalized[field]=style[field];
+  }
+  return normalized;
+}
+
+function styleRotapfelTabs(nav,style){
+  const settings=normalizeRotapfelTabStyle(style);
+  if(settings.variant)nav.dataset.tabStyle=settings.variant;
+  for(const [field,name] of [['color','color'],['activeColor','active-color'],['background','background'],['activeBackground','active-background'],['fontSize','font-size'],['padding','padding']]){
+    if(settings[field]===undefined)continue;
+    nav.setAttribute('data-tab-'+name,'');
+    nav.style.setProperty('--rotapfel-tab-'+name,typeof settings[field]==='number'?settings[field]+'px':settings[field]);
+  }
+}
+
+export function renderRotapfelRoomTabs(rooms,activeRoom,settings,{german,onRoom}={}){
+  if(settings?.showRoomTabs===false||rooms.length<2)return;
+  const nav=document.createElement('nav');
+  nav.className='rotapfel-room-tabs';
+  nav.setAttribute('aria-label',german?'Raumauswahl':'Select room');
+  styleRotapfelTabs(nav,settings?.roomTabStyle);
+  for(const room of rooms){
+    const item=document.createElement(onRoom?'button':'span');
+    item.className='rotapfel-tab-item';
+    item.textContent=room.name||(german?'Raum':'Room');
+    if(String(room.id)===String(activeRoom))item.setAttribute('aria-current','true');
+    if(onRoom){
+      item.type='button';
+      item.onclick=()=>onRoom(room.id);
+    }
+    nav.append(item);
+  }
+  return nav;
+}
 
 export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,onMenu}={}){
   if(!cfg)return;
@@ -119,6 +196,7 @@ export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,on
   const kiosk=cfg.kiosk===true&&!url.searchParams.has('rotapfel_exit_kiosk');
   const nav=document.createElement('nav');
   nav.className='rotapfel-tabs';
+  styleRotapfelTabs(nav,cfg.navigationStyle);
   nav.toggleAttribute('data-wide',wide);
   nav.dataset.mode=['manager','bar','buttons','none'].includes(cfg.navigation)?cfg.navigation:'manager';
   nav.dataset.position=nav.dataset.mode==='bar'
@@ -140,6 +218,7 @@ export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,on
     for(const tab of tabs){
       if(typeof tab?.path!=='string'||!/^[a-z0-9_-]+$/i.test(tab.path))continue;
       const link=document.createElement(preview?'span':'a');
+      link.className='rotapfel-tab-item';
       const target=new URL(url);
       if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
       else target.pathname='/'+url.pathname.split('/')[1]+'/'+encodeURIComponent(tab.path);
@@ -249,19 +328,14 @@ class RotapfelCanvasCard extends HTMLElement {
     });
     this._applyChrome();
     const rooms=Array.isArray(this._config.rooms)?this._config.rooms:[];
-    if(rooms.length>1){
-      const nav=document.createElement('nav');nav.setAttribute('aria-label',german?'Raumauswahl':'Select room');
-      nav.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:4px 0';
-      for(const room of rooms){
-        const button=document.createElement('button');button.type='button';button.textContent=room.name||(german?'Raum':'Room');
-        const active=String(room.id)===String(this._activeRoomId);
-        button.setAttribute('aria-pressed',String(active));
-        button.style.cssText='cursor:pointer;border-radius:8px;padding:9px 14px;font:inherit;border:1px solid var(--divider-color,#bbb);background:'+(active?'var(--primary-color,#03a9f4)':'var(--card-background-color,#fff)')+';color:'+(active?'var(--text-primary-color,#fff)':'var(--primary-text-color,#222)');
-        button.onclick=()=>{if(String(this._activeRoomId)===String(room.id))return;this._activeRoomId=room.id;this._render();};
-        nav.append(button);
+    const roomTabs=renderRotapfelRoomTabs(rooms,this._activeRoomId,this._config.presentation,{
+      german,onRoom:id=>{
+        if(String(this._activeRoomId)===String(id))return;
+        this._activeRoomId=id;
+        this._render();
       }
-      root.append(nav);
-    }
+    });
+    if(roomTabs)root.append(roomTabs);
     const controls=document.createElement('div');controls.style.cssText='display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 8px;font:12px var(--primary-font-family,Arial,sans-serif)';
     const profileLabel=document.createElement('span');profileLabel.textContent='Layout:';
     const profileSelect=document.createElement('select');profileSelect.setAttribute('aria-label',german?'Geräteprofil':'Device profile');profileSelect.style.cssText='max-width:180px;padding:5px;border-radius:6px;background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);border:1px solid var(--divider-color,#bbb)';
@@ -310,7 +384,7 @@ class RotapfelCanvasCard extends HTMLElement {
       const sideNavigation=['left','right'].includes(navigation?.dataset.position);
       const scale=Math.min(1,(surface.clientWidth||width)/width);
       canvas.style.transform=`scale(${scale})`;
-      const navigationHeight=sideNavigation?0:navigation?.offsetHeight||0;
+      const navigationHeight=(sideNavigation?0:navigation?.offsetHeight||0)+(roomTabs?roomTabs.offsetHeight+12:0);
       const usableHeight=Math.max(1,height-Math.ceil(navigationHeight/scale));
       const expandable=profiles[profile]?.fixed===false||profile==='iphone';
       const effectiveHeight=expandable||navigationHeight
@@ -335,7 +409,7 @@ class RotapfelCanvasCard extends HTMLElement {
       try{helpers=await window.loadCardHelpers();}
       catch(e){console.error('Rotapfel: Card Helpers nicht verfügbar',e);return;}
       if(viewport.parentNode!==root)return;
-      for(const item of this._config.elements.filter(item=>!rooms.length||item.room_id==null||String(item.room_id)===String(this._activeRoomId))){
+      for(const item of this._config.elements.filter(item=>this._config.presentation?.showRoomTabs===false||!rooms.length||item.room_id==null||String(item.room_id)===String(this._activeRoomId))){
         const tile=document.createElement('div');tile.className='tile';tile._rotapfelItem=item;tile.style.background='transparent';tile.style.zIndex=String(rotapfelNumber(item.z,0,9999,0));
         for(const [key,value] of Object.entries({left:item.x,top:item.y,width:item.w,height:item.h}))tile.style[key]=rotapfelNumber(value,0,10000,0)+'px';
         const d=item.design||{};

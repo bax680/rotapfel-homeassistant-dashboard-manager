@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.58, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.59, isolated from existing dashboards."""
 import asyncio
 import base64
 import binascii
@@ -17,7 +17,9 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13958"
+VERSION = "0.2.0a13959"
+FRONTEND_PATH = f"/{DOMAIN}/frontend/{VERSION}"
+MANAGER_MODULE_URL = f"{FRONTEND_PATH}/rotapfel-manager.js"
 
 SHARED_PANEL = "rotapfel-shared"
 BACKGROUND_LIMIT = 640 * 1024
@@ -67,7 +69,7 @@ async def sync_shared_panel(hass, state, dashboard):
             hass,
             webcomponent_name="rotapfel-shared-dashboards",
             frontend_url_path=path,
-            module_url=f"/{DOMAIN}/rotapfel-manager.js?v={VERSION}",
+            module_url=MANAGER_MODULE_URL,
             sidebar_title=title,
             sidebar_icon="mdi:view-dashboard",
             require_admin=False,
@@ -86,11 +88,16 @@ async def async_setup_entry(hass, entry):
     state = {"store": store, "data": data, "lock": lock, "shared_panels": {}}
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = state
     hass.http.register_view(RotapfelView(hass, entry.entry_id))
-    js_url = f"/{DOMAIN}/rotapfel-manager.js?v={VERSION}"
     backgrounds = Path(hass.config.path(".storage", "rotapfel-backgrounds"))
     await hass.async_add_executor_job(lambda: backgrounds.mkdir(parents=True, exist_ok=True))
     await hass.http.async_register_static_paths([
         StaticPathConfig(f"/{DOMAIN}/backgrounds", str(backgrounds), cache_headers=False),
+        # The manager and its relative imports load from the same release.
+        *(StaticPathConfig(
+            f"{FRONTEND_PATH}/{filename}",
+            str(Path(__file__).parent / "frontend" / filename),
+            cache_headers=False,
+        ) for filename in ("rotapfel-manager.js", "rotapfel-canvas-card.js")),
         StaticPathConfig(
             f"/{DOMAIN}/rotapfel-manager.js",
             str(Path(__file__).parent / "frontend" / "rotapfel-manager.js"),
@@ -139,7 +146,7 @@ async def async_setup_entry(hass, entry):
         hass,
         webcomponent_name="rotapfel-dashboard-manager",
         frontend_url_path=PANEL_PATH,
-        module_url=js_url,
+        module_url=MANAGER_MODULE_URL,
         sidebar_title="Rotapfel Control",
         sidebar_icon="mdi:food-apple",
         require_admin=True,
@@ -150,7 +157,7 @@ async def async_setup_entry(hass, entry):
         webcomponent_name="rotapfel-shared-dashboards",
         # Keep old URLs reachable without an extra sidebar entry.
         frontend_url_path=SHARED_PANEL,
-        module_url=js_url,
+        module_url=MANAGER_MODULE_URL,
         require_admin=False,
     )
     for dashboard in data["dashboards"]:
