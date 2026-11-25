@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.60 · **Integrationsversion:** `0.2.0a13960` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.61 · **Integrationsversion:** `0.2.0a13961` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -87,7 +87,7 @@ Im Layoutmanager stehen **Dashboard-Darstellung** und **Tab-Darstellung** zur Ve
 1. Öffne **Layout bearbeiten → Design & Raster → Navigation konfigurieren**. In der Positionierungsfläche gibt es denselben Button in der Werkzeugleiste und auf Mobilgeräten im Werkzeugmenü.
 2. Wähle unter **Tab-Navigation** zwischen Manager-Leiste, Navigationsleiste, einzelnen Schaltflächen und keiner Tab-Navigation. Die Manager-Leiste steht oben links. Die Navigationsleiste lässt sich oben mittig, oben links, unten mittig, links oder rechts platzieren.
 3. Aktiviere **Raumtabs anzeigen**, wenn Besucher zwischen Räumen wechseln sollen. Bei ausgeblendeten Raumtabs zeigt das Dashboard alle Karten des Tabs an ihren gespeicherten Koordinaten. Im Editor kannst du weiterhin nach Raum arbeiten.
-4. Unter **Stil der Dashboard-Navigation** und **Stil der Raumtabs** stellst du Stil, Schriftgröße und Innenabstand getrennt ein. Für aktive und inaktive Tabs lassen sich Schrift- und Hintergrundfarbe separat eingeben. Farben verwenden `#RRGGBB`, zum Beispiel `#ffffff`. Leere Felder verwenden die Standardwerte.
+4. Unter **Stil der Dashboard-Navigation** und **Stil der Raumtabs** stellst du Stil, Schriftgröße und Innenabstand getrennt ein. Für aktive und inaktive Tabs lassen sich Schrift- und Hintergrundfarbe separat eingeben. Klicke auf das Farbfeld, um eine Farbe auszuwählen. Mit **Standardfarbe verwenden** stellst du die jeweilige Standardfarbe wieder her. Leere Größenfelder verwenden die Standardwerte.
 5. Wähle **Übernehmen** und anschließend **Layout speichern**. Die Positionierungsfläche zeigt die Leisten innerhalb ihres Außenrahmens an der gewählten Position. Einen abweichenden Anzeigenamen für einen einzelnen Tab vergibst du unter **Tab-Darstellung**.
 
 **Kiosk-Modus auf allen Tabs** blendet die Home-Assistant-Seitenleiste und die native Dashboard-Kopfzeile aus. Die gewählte Rotapfel-Tab-Navigation kann weiterhin angezeigt werden. Mit `?rotapfel_exit_kiosk=1` am Ende der URL öffnest du das Dashboard mit Home-Assistant-Seitenleiste. Bei einer URL mit vorhandenen Parametern verwende `&rotapfel_exit_kiosk=1`.
@@ -218,6 +218,10 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 ### Alpha 13.9.54
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
+
+### Alpha 13.9.61
+
+- Farbwähler für Schrift- und Hintergrundfarben der Navigation und Raumtabs.
 
 ### Alpha 13.9.60
 

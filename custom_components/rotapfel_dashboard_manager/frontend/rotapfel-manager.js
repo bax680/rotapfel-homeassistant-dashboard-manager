@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13960';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.60';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13961';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.61';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -785,10 +785,14 @@ class RotapfelDashboardManager extends HTMLElement {
           ['',t('Standard','Default')],['underline',t('Unterstrichen','Underlined')],
           ['pill',t('Rund','Pill')],['plain',t('Nur Text','Text only')]
         ],style.variant||'')}</select></label>
-        ${tabStyleFields.map(([key,label,min,max])=>`<label>${label}<input id="${id}-${key}" value="${e(style[key]??'')}"
-          ${min?`type="number" min="${min}" max="${max}" step="1"`:'type="text" pattern="#[0-9A-Fa-f]{6}" maxlength="7"'}
-          placeholder="${min?t('Standard','Default'):'#RRGGBB'}"></label>`).join('')}
-        <small>${t('Leere Felder verwenden den Standardstil.','Empty fields use the default styling.')}</small>
+        ${tabStyleFields.map(([key,label,min,max])=>min
+          ?`<label>${label}<input type="number" id="${id}-${key}" value="${e(style[key]??'')}"
+            min="${min}" max="${max}" step="1" placeholder="${t('Standard','Default')}"></label>`
+          :`<div>
+            <label>${label} <input type="color" id="${id}-${key}" value="${e(style[key]||'#202124')}"></label>
+            <label><input type="checkbox" id="${id}-${key}-default" style="width:auto" ${style[key]?'':'checked'}>
+              ${t('Standardfarbe verwenden','Use default color')}</label>
+          </div>`).join('')}
       </fieldset>`;
     };
     const dialog=document.createElement('dialog');
@@ -839,7 +843,8 @@ class RotapfelDashboardManager extends HTMLElement {
       const values={variant:get(id+'-variant').value};
       for(const [key] of tabStyleFields){
         const input=get(id+'-'+key);
-        values[key]=input.type==='number'?input.valueAsNumber:input.value;
+        if(input.type==='number')values[key]=input.valueAsNumber;
+        else if(!get(id+'-'+key+'-default').checked)values[key]=input.value;
       }
       return normalizeRotapfelTabStyle(values);
     };
@@ -848,6 +853,14 @@ class RotapfelDashboardManager extends HTMLElement {
       const updatePosition=()=>{get('presentation-position-label').style.display=navigationMode.value==='bar'?'':'none';};
       navigationMode.onchange=updatePosition;
       updatePosition();
+      for(const id of ['navigation-style','room-tab-style']){
+        for(const [key,,min] of tabStyleFields){
+          if(min)continue;
+          const picker=get(id+'-'+key);
+          const useDefault=get(id+'-'+key+'-default');
+          picker.oninput=()=>{useDefault.checked=false;};
+        }
+      }
     }
     const inherit=get('bg-inherit');
     if(inherit){
