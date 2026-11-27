@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13964';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.64';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13965';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.65';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -2349,8 +2349,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const surface=this.findExternalSurface(host);
     if(!surface&&!host.childElementCount&&!host.shadowRoot?.childElementCount)return null;
     // Use layout dimensions instead of visual bounds, which may be zoomed.
-    const contentHeight=Math.max(host.offsetHeight,host.scrollHeight,
-      surface?.offsetHeight||0,surface?.scrollHeight||0);
+    const contentHeight=surface&&surface!==host?Math.max(surface.offsetHeight||0,surface.scrollHeight||0):Math.max(host.offsetHeight,host.scrollHeight);
     if(contentHeight<8)return null;
     return Math.max(60,Math.ceil(contentHeight)+Math.max(0,tile.offsetHeight-tile.clientHeight));
   }
@@ -2387,7 +2386,7 @@ class RotapfelDashboardManager extends HTMLElement {
       }
       const nativeHeight=native?this.nativeFrameHeight(tile):null;
       const size=generic?{nativeWidth:old.w,nativeHeight:nativeHeight??genericHeight}:this.externalCardSize(card,tile);
-      if(!size||generic&&size.nativeHeight<8)continue;
+      if(!size||generic&&(!Number.isFinite(size.nativeHeight)||size.nativeHeight<8))continue;
       const therm=this.externalVariant(card)==='rotapfel_simple_thermcard';
       // ThermCard: the button fits both axes to the measured visible card.
       // Other card types retain their established height-only behavior.
@@ -2398,6 +2397,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const desiredW=therm?Math.max(76,Math.min(width,Math.ceil(size.nativeWidth*scale)+8)):old.w;
       const desiredH=native?nativeHeight:generic?Math.max(36,Math.ceil(genericHeight)+8):therm?Math.max(60,Math.ceil(size.nativeHeight*scale)+12):this.fittedFrameHeight(card,tile,old.w);
       const fittedH=this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false?desiredH:Math.min(height,desiredH);
+      if(!Number.isFinite(fittedH)||!Number.isFinite(desiredW))continue;
       if(Math.abs(desiredW-old.w)>2||Math.abs(fittedH-old.h)>2){
         update(card,{...old,w:desiredW,h:fittedH},false);
         if(therm){
@@ -3647,15 +3647,11 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
           const finished=start;
           start=null;hideGuides();
           if(ev.type!=='pointerup'||!finished.resizeAxis||!finished.historyCaptured)return;
-          if(finished.c.variant==='ha-native'&&finished.resizeAxis!=='x')return;
-          const applied=positions.get(finished.c.id);
-          // After the drag, measure the real card content once the browser has
-          // completed layout. Do not resize other cards or alter the chosen width.
-          requestAnimationFrame(()=>requestAnimationFrame(()=>{
-            if(!overlay.isConnected||positions.get(finished.c.id)!==applied)return;
-            this.autoFitExternalFrames(tab,overlay,positions,update,true,finished.c.id);
-            scheduleFit();
-          }));
+          // Native cards also fit after vertical and diagonal resize.
+          let applied=positions.get(finished.c.id);
+          const refit=()=>{if(!overlay.isConnected||positions.get(finished.c.id)!==applied)return;this.autoFitExternalFrames(tab,overlay,positions,update,true,finished.c.id);applied=positions.get(finished.c.id);scheduleFit();};
+          requestAnimationFrame(()=>requestAnimationFrame(refit));
+          for(const delay of [150,450,900])setTimeout(refit,delay);
         };
         el.addEventListener('pointerup',finishResize);
         el.addEventListener('pointercancel',finishResize);
@@ -4149,7 +4145,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         if(choice==='equinox'&&eid==='climate.wohn_esszimmer_vtherm_wz_ez')c.external_options={power_entity:'sensor.wohn_esszimmer_vtherm_wz_ez_energie',humidity_entity:'sensor.tempsensor_wz_ez_humidity',temperature_entity:'sensor.tempsensor_wz_ez_temperature'};
         if(!await this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();
         if(choice==='rotapfel_simple_thermcard')this.configureThermostat(c,change);
-      });
+      },{domains:domains[choice]||null});
     };
   }
   configureCustomCard(c,change,isNew=false){
@@ -4237,52 +4233,30 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       return configInput.value.match(/^entity:\s*['"]?([a-z_]+\.[a-z0-9_]+)['"]?\s*$/m)?.[1]||'';
     };
     entityLabel.textContent=getConfiguredEntity();
-    overlay.querySelector('#custom-pick-entity').onclick=()=>{
-      this.pickEntity(getConfiguredEntity(),entity=>{
-        const type=typeInput.value.trim();
-        if(!type){overlay.querySelector('#custom-error').textContent=this.t("Bitte zuerst einen Kartentyp auswählen.","Select a card type first.");return;}
-        const current=configInput.value.trim();
-        const entityName=this._hass?.states?.[entity]?.attributes?.friendly_name||entity;
-        let updated=false;
-        try{
-          const obj=JSON.parse(current);
-          if(obj&&typeof obj==='object'&&!Array.isArray(obj)){
-            if('entity' in obj||!('entities' in obj)){
-              obj.entity=entity;
-              if(templateManaged&&obj.name)obj.name=entityName;
-              configInput.value=JSON.stringify(obj,null,2);
-              updated=true;
-            }
-          }
-        }catch(_e){}
-        if(!updated){
-          const lines=current.split(/\r?\n/);
-          const entityLine=lines.findIndex(line=>/^entity:\s*/.test(line));
-          if(entityLine>=0){
-            lines[entityLine]='entity: '+entity;
-            if(templateManaged){
-              const nameLine=lines.findIndex(line=>/^name:\s*/.test(line));
-              if(nameLine>=0)lines[nameLine]='name: '+JSON.stringify(entityName);
-            }
-            configInput.value=lines.join('\n');
-            updated=true;
-          }else if(/^entities:\s*$/m.test(current)){
-            const listIndex=lines.findIndex(line=>/^entities:\s*$/.test(line));
-            if(listIndex>=0&&/^\s*-\s+/.test(lines[listIndex+1]||'')){
-              lines[listIndex+1]='  - '+entity;
-              configInput.value=lines.join('\n');
-              updated=true;
-            }
-          }
-        }
-        if(!updated){
-          configInput.value=(current||'type: '+type)+'\nentity: '+entity;
-          if(templateManaged)configInput.value+='\nname: '+JSON.stringify(entityName);
-        }
-        generatedTemplate=configInput.value;
-        entityLabel.textContent=entity;
-        detectType();
-      });
+    overlay.querySelector('#custom-pick-entity').onclick=async()=>{
+      const type=typeInput.value.trim(),error=overlay.querySelector('#custom-error');
+      if(!type){error.textContent=this.t("Bitte zuerst einen Kartentyp auswählen.","Select a card type first.");return;}
+      let obj;
+      try{const raw=configInput.value.trim();try{obj=raw?JSON.parse(raw):{type};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error('Invalid configuration');}
+      catch(err){error.textContent=String(err.message||err);return;}
+      const multi=type==='custom:calendar-card-pro'||Array.isArray(obj.entities);
+      const previous=multi?(obj.entities||[]).map(x=>typeof x==='string'?x:x?.entity).filter(Boolean):obj.entity;
+      this.pickEntity(previous,selection=>{
+        if(multi){
+          const old=Array.isArray(obj.entities)?obj.entities:[];
+          obj.entities=selection.map(id=>old.find(x=>(typeof x==='string'?x:x?.entity)===id)??(type==='custom:calendar-card-pro'?{entity:id}:id));
+          delete obj.entity;
+        }else{obj.entity=selection;if(templateManaged&&obj.name)obj.name=this._hass?.states?.[selection]?.attributes?.friendly_name||selection;}
+        configInput.value=JSON.stringify(obj,null,2);generatedTemplate=configInput.value;
+        entityLabel.textContent=Array.isArray(selection)?selection.join(', '):selection;detectType();
+      },{multiple:multi,domains:type==='custom:calendar-card-pro'?['calendar']:null});
+    };
+    const multiButton=document.createElement('button');multiButton.type='button';multiButton.className='secondary';multiButton.textContent=this.t('Mehrere Entitäten auswählen','Select multiple entities');
+    overlay.querySelector('#custom-pick-entity').after(multiButton);
+    multiButton.onclick=async()=>{
+      try{const raw=configInput.value.trim();let obj;try{obj=raw?JSON.parse(raw):{type:typeInput.value.trim()};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error('Invalid configuration');
+        const old=Array.isArray(obj.entities)?obj.entities:[];this.pickEntity(old.map(x=>typeof x==='string'?x:x?.entity).filter(Boolean),ids=>{obj.entities=ids.map(id=>old.find(x=>(typeof x==='string'?x:x?.entity)===id)??(typeInput.value.trim()==='custom:calendar-card-pro'?{entity:id}:id));delete obj.entity;configInput.value=JSON.stringify(obj,null,2);generatedTemplate=configInput.value;entityLabel.textContent=ids.join(', ');detectType();},{multiple:true});
+      }catch(err){overlay.querySelector('#custom-error').textContent=String(err.message||err);}
     };
 
     const quickFields=overlay.querySelector('#custom-quick-fields');
@@ -4703,19 +4677,21 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     };
     preview();
   }
-  pickEntity(current,callback){
-    const allowed=['light','switch','sensor','binary_sensor','climate','cover','input_boolean'];
+  pickEntity(current,callback,{domains=null,multiple=false}={}){
     const states=this._hass?.states||{};
-    const entries=Object.keys(states).filter(id=>allowed.includes(id.split('.')[0])).sort();
+    const entries=Object.keys(states).filter(id=>!domains||domains.includes(id.split('.')[0])).sort();
+    const allowed=[...new Set(entries.map(id=>id.split('.')[0]))].sort();
+    const selected=new Set((Array.isArray(current)?current:[current]).filter(Boolean));
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
-    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>${this.t("Home Assistant Entität auswählen","Select a Home Assistant entity")}</h2><label>${this.t("Suche","Search")}<input id="entity-search" placeholder="${this.t("Name oder entity_id","Name or entity ID")}" autocomplete="off"></label><label>${this.t("Entitätstyp","Entity type")}<select id="entity-domain"><option value="">${this.t("Alle Typen","All types")}</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>${this.t("Entität","Entity")}<select id="entity-select" size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="entity-cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">${this.t("Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.","The list shows entities currently exposed to the frontend by Home Assistant.")}</p></div>`;
+    overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(560px,95vw);max-height:85vh;overflow:auto"><h2>${this.t("Home Assistant Entität auswählen","Select a Home Assistant entity")}</h2><label>${this.t("Suche","Search")}<input id="entity-search" placeholder="${this.t("Name oder entity_id","Name or entity ID")}" autocomplete="off"></label><label>${this.t("Entitätstyp","Entity type")}<select id="entity-domain"><option value="">${this.t("Alle Typen","All types")}</option>${allowed.map(x=>`<option>${x}</option>`).join('')}</select></label><label>${this.t("Entität","Entity")}<select id="entity-select" ${multiple?'multiple':''} size="12" style="height:250px"></select></label><div class="actions"><button id="entity-accept">${this.t("Übernehmen","Apply")}</button><button class="secondary" id="entity-cancel">${this.t("Abbrechen","Cancel")}</button></div><p class="muted">${this.t("Es werden nur Entitäten angezeigt, die Home Assistant aktuell an das Frontend liefert.","The list shows entities currently exposed to the frontend by Home Assistant.")}</p></div>`;
     this.shadowRoot.appendChild(overlay);
     const search=overlay.querySelector('#entity-search'),domain=overlay.querySelector('#entity-domain'),select=overlay.querySelector('#entity-select');
-    const refresh=()=>{const q=search.value.toLocaleLowerCase(),d=domain.value;const filtered=entries.filter(id=>(!d||id.startsWith(d+'.'))&&(id.toLowerCase().includes(q)||String(states[id]?.attributes?.friendly_name||'').toLowerCase().includes(q))).slice(0,500);select.replaceChildren(...filtered.map(id=>{const o=document.createElement('option');o.value=id;o.textContent=`${states[id]?.attributes?.friendly_name||id} · ${id}`;if(id===current)o.selected=true;return o;}));};
+    const refresh=()=>{const q=search.value.toLocaleLowerCase(),d=domain.value;const filtered=entries.filter(id=>(!d||id.startsWith(d+'.'))&&(id.toLowerCase().includes(q)||String(states[id]?.attributes?.friendly_name||'').toLowerCase().includes(q))).slice(0,500);select.replaceChildren(...filtered.map(id=>{const o=document.createElement('option');o.value=id;o.textContent=`${states[id]?.attributes?.friendly_name||id} · ${id}`;if(selected.has(id))o.selected=true;return o;}));};
+    select.onchange=()=>{if(!multiple)selected.clear();for(const o of select.options){if(o.selected)selected.add(o.value);else selected.delete(o.value);}};
     search.oninput=refresh;domain.onchange=refresh;refresh();
     overlay.querySelector('#entity-cancel').onclick=()=>overlay.remove();
-    overlay.querySelector('#entity-accept').onclick=()=>{if(select.value){callback(select.value);overlay.remove();}};
+    overlay.querySelector('#entity-accept').onclick=()=>{if(multiple?selected.size:select.value){callback(multiple?[...selected]:select.value);overlay.remove();}};
     overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.remove();});search.focus();
   }
 
