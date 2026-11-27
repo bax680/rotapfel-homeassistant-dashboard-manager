@@ -98,7 +98,8 @@ export const rotapfelNavigationCss=`
       }
       .rotapfel-tabs[data-mode="bar"][data-position="right"]{border-inline-start:1px solid var(--divider-color);border-inline-end:0}
       .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){justify-content:center}
-      .rotapfel-tabs{box-sizing:border-box;align-self:flex-start;max-width:100%}\n      .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){align-self:center}
+      .rotapfel-tabs{box-sizing:border-box;align-self:flex-start;max-width:100%}
+      .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){align-self:center}
       .rotapfel-tabs :is(a,span){overflow-wrap:anywhere}
 
       .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
