@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13965';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.65';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13966';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.66';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -1270,8 +1270,8 @@ class RotapfelDashboardManager extends HTMLElement {
       </select></label>
       <fieldset data-users hidden><legend>${t('Benutzer auswählen','Select users')}</legend>
         <p>${t('Freigegebene Dashboards öffnen sich direkt über die Seitenleiste.','Shared dashboards open directly from the sidebar.')}</p>
-        ${users.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(user=>`<label style="display:block">
-          <input type="checkbox" name="user" value="${e(user.id)}" ${previous?.user_ids?.includes(user.id)?'checked':''}>
+        ${users.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(user=>`<label style="display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:8px 0">
+          <input style="width:auto;flex:0 0 auto;margin:0" type="checkbox" name="user" value="${e(user.id)}" ${previous?.user_ids?.includes(user.id)?'checked':''}>
           ${e(user.name)}${user.admin?' (Admin)':''}
         </label>`).join('')}
       </fieldset>
@@ -4359,6 +4359,53 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     typeInput.addEventListener('input',refreshQuick);
     detectType();
     refreshQuick();
+    const editorPanel=document.createElement('section');
+    const editorButton=document.createElement('button');editorButton.type='button';editorButton.className='secondary';
+    editorButton.textContent=this.t('Grafischen Editor öffnen','Open visual editor');
+    const editorStatus=document.createElement('p');editorStatus.className='muted';editorStatus.setAttribute('role','status');
+    const editorHost=document.createElement('div');editorPanel.append(editorButton,editorStatus,editorHost);
+    const codeLabel=configInput.closest('label');codeLabel.before(editorPanel);
+    let visual=null,visualType='',generation=0,syncing=false;
+    const readVisualConfig=async(type)=>{
+      const raw=configInput.value.trim();let obj;
+      try{obj=raw?JSON.parse(raw):{};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}
+      if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error(this.t('Ungültige Konfiguration','Invalid configuration'));
+      if(obj.type&&obj.type!==type)throw Error(this.t('Kartentyp stimmt nicht überein','Card type mismatch'));
+      return {...obj,type};
+    };
+    const closeVisual=()=>{generation++;visual=null;visualType='';editorHost.replaceChildren();codeLabel.hidden=false;editorButton.disabled=false;editorButton.textContent=this.t('Grafischen Editor öffnen','Open visual editor');};
+    const openVisual=async()=>{
+      const type=typeInput.value.trim();if(!/^custom:[a-z0-9_-]+$/i.test(type))return;
+      const token=++generation;editorButton.disabled=true;editorStatus.textContent=this.t('Grafischer Editor wird gesucht …','Looking for visual editor …');
+      try{
+        const hass=await this.nativeCardEditorHass();
+        const tag=type.slice(7);
+        try{await this.ensureGenericCustomResource(tag);}catch{}
+        if(!customElements.get(tag)&&window.loadCardHelpers){try{const helpers=await window.loadCardHelpers();helpers.createCardElement(await readVisualConfig(type));}catch{}}
+        if(!customElements.get(tag))await Promise.race([customElements.whenDefined(tag),new Promise(resolve=>setTimeout(resolve,1800))]);
+        const cls=customElements.get(tag);
+        if(!cls?.getConfigElement)throw Error(this.t('Kein grafischer Originaleditor verfügbar. YAML/JSON bleibt verfügbar.','No original visual editor available. YAML/JSON remains available.'));
+        const editor=await cls.getConfigElement();
+        if(!overlay.isConnected||token!==generation)return;
+        if(!editor?.setConfig)throw Error(this.t('Grafischer Editor nicht verfügbar','Visual editor unavailable'));
+        let config=await readVisualConfig(type);
+        if(Object.keys(config).length===1&&cls.getStubConfig){try{const stub=await cls.getStubConfig(hass,Object.keys(hass?.states||{}),[]);if(stub&&typeof stub==='object')config={...stub,type};}catch{}}
+        if(!overlay.isConnected||token!==generation)return;
+        editor.hass=hass;editor.setConfig(config);
+        configInput.value=JSON.stringify(config,null,2);visual=editor;visualType=type;
+        editor.addEventListener('config-changed',event=>{if(syncing||visual!==editor||!event.detail?.config)return;configInput.value=JSON.stringify({...event.detail.config,type},null,2);templateManaged=false;detectType();refreshQuick();entityLabel.textContent=getConfiguredEntity();});
+        editorHost.replaceChildren(editor);codeLabel.hidden=true;editorStatus.textContent='';editorButton.textContent=this.t('Zu YAML / JSON wechseln','Switch to YAML / JSON');
+      }catch(err){if(token===generation&&overlay.isConnected){closeVisual();editorStatus.textContent=String(err.message||err);}}
+      finally{if(token===generation)editorButton.disabled=false;}
+    };
+    editorButton.onclick=()=>{if(visual){closeVisual();editorStatus.textContent='';}else openVisual();};
+    const syncVisual=async()=>{if(!visual)return;const editor=visual;try{const config=await readVisualConfig(visualType);if(visual!==editor)return;syncing=true;editor.setConfig(config);}catch(err){closeVisual();editorStatus.textContent=String(err.message||err);}finally{syncing=false;}};
+    configInput.addEventListener('change',syncVisual);
+    overlay.addEventListener('click',event=>{if(event.target.closest?.('#custom-pick-entity')||event.target===multiButton){if(visual)closeVisual();}});
+    quickFields.addEventListener('change',()=>queueMicrotask(syncVisual));
+    select.addEventListener('change',()=>{if(visual&&typeInput.value.trim()!==visualType)closeVisual();});
+    typeInput.addEventListener('input',()=>{if(visual&&typeInput.value.trim()!==visualType)closeVisual();});
+    if(initialType)openVisual();
     // Refresh the catalog without blocking the editor.
     this.refreshCustomCardCatalog().then(types=>{
       if(overlay.isConnected){
