@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.61 · **Integrationsversion:** `0.2.0a13961` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.62 · **Integrationsversion:** `0.2.0a13962` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -76,7 +76,7 @@ Equinox, Climate Cluster Card und Mushroom sind optionale Erweiterungen. Install
 | Equinox | [Im Marketplace öffnen](https://my.home-assistant.io/redirect/marketplace_repository/?owner=KipK&repository=equinox&category=plugin) · [Original-Repository](https://github.com/KipK/equinox) |
 | Climate Cluster Card | [Im Marketplace öffnen](https://my.home-assistant.io/redirect/marketplace_repository/?owner=rickyfont94&repository=climate-cluster-card&category=plugin) · [Original-Repository](https://github.com/rickyfont94/climate-cluster-card) |
 
-Unter **Custom-Card-Ressourcen** kannst du die verfügbaren Zuordnungen prüfen. Der Custom-Card-Editor bietet für unterstützte Typen Schnelleinstellungen für Anzeigename, Icon und Iconfarbe. Individuelle Optionen stehen in der YAML- oder JSON-Konfiguration.
+Unter **Custom-Card-Ressourcen** im Hauptmanager kannst du die verfügbaren Zuordnungen prüfen und Kartentypen für den Layoutmanager freigeben. Equinox, Climate Cluster und Rotapfel Simple ThermCard bleiben fest integriert. Weitere Typen sind zunächst nicht freigegeben. Suche nach einem Typ, markiere die gewünschten Checkboxen oder verwende **Alle auswählen** / **Alle abwählen**. **Erneut suchen** aktualisiert den Katalog und erhält die Auswahl. Mit **Speichern** wird die Freigabeliste zentral in Home Assistant gespeichert; sie gilt browser- und geräteübergreifend. Neu erkannte Typen müssen ausdrücklich freigegeben werden. Die Freigabe betrifft die direkte Custom-Card-Auswahl und Konfiguration, nicht die Installation von Ressourcen, vorhandene Vorlagen oder importierte Dashboards. Die Erkennung kann abhängig von Ressourcen und Browserregistrierung unvollständig sein. Manuelle Ressourcenpfade der drei integrierten Karten bleiben browserspezifisch. Der Custom-Card-Editor bietet für unterstützte Typen Schnelleinstellungen für Anzeigename, Icon und Iconfarbe. Individuelle Optionen stehen in der YAML- oder JSON-Konfiguration.
 
 ## Darstellung veröffentlichter Dashboards
 
@@ -219,7 +219,7 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
 
-### Alpha 13.9.61
+### Alpha 13.9.62
 
 - Farbwähler für Schrift- und Hintergrundfarben der Navigation und Raumtabs.
 
