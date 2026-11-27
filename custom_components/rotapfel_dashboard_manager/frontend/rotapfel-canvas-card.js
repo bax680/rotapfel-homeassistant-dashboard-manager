@@ -93,12 +93,12 @@ export const rotapfelNavigationCss=`
       .rotapfel-navigation-layout:has(>.rotapfel-tabs[data-position="right"]){flex-direction:row-reverse}
       .rotapfel-navigation-surface{flex:1 1 auto;width:100%;min-width:0;overflow:clip}
       .rotapfel-tabs[data-mode="bar"]:is([data-position="left"],[data-position="right"]){
-        flex:0 0 clamp(76px,20%,180px);flex-direction:column;flex-wrap:nowrap;align-items:stretch;
+        flex:0 0 auto;max-width:35%;align-self:flex-start;flex-direction:column;flex-wrap:nowrap;align-items:stretch;
         justify-content:flex-start;border:0;border-inline-end:1px solid var(--divider-color)
       }
       .rotapfel-tabs[data-mode="bar"][data-position="right"]{border-inline-start:1px solid var(--divider-color);border-inline-end:0}
       .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){justify-content:center}
-      .rotapfel-tabs{box-sizing:border-box}
+      .rotapfel-tabs{box-sizing:border-box;align-self:flex-start;max-width:100%}\n      .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){align-self:center}
       .rotapfel-tabs :is(a,span){overflow-wrap:anywhere}
 
       .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
