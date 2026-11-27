@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.63 · **Integrationsversion:** `0.2.0a13963` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.64 · **Integrationsversion:** `0.2.0a13964` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -219,7 +219,7 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
 
-### Alpha 13.9.63
+### Alpha 13.9.64
 
 - Farbwähler für Schrift- und Hintergrundfarben der Navigation und Raumtabs.
 
@@ -253,6 +253,12 @@ Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräte
 
 Ergänzt Hintergründe für das ganze Dashboard oder einzelne Tabs, globalen Kiosk-Modus und konfigurierbare Tab-Navigation. Entfernt doppelte Überschriften und übernimmt die Korrekturen für die Vorschau und die automatische Anordnung nach Kartentyp.
 
-### Alpha 13.9.63 – English notes
+### Alpha 13.9.64 – English notes
 
 Custom card discovery includes installed Marketplace repository names as candidates and supports manual type entry. Built-in cards are hidden from the allowlist. New cards use type-specific ideal dimensions; explicit resizing also works on manually resized cards. Theme colors initialize the color pickers. Navigation uses compact bars. Browser validation is required.
+
+## Alpha 13.9.64 / Direct tab cards
+
+Freigegebene Custom Cards erscheinen als eigene Einträge in der Kartenauswahl. Mit **+ Karte im Tab** können Karten ohne manuell angelegten Raum hinzugefügt werden. Intern wird eine Karten-Gruppe für den Tab angelegt; im Mischbetrieb kann sie als Raumtab erscheinen. Der Ladestatus beschreibt die Registrierung im Browser, nicht die Installation.
+
+Approved custom cards appear as individual picker entries. **+ Card in tab** creates an internal card group without requiring a manually created room. In mixed layouts this group may appear as a room tab. Loading status describes browser registration, not installation.
