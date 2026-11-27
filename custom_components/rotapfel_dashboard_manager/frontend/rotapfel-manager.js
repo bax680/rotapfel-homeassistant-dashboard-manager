@@ -4107,7 +4107,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     };
     search.oninput=draw;category.onchange=draw;draw();
     overlay.querySelector('#type-cancel').onclick=()=>overlay.remove();
-    overlay.querySelector('#type-add').onclick=()=>{
+    overlay.querySelector('#type-add').onclick=async()=>{
       const choice=selected;overlay.remove();
       if(choice==='label-horizontal'||choice==='label-vertical'){
         const title=prompt(this.t("Text der Beschriftung","Label text"))?.trim();
