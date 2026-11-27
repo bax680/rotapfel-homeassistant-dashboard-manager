@@ -2,7 +2,7 @@
 
 Erstelle und verwalte eigene Home-Assistant-Dashboards mit einem grafischen Layout-Editor. Ordne Karten nach Tabs und Räumen, speichere Vorlagen und passe die Arbeitsfläche an Desktop, Tablet und Smartphone an.
 
-**Source Archive:** Alpha 13.9.65 · **Integrationsversion:** `0.2.0a13965` · **Domain:** `rotapfel_dashboard_manager`
+**Source Archive:** Alpha 13.9.66 · **Integrationsversion:** `0.2.0a13966` · **Domain:** `rotapfel_dashboard_manager`
 
 ## Installation und erster Start
 
@@ -219,7 +219,7 @@ Ergänzt englische Texte für Kartenliste, Kartenaktionen, Kartenbibliothek, Kar
 
 Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräteprofile, Versionsverwaltung, Veröffentlichungsdialoge und Meldungen.
 
-### Alpha 13.9.65
+### Alpha 13.9.66
 
 - Farbwähler für Schrift- und Hintergrundfarben der Navigation und Raumtabs.
 
@@ -253,18 +253,24 @@ Erweitert die englische Oberfläche auf Positionierungseditor, Vorlagen, Geräte
 
 Ergänzt Hintergründe für das ganze Dashboard oder einzelne Tabs, globalen Kiosk-Modus und konfigurierbare Tab-Navigation. Entfernt doppelte Überschriften und übernimmt die Korrekturen für die Vorschau und die automatische Anordnung nach Kartentyp.
 
-### Alpha 13.9.65 – English notes
+### Alpha 13.9.66 – English notes
 
 Custom card discovery includes installed Marketplace repository names as candidates and supports manual type entry. Built-in cards are hidden from the allowlist. New cards use type-specific ideal dimensions; explicit resizing also works on manually resized cards. Theme colors initialize the color pickers. Navigation uses compact bars. Browser validation is required.
 
-## Alpha 13.9.65 / Direct tab cards
+## Alpha 13.9.66 / Direct tab cards
 
 Freigegebene Custom Cards erscheinen als eigene Einträge in der Kartenauswahl. Mit **+ Karte im Tab** können Karten ohne manuell angelegten Raum hinzugefügt werden. Intern wird eine Karten-Gruppe für den Tab angelegt; im Mischbetrieb kann sie als Raumtab erscheinen. Der Ladestatus beschreibt die Registrierung im Browser, nicht die Installation.
 
 Approved custom cards appear as individual picker entries. **+ Card in tab** creates an internal card group without requiring a manually created room. In mixed layouts this group may appear as a room tab. Loading status describes browser registration, not installation.
 
-## Alpha 13.9.65 – Entity selection and frame fitting
+## Alpha 13.9.66 – Entity selection and frame fitting
 
 DE: Die Entitätsauswahl verwendet dynamisch alle vom HA-Frontend bereitgestellten Typen. Eigene Kartentypen behalten passende Filter. Custom Cards unterstützen eine Mehrfachauswahl; Calendar Card Pro erhält `entities` mit Entity-Objekten. Nach dem Ziehen werden native und externe Karten erneut gemessen, auch bei verzögertem Rendering. Die gewählte Breite bleibt grundsätzlich erhalten.
 
 EN: Entity selection dynamically includes all domains exposed by the HA frontend, with compatible filters for built-in cards. Custom cards support multiple entities; Calendar Card Pro receives entity objects in `entities`. Native and external frames are remeasured after resizing, including delayed rendering. The selected width is generally retained.
+
+## Alpha 13.9.66 – Visual custom card editors
+
+DE: Die Benutzerauswahl beim Veröffentlichen ist linksbündig. Custom Cards können ihren Originaleditor über getConfigElement() anbieten. Rotapfel versucht die Ressource zu laden und öffnet den Editor automatisch für vorausgewählte Karten. YAML/JSON bleibt als Alternative verfügbar. Die Unterstützung hängt vom jeweiligen Kartenmodul ab.
+
+EN: Publication user checkboxes are aligned with names. Custom cards can expose their original editor through getConfigElement(). Rotapfel attempts resource loading and opens the editor for preselected cards. YAML/JSON remains available as a fallback. Support depends on the card module.
