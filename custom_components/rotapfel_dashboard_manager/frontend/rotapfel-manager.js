@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13961';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.61';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13962';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.62';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -203,19 +203,37 @@ class RotapfelDashboardManager extends HTMLElement {
       registered:!!customElements.get(tag),url:values[key],
       source:manual[key]?this.t("Manuell","Manual"):auto[key]?'Home Assistant':this.t("Nicht gefunden","Not found")}));
   }
+  fixedCustomTypes(){return Object.values(this.resourceTags()).map(t=>'custom:'+t);}
+  async loadCustomCardPolicy(){
+    const result=await this.api('custom_card_policy');
+    this._customCardAllowed=Array.isArray(result.allowed)?result.allowed:[];
+    return this._customCardAllowed;
+  }
+  allowedCustomTypes(types){const allowed=new Set([...this.fixedCustomTypes(),...(this._customCardAllowed||[])]);return types.filter(t=>allowed.has(t));}
   async resourceManager(){
     const overlay=document.createElement('div');
     overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
     const esc=x=>this.esc(x),labels=this.resourceNames();
     overlay.innerHTML=`<div style="background:var(--card-background-color,#fff);color:var(--primary-text-color,#222);padding:22px;border-radius:14px;width:min(720px,96vw);max-height:90vh;overflow:auto"><h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">${this.t("Lese Home-Assistant-Ressourcen …","Reading Home Assistant resources …")}</p></div>`;
     this.shadowRoot.appendChild(overlay);
+    let selected=new Set(),catalog=[],query="";
     const draw=()=>{
       if(!overlay.isConnected)return;
       const values=this.readResources(),manual=this.manualResources(),status=this.resourceStatus();
       overlay.firstElementChild.innerHTML=`<h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">${this.t("Ressourcen aus Home Assistant werden automatisch erkannt. Ein manueller Pfad hat Vorrang. Ein leeres Feld nutzt die automatische Erkennung.","Home Assistant resources are detected automatically. A manual path takes precedence. Leave the field blank to use automatic detection.")}</p>${status.map(({key,tag,registered,source})=>`<div style="padding:12px 0;border-bottom:1px solid #aaa5"><strong>${esc(labels[key])}</strong><span class="muted"> · ${esc(tag)} · ${registered?this.t("Geladen","Loaded"):this.t("Noch nicht geladen","Not loaded yet")} · ${esc(source)}</span><label>${this.t("JavaScript-Ressource","JavaScript resource")}<input data-resource="${key}" value="${esc(manual[key]||'')}" placeholder="${esc(values[key]||this.t("Automatisch erkennen","Detect automatically"))}"></label>${!manual[key]&&values[key]?`<p class="muted" style="overflow-wrap:anywhere">${this.t("Erkannt:","Detected:")} ${esc(values[key])}</p>`:''}</div>`).join('')}<p class="muted">${this.t("Die automatische Erkennung erfolgt über die Home-Assistant-Ressourcenliste. Manuelle Überschreibungen gelten nur in diesem Browser.","Automatic detection uses the Home Assistant resource list. Manual overrides apply only in this browser.")}</p>${this._resourceDiscoveryError?`<p class="error">${this.t("Ressourcenliste nicht abrufbar:","Could not retrieve resource list:")} ${esc(this._resourceDiscoveryError)}${this.t(". Manuelle Eingabe bleibt möglich.",". You can still enter a path manually.")}</p>`:''}<div class="actions"><button id="resource-save">${this.t("Speichern","Save")}</button><button class="secondary" id="resource-refresh">${this.t("Erneut suchen","Search again")}</button><button class="secondary" id="resource-close">${this.t("Schließen","Close")}</button></div><p id="resource-error" class="error"></p>`;
+      const panel=document.createElement('section');
+      panel.innerHTML='<h3>'+this.t('Freigabe für den Layoutmanager','Layout manager allowlist')+'</h3><p>'+this.t('Die drei integrierten Karten bleiben immer verfügbar.','The three integrated cards remain available.')+'</p><input id="allow-search" type="search" placeholder="'+this.t('Karten suchen','Search cards')+'"><div class="actions"><button id="allow-all" class="secondary">'+this.t('Alle auswählen','Select all')+'</button><button id="allow-none" class="secondary">'+this.t('Alle abwählen','Deselect all')+'</button></div><div id="allow-list" style="max-height:35vh;overflow:auto"></div><p id="allow-count"></p>';
+      overlay.querySelector('.actions').before(panel);
+      const search=panel.querySelector('#allow-search');search.value=query;
+      const fixed=new Set(this.fixedCustomTypes());
+      const drawList=()=>{const list=panel.querySelector('#allow-list');list.replaceChildren();for(const t of catalog.filter(t=>t.toLowerCase().includes(query.toLowerCase()))){const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:8px;padding:6px';const input=document.createElement('input');input.type='checkbox';input.style.width='auto';input.checked=fixed.has(t)||selected.has(t);input.disabled=fixed.has(t);input.onchange=()=>{if(input.checked)selected.add(t);else selected.delete(t);count();};label.append(input,document.createTextNode(t+' · '+(fixed.has(t)?this.t('Fest integriert','Built in'):customElements.get(t.slice(7))?this.t('Geladen','Loaded'):this.t('Nicht geladen','Not loaded'))));list.append(label);}count();};
+      const count=()=>{panel.querySelector('#allow-count').textContent=this.t('Zusätzlich freigegeben: ','Additionally allowed: ')+selected.size;};
+      search.oninput=()=>{query=search.value;drawList();};
+      panel.querySelector('#allow-all').onclick=()=>{selected=new Set(catalog.filter(t=>!fixed.has(t)));drawList();};
+      panel.querySelector('#allow-none').onclick=()=>{selected.clear();drawList();};drawList();
       overlay.querySelector('#resource-close').onclick=()=>overlay.remove();
-      overlay.querySelector('#resource-refresh').onclick=async()=>{await this.discoverResources(true);draw();};
-      overlay.querySelector('#resource-save').onclick=()=>{
+      overlay.querySelector('#resource-refresh').onclick=async()=>{await this.discoverResources(true);catalog=[...new Set([...await this.refreshCustomCardCatalog(true),...selected])].sort();draw();};
+      overlay.querySelector('#resource-save').onclick=async()=>{
         const next={};
         for(const field of overlay.querySelectorAll('[data-resource]')){
           const value=field.value.trim();
@@ -224,12 +242,12 @@ class RotapfelDashboardManager extends HTMLElement {
           }
           if(value)next[field.dataset.resource]=value;
         }
-        try{localStorage.setItem('rotapfel_resources_alpha13',JSON.stringify(next));overlay.remove();this.render();}
+        try{const result=await this.api('save_custom_card_policy',{allowed:[...selected]});this._customCardAllowed=result.allowed;localStorage.setItem('rotapfel_resources_alpha13',JSON.stringify(next));overlay.remove();this.render();}
         catch(err){overlay.querySelector('#resource-error').textContent=this.t("Speichern nicht möglich: ","Could not save: ")+String(err);}
       };
     };
     overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.remove();});
-    await this.discoverResources(true);draw();
+    try{await this.discoverResources(true);const policy=await this.loadCustomCardPolicy();selected=new Set(policy.filter(t=>!this.fixedCustomTypes().includes(t)));catalog=[...new Set([...await this.refreshCustomCardCatalog(true),...selected])].sort();draw();}catch(err){overlay.firstElementChild.textContent=this.t('Kartenfreigabe konnte nicht geladen werden: ','Could not load card allowlist: ')+String(err);overlay.onclick=()=>overlay.remove();}
   }
   async ensureExternalResource(c){
     const tag=this.externalConfig(c)?.type?.replace(/^custom:/,'');
@@ -263,7 +281,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const types=new Set();
     const add=tag=>{
       tag=String(tag||'').trim().replace(/^custom:/,'').toLowerCase();
-      if(/^[a-z][a-z0-9-]*-card$/.test(tag)||/^[a-z][a-z0-9-]*-entities$/.test(tag))
+      if(/^[a-z][a-z0-9-]*-card$/.test(tag)||/^[a-z][a-z0-9-]*-entities$/.test(tag)||['webrtc-camera','mini-media-player','stack-in-card'].includes(tag))
         types.add('custom:'+tag);
     };
     // Lovelace custom cards may register metadata in the global customCards
@@ -4075,6 +4093,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     }
   }
   async openCardTypePicker(room,change){
+    await this.loadCustomCardPolicy();
     const hass=await this.nativeCardEditorHass();
     const overlay=document.createElement('div');overlay.className='card-type-overlay';overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:9999;display:grid;place-items:center;padding:16px';
     const catalog=[
@@ -4160,7 +4179,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     const stored=c.custom_config&&typeof c.custom_config==='object'?c.custom_config:null;
     const legacy=c.custom||{};
     const initialType=stored?.type||legacy.card_type||'';
-    const catalog=this._customCardCatalog||[];
+    const catalog=this.allowedCustomTypes([...new Set([...this.fixedCustomTypes(),...(this._customCardAllowed||[]),...(this._customCardCatalog||[])])]);
     const knownTypes=[...new Set([...catalog,initialType].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
     const typeOptions=knownTypes.map(type=>`<option value="${esc(type)}">${esc(type.replace(/^custom:/,'').replace(/-/g,' '))}</option>`).join('');
     const initialText=stored?JSON.stringify(stored,null,2):legacy.configuration||'{}';
@@ -4389,7 +4408,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     // Refresh the catalog without blocking the editor.
     this.refreshCustomCardCatalog().then(types=>{
       if(overlay.isConnected){
-        fillTypes(types);
+        fillTypes(this.allowedCustomTypes([...new Set([...types,...(this._customCardAllowed||[])])]));
         const report=this._marketplaceCardReport;
         overlay.querySelector('#custom-marketplace-status').textContent=report
           ?this.t(`Marketplace: ${report.installed} installierte Dashboard-Erweiterungen, ${report.matched} anhand der Ressourcen zugeordnet. Eine Erweiterung kann mehrere Kartentypen enthalten.`,`Marketplace: ${report.installed} installed dashboard extensions, ${report.matched} matched to resources. An extension can contain multiple card types.`)
@@ -4415,6 +4434,8 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         if(!options||typeof options!=='object'||Array.isArray(options))throw Error(this.t("Die Konfiguration muss ein YAML-/JSON-Objekt sein.","The configuration must be a YAML or JSON object."));
         const card_type=typeof options.type==='string'&&options.type.trim()?options.type.trim():selectedType;
         if(!/^custom:[a-z0-9_-]+$/i.test(card_type))throw Error(this.t("Kein gültiger Kartentyp gefunden. Bitte type: custom:... im YAML angeben oder einen Kartentyp auswählen.","No valid card type found. Specify type: custom:... in YAML or select a card type."));
+        await this.loadCustomCardPolicy();
+        if(!this.allowedCustomTypes([card_type]).length)throw Error(this.t('Kartentyp ist nicht freigegeben. Bitte im Hauptmanager freigeben.','Card type is not allowed. Enable it in the main manager.'));
         c.title=title.slice(0,80);
         c.custom_config={...options,type:card_type};
         delete c.custom;
