@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13962';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.62';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13963';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.63';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -219,14 +219,14 @@ class RotapfelDashboardManager extends HTMLElement {
     let selected=new Set(),catalog=[],query="";
     const draw=()=>{
       if(!overlay.isConnected)return;
-      const values=this.readResources(),manual=this.manualResources(),status=this.resourceStatus();
-      overlay.firstElementChild.innerHTML=`<h2>${this.t("Custom-Card-Ressourcen","Custom card resources")}</h2><p class="muted">${this.t("Ressourcen aus Home Assistant werden automatisch erkannt. Ein manueller Pfad hat Vorrang. Ein leeres Feld nutzt die automatische Erkennung.","Home Assistant resources are detected automatically. A manual path takes precedence. Leave the field blank to use automatic detection.")}</p>${status.map(({key,tag,registered,source})=>`<div style="padding:12px 0;border-bottom:1px solid #aaa5"><strong>${esc(labels[key])}</strong><span class="muted"> · ${esc(tag)} · ${registered?this.t("Geladen","Loaded"):this.t("Noch nicht geladen","Not loaded yet")} · ${esc(source)}</span><label>${this.t("JavaScript-Ressource","JavaScript resource")}<input data-resource="${key}" value="${esc(manual[key]||'')}" placeholder="${esc(values[key]||this.t("Automatisch erkennen","Detect automatically"))}"></label>${!manual[key]&&values[key]?`<p class="muted" style="overflow-wrap:anywhere">${this.t("Erkannt:","Detected:")} ${esc(values[key])}</p>`:''}</div>`).join('')}<p class="muted">${this.t("Die automatische Erkennung erfolgt über die Home-Assistant-Ressourcenliste. Manuelle Überschreibungen gelten nur in diesem Browser.","Automatic detection uses the Home Assistant resource list. Manual overrides apply only in this browser.")}</p>${this._resourceDiscoveryError?`<p class="error">${this.t("Ressourcenliste nicht abrufbar:","Could not retrieve resource list:")} ${esc(this._resourceDiscoveryError)}${this.t(". Manuelle Eingabe bleibt möglich.",". You can still enter a path manually.")}</p>`:''}<div class="actions"><button id="resource-save">${this.t("Speichern","Save")}</button><button class="secondary" id="resource-refresh">${this.t("Erneut suchen","Search again")}</button><button class="secondary" id="resource-close">${this.t("Schließen","Close")}</button></div><p id="resource-error" class="error"></p>`;
+      overlay.firstElementChild.innerHTML='<h2>'+this.t('Custom-Card-Ressourcen','Custom card resources')+'</h2><div class="actions"><button id="resource-save">'+this.t('Speichern','Save')+'</button><button class="secondary" id="resource-refresh">'+this.t('Erneut suchen','Search again')+'</button><button class="secondary" id="resource-close">'+this.t('Schließen','Close')+'</button></div><p id="resource-error" class="error"></p>';
       const panel=document.createElement('section');
       panel.innerHTML='<h3>'+this.t('Freigabe für den Layoutmanager','Layout manager allowlist')+'</h3><p>'+this.t('Die drei integrierten Karten bleiben immer verfügbar.','The three integrated cards remain available.')+'</p><input id="allow-search" type="search" placeholder="'+this.t('Karten suchen','Search cards')+'"><div class="actions"><button id="allow-all" class="secondary">'+this.t('Alle auswählen','Select all')+'</button><button id="allow-none" class="secondary">'+this.t('Alle abwählen','Deselect all')+'</button></div><div id="allow-list" style="max-height:35vh;overflow:auto"></div><p id="allow-count"></p>';
       overlay.querySelector('.actions').before(panel);
       const search=panel.querySelector('#allow-search');search.value=query;
+      const manual=document.createElement('input');manual.placeholder='custom:calendar-card-pro';const addButton=document.createElement('button');addButton.className='secondary';addButton.textContent=this.t('Kartentyp ergänzen','Add card type');panel.append(manual,addButton);addButton.onclick=()=>{const t='custom:'+manual.value.trim().toLowerCase().replace(/^custom:/,'');if(!/^custom:[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(t)||this.fixedCustomTypes().includes(t))return;catalog=[...new Set([...catalog,t])].sort();selected.add(t);query='';search.value='';manual.value='';drawList();};
       const fixed=new Set(this.fixedCustomTypes());
-      const drawList=()=>{const list=panel.querySelector('#allow-list');list.replaceChildren();for(const t of catalog.filter(t=>t.toLowerCase().includes(query.toLowerCase()))){const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:8px;padding:6px';const input=document.createElement('input');input.type='checkbox';input.style.width='auto';input.checked=fixed.has(t)||selected.has(t);input.disabled=fixed.has(t);input.onchange=()=>{if(input.checked)selected.add(t);else selected.delete(t);count();};label.append(input,document.createTextNode(t+' · '+(fixed.has(t)?this.t('Fest integriert','Built in'):customElements.get(t.slice(7))?this.t('Geladen','Loaded'):this.t('Nicht geladen','Not loaded'))));list.append(label);}count();};
+      const drawList=()=>{const list=panel.querySelector('#allow-list');list.replaceChildren();for(const t of catalog.filter(t=>!fixed.has(t)&&t.toLowerCase().includes(query.toLowerCase()))){const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:8px;padding:6px';const input=document.createElement('input');input.type='checkbox';input.style.width='auto';input.checked=fixed.has(t)||selected.has(t);input.disabled=fixed.has(t);input.onchange=()=>{if(input.checked)selected.add(t);else selected.delete(t);count();};label.append(input,document.createTextNode(t+' · '+(fixed.has(t)?this.t('Fest integriert','Built in'):customElements.get(t.slice(7))?this.t('Geladen','Loaded'):this.t('Nicht geladen','Not loaded'))));list.append(label);}count();};
       const count=()=>{panel.querySelector('#allow-count').textContent=this.t('Zusätzlich freigegeben: ','Additionally allowed: ')+selected.size;};
       search.oninput=()=>{query=search.value;drawList();};
       panel.querySelector('#allow-all').onclick=()=>{selected=new Set(catalog.filter(t=>!fixed.has(t)));drawList();};
@@ -242,7 +242,7 @@ class RotapfelDashboardManager extends HTMLElement {
           }
           if(value)next[field.dataset.resource]=value;
         }
-        try{const result=await this.api('save_custom_card_policy',{allowed:[...selected]});this._customCardAllowed=result.allowed;localStorage.setItem('rotapfel_resources_alpha13',JSON.stringify(next));overlay.remove();this.render();}
+        try{const result=await this.api('save_custom_card_policy',{allowed:[...selected]});this._customCardAllowed=result.allowed;overlay.remove();this.render();}
         catch(err){overlay.querySelector('#resource-error').textContent=this.t("Speichern nicht möglich: ","Could not save: ")+String(err);}
       };
     };
@@ -279,15 +279,15 @@ class RotapfelDashboardManager extends HTMLElement {
   async discoverCustomCardTypes(force=false){
     if(!force&&this._customCardCatalog?.length)return this._customCardCatalog;
     const types=new Set();
-    const add=tag=>{
+    const add=(tag,explicit=false)=>{
       tag=String(tag||'').trim().replace(/^custom:/,'').toLowerCase();
-      if(/^[a-z][a-z0-9-]*-card$/.test(tag)||/^[a-z][a-z0-9-]*-entities$/.test(tag)||['webrtc-camera','mini-media-player','stack-in-card'].includes(tag))
+      if((explicit&&/^[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(tag))||/^[a-z][a-z0-9-]*-card(?:-pro)?$/.test(tag)||/^[a-z][a-z0-9-]*-entities$/.test(tag)||['webrtc-camera','mini-media-player','stack-in-card'].includes(tag))
         types.add('custom:'+tag);
     };
     // Lovelace custom cards may register metadata in the global customCards
     // catalog, even when the browser cannot enumerate customElements.
     for(const item of (Array.isArray(window.customCards)?window.customCards:[])){
-      add(item?.type);
+      add(item?.type,true);
       add(item?.name?.toLowerCase().replace(/\\s+/g,'-'));
     }
     if(typeof customElements.getNames==='function')
@@ -324,8 +324,10 @@ class RotapfelDashboardManager extends HTMLElement {
     // repository name as a guaranteed usable card type.
     try{
       const repositories=await this._hass.callWS({type:'marketplace/repositories/list',categories:['plugin']});
-      if(Array.isArray(repositories)){
-        const installed=repositories.filter(item=>item?.installed===true);
+      const entries=Array.isArray(repositories)?repositories:repositories?.repositories||[];
+      if(Array.isArray(entries)){
+        const installed=entries.filter(item=>item?.installed===true||!!item?.installed_version);
+        for(const item of installed){for(const value of [item.full_name?.split('/').pop(),item.name,item.file_name]){const tag=String(value||'').toLowerCase().replace(/\.(?:min\.)?m?js$/,'').replace(/\s+/g,'-');add(tag);}}
         const resourcesResponse=await this._hass.callWS({type:'lovelace/resources'});
         const resourceList=Array.isArray(resourcesResponse)?resourcesResponse:Array.isArray(resourcesResponse?.resources)?resourcesResponse.resources:[];
         const resourceUrls=resourceList.map(item=>String(typeof item==='string'?item:item?.url||'').toLowerCase());
@@ -796,6 +798,7 @@ class RotapfelDashboardManager extends HTMLElement {
       ['fontSize',t('Schriftgröße (px)','Font size (px)'),10,36],
       ['padding',t('Innenabstand (px)','Padding (px)'),4,24]
     ];
+    const themeColor=(key,id,variant)=>{const room=id==='room-tab-style',filled=variant==='pill'||(room&&!variant),plain=variant==='plain'||variant==='underline';const prop=key==='color'?'--primary-text-color':key==='activeColor'?(filled?'--text-primary-color':'--primary-color'):key==='activeBackground'&&filled?'--primary-color':plain||(!room&&settings.navigation==='bar')?'--primary-background-color':'--card-background-color';const fallback=prop==='--primary-color'?'#03a9f4':prop==='--primary-text-color'?'#222222':'#ffffff';const probe=document.createElement('span');probe.style.color='var('+prop+','+fallback+')';this.shadowRoot.append(probe);const rgb=getComputedStyle(probe).color.match(/\d+/g);probe.remove();return rgb&&rgb.length>=3?'#'+rgb.slice(0,3).map(n=>Number(n).toString(16).padStart(2,'0')).join(''):fallback;};
     const styleControls=(id,title,value)=>{
       const style=normalizeRotapfelTabStyle(value);
       return `<fieldset><legend>${title}</legend>
@@ -807,7 +810,7 @@ class RotapfelDashboardManager extends HTMLElement {
           ?`<label>${label}<input type="number" id="${id}-${key}" value="${e(style[key]??'')}"
             min="${min}" max="${max}" step="1" placeholder="${t('Standard','Default')}"></label>`
           :`<div>
-            <label>${label} <input type="color" id="${id}-${key}" value="${e(style[key]||'#202124')}"></label>
+            <label>${label} <input type="color" id="${id}-${key}" value="${e(style[key]||themeColor(key,id,style.variant))}"></label>
             <label><input type="checkbox" id="${id}-${key}-default" style="width:auto" ${style[key]?'':'checked'}>
               ${t('Standardfarbe verwenden','Use default color')}</label>
           </div>`).join('')}
@@ -819,7 +822,7 @@ class RotapfelDashboardManager extends HTMLElement {
       <h2>${tab?t('Tab-Darstellung','Tab appearance'):t('Dashboard-Darstellung','Dashboard appearance')}</h2>
       ${tab?`<label><input type="checkbox" id="bg-inherit" style="width:auto" ${tab.background?'':'checked'}> ${t('Dashboard-Hintergrund übernehmen','Use dashboard background')}</label>`:''}
       <fieldset id="background"><legend>${t('Hintergrund','Background')}</legend>
-        <label>${t('Hintergrundfarbe','Background color')} <input type="color" id="bg-color" value="${/^#[a-f0-9]{6}$/i.test(original.color||'')?original.color:'#202124'}"></label>
+        <label>${t('Hintergrundfarbe','Background color')} <input type="color" id="bg-color" value="${/^#[a-f0-9]{6}$/i.test(original.color||'')?original.color:themeColor('background','background','plain')}"></label>
         <label><input type="checkbox" style="width:auto" id="bg-color-default" ${original.color?'':'checked'}> ${t('Theme-Farbe verwenden','Use theme color')}</label>
         <label>${t('Bild aus Home Assistant','Image from Home Assistant')}<input type="text" id="bg-image" value="${e(original.image||'')}" placeholder="/local/wallpaper.jpg"></label>
         <small>${t('Pfad aus /local/ oder eine media-source://-Bild-ID eingeben. Bei Uploads PNG, JPEG oder WebP bis 640 KiB wählen.','Enter a /local/ path or a media-source:// image ID. Uploads accept PNG, JPEG or WebP up to 640 KiB.')}</small>
@@ -876,7 +879,7 @@ class RotapfelDashboardManager extends HTMLElement {
           if(min)continue;
           const picker=get(id+'-'+key);
           const useDefault=get(id+'-'+key+'-default');
-          picker.oninput=()=>{useDefault.checked=false;};
+          picker.oninput=()=>{useDefault.checked=false;};useDefault.onchange=()=>{if(useDefault.checked)picker.value=themeColor(key,id,get(id+'-variant').value);};get(id+'-variant').addEventListener('change',()=>{if(useDefault.checked)picker.value=themeColor(key,id,get(id+'-variant').value);});
         }
       }
     }
@@ -1902,8 +1905,9 @@ class RotapfelDashboardManager extends HTMLElement {
     const height=Math.max(240,Number(cv.height)||1080);
     const gap=Math.max(8,Number(cv.gap)||8);
     const kind=this.externalVariant(c);
-    const w=Math.min(width-gap*2,size?.w??(c.type==='label'?(c.variant==='label-vertical'?76:320):kind==='climate_cluster'?900:kind==='equinox'?440:kind==='rotapfel_simple_thermcard'?450:c.type==='custom'?320:Math.max(180,Math.round(this.design(c).width*width/4))));
-    const h=Math.min(height-gap*2,size?.h??(c.type==='label'?(c.variant==='label-vertical'?200:60):kind==='climate_cluster'?520:kind==='equinox'?280:kind==='rotapfel_simple_thermcard'?180:c.type==='custom'?80:Math.max(60,Number(this.design(c).height)||110)));
+    const ideal=this.idealCardDimensions(c,width);
+    const w=Math.min(width-gap*2,size?.w??ideal.w);
+    const h=Math.min(height-gap*2,size?.h??ideal.h);
     const occupied=this.cardPositions(tab,cv,room);
     const free=(x,y)=>x>=gap&&y>=gap&&x+w<=width-gap&&y+h<=height-gap&&
       occupied.every(p=>x+w+gap<=p.x||p.x+p.w+gap<=x||y+h+gap<=p.y||p.y+p.h+gap<=y);
@@ -1950,8 +1954,9 @@ class RotapfelDashboardManager extends HTMLElement {
     for(const {c,x,y,w,h} of plan.moves)c.position={...c.position,x,y,w,h};
     card.position=plan.position;
   }
-  placeNewCard(room,card){
-    const plan=this.planCardPlacement(room,card);
+  async placeNewCard(room,card){
+    const tab=this.layout?.find(t=>t.rooms?.includes(room));const width=Number(this.effectiveCanvas(tab).width)||1920;let natural=null;if(this.externalVariant(card)||card.type==='custom'){try{natural=await this.standardExternalSize(card);}catch{}}
+    const plan=this.planCardPlacement(room,card,this.idealCardDimensions(card,width,natural));
     if(!plan){
       window.alert(this.t("Kein freier Platz für diese Karte. Bitte eine Karte verschieben, verkleinern oder die Dashboardmaße erhöhen.","There is no space for this card. Move or shrink a card, or increase the dashboard dimensions."));
       return false;
@@ -2290,7 +2295,8 @@ class RotapfelDashboardManager extends HTMLElement {
     const heightKeys=['height','card_height','default_height','min_height'];
     let w=numeric(cfg,widthKeys),h=numeric(cfg,heightKeys);
     const tag=cfg.type?.replace(/^custom:/,'');
-    if(!tag||!await this.ensureExternalResource(card))return null;
+    if(!tag)return null;
+    if(card.type==='custom'&&card.variant!=='ha-native'){if(!await this.ensureGenericCustomResource(tag))return null;}else if(card.variant==='ha-native'){return null;}else if(!await this.ensureExternalResource(card))return null;
     const ctor=customElements.get(tag);
     const defaults=ctor?.defaultConfig||ctor?.defaults||ctor?.DEFAULT_CONFIG||{};
     w??=numeric(defaults,widthKeys);
@@ -2301,13 +2307,14 @@ class RotapfelDashboardManager extends HTMLElement {
     const probe=document.createElement('div');
     probe.style.cssText='position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none;width:max-content;max-width:none;contain:layout style;z-index:-1';
     const host=document.createElement(tag);
-    const probeWidth=w||(tag==='equinox-card'?430:430);
+    const probeWidth=w||this.idealCardDimensions(card,1000).w;
     host.style.cssText=`display:block;width:${probeWidth}px;max-width:none`;
     probe.append(host);this.shadowRoot.append(probe);
     try{
       if(typeof host.setConfig!=='function')return null;
       host.setConfig(cfg);host.hass=this._hass;
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      if(host.updateComplete)await Promise.race([host.updateComplete,new Promise(resolve=>setTimeout(resolve,800))]);
       const surface=this.findExternalSurface(host);
       const rect=surface||host;
       const mw=rect.offsetWidth,mh=rect.offsetHeight;
@@ -2316,6 +2323,18 @@ class RotapfelDashboardManager extends HTMLElement {
       return w&&h?{w,h,source:'rendered'}:null;
     }catch(err){return null;}
     finally{probe.remove();}
+  }
+  idealCardDimensions(card,width,natural=null){
+    const kind=this.externalVariant(card),name=String(card.title||card.name||''),type=card.custom_config?.type||'';
+    let w= Math.max(180,Math.min(360,112+name.length*7)),h=86;
+    if(card.type==='label'){w=card.variant==='label-vertical'?76:Math.max(100,Math.min(600,40+name.length*11));h=card.variant==='label-vertical'?Math.max(100,40+name.length*11):60;}
+    else if(kind==='equinox'){w=430;h=280;}
+    else if(kind==='climate_cluster'){w=850;h=460;}
+    else if(kind==='rotapfel_simple_thermcard'){w=450;h=180;}
+    else if(card.type==='custom'){w=320;h=/calendar|graph|chart|weather|picture|history|entities/.test(type)?240:100;}
+    if(natural?.w>0&&natural?.h>0){w=natural.w;h=natural.h+8;}
+    const fitted=Math.min(Math.max(76,width-24),w);
+    return {w:Math.round(fitted),h:Math.max(60,Math.ceil(kind&&card.type!=='custom'?h*fitted/w:h))};
   }
   idealCustomCardWidth(card,currentWidth,canvasWidth){
     const available=Math.max(76,canvasWidth-24);
@@ -3462,7 +3481,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     overlay.querySelector('#editor-lock').onchange=ev=>{if(!active)return;rememberChange();active.position={...(active.position||positions.get(active.id)),editorLocked:ev.target.checked};this.dirty=true;choose(active.id);};
     const idealSize=async (all,resultId='ideal-size-result')=>{
       const result=overlay.querySelector('#'+resultId);
-      const targets=cards.filter(({c})=>(all||selectedIds.has(c.id))&&c.type!=='label'&&!isEditorLocked(c)&&!c.position?.manualSize);
+      const targets=cards.filter(({c})=>(all||selectedIds.has(c.id))&&!isEditorLocked(c));
       if(!targets.length){result.textContent=this.t("Wähle Karten ohne Größen- oder Layoutsperre aus.","Select cards with no size or layout lock.");return;}
       const buttons=['#ideal-size-selected','#ideal-size-all','#auto-ideal-size','#auto-layout-tab'].map(q=>overlay.querySelector(q));
       buttons.forEach(b=>b.disabled=true);
@@ -3471,56 +3490,13 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         for(const {c} of targets){
           const old=positions.get(c.id);if(!old)continue;
           let natural=null;
-          if(c.type==='custom'){
-            // A responsive card can report a tiny rendered width while truncating
-            // its contents. Read the unscaled height and give narrow frames more room.
-            const tile=overlay.querySelector('.position-tile[data-id="'+c.id+'"]');
-            const host=tile?.querySelector('.external-card-slot')?.firstElementChild;
-            if(host){
-              const surface=host.shadowRoot?.querySelector('ha-card')||host;
-              const measured=Math.max(surface.scrollHeight||0,surface.offsetHeight||0,host.scrollHeight||0);
-              if(measured>8){
-                natural={w:old.w,h:Math.ceil(measured)};
-              }
-            }
-          }else if(this.externalVariant(c)){
-            try{natural=await this.standardExternalSize(c);}catch(error){console.warn('Rotapfel: Größenmessung fehlgeschlagen',c.id,error);}
-          }
-          // The device width is the reference, not the old frame aspect ratio.
-          // Native external cards are measured at their design width; their
-          // height is scaled uniformly to prevent stretched typography.
-          const kind=this.externalVariant(c);
-          if(!natural?.w||!natural?.h){
-            skipped++;
-            if(kind==='equinox')natural={w:430,h:220};
-            else if(kind==='climate_cluster')natural={w:850,h:460};
-            else natural={w:Math.max(150,old.w),h:100};
-          }
-          const maxWidth=Math.max(76,width-24);
-          const nativeW=Math.max(76,Number(natural.w)||old.w);
-          const nativeH=Math.max(60,Number(natural.h)||old.h);
-          const w=c.type==='custom'?this.idealCustomCardWidth(c,old.w,width):Math.round(this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed===false?maxWidth:Math.min(maxWidth,nativeW));
-          let h;
-          if(c.type==='custom'){
-            h=nativeH+8;
-          }else if(kind){
-            // A uniform fit preserves the original aspect ratio and allows
-            // a small breathing margin for fonts and late-rendered content.
-            h=Math.ceil(nativeH*w/nativeW)+4;
-            if(kind==='equinox')h=Math.max(100,Math.ceil(nativeH*w/nativeW)+4);
-            // Measured content height takes precedence over old 540px fallback.
-          }else{
-            // Our own entity tiles use a responsive row. Their old frame
-            // height is not a measurement of content height.
-            const name=String(c.title||c.name||'');
-            h=Math.max(86,Math.min(160,86+Math.floor(name.length/32)*22));
-          }
-          h=Math.max(70,Math.round(h));
+          if(this.externalVariant(c)||c.type==='custom'){try{natural=await this.standardExternalSize(c);}catch{}if(!natural)skipped++;}
+          const {w,h}=this.idealCardDimensions(c,width,natural);
           const q={...old,w,h,x:Math.max(0,Math.min(old.x,width-w)),y:old.y};
           if(q.w!==old.w||q.h!==old.h||q.x!==old.x||q.y!==old.y)changes.push({c,q});
         }
         if(!overlay.isConnected)return;
-        if(changes.length){rememberChange();for(const {c,q} of changes)update(c,q,false);syncSelection();}
+        if(changes.length){rememberChange();for(const {c,q} of changes){if(c.position)c.position.manualSize=false;update(c,q,false);}syncSelection();}
         result.textContent=`${changes.length} ${this.t("Karten angepasst","cards resized")} · ${skipped} ${this.t("mit Ersatzmaß. Andere Geräteprofile bleiben unverändert.","used fallback sizes. Other device profiles are preserved.")}`;
       }finally{buttons.forEach(b=>b.disabled=false);}
     };
@@ -4137,20 +4113,20 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         const title=prompt(this.t("Text der Beschriftung","Label text"))?.trim();
         if(!title)return;
         const c={id:this.uid(),type:'label',variant:choice,title,design:{...this.design({}),opacity:0,font_size:18}};
-        if(!this.placeNewCard(room,c))return;
+        if(!await this.placeNewCard(room,c))return;
         room.cards.push(c);
         this._selectedCards={...this._selectedCards,[room.id]:c.id};
         change();
         return;
       }
       if(choice==='placeholder'){
-        const title=prompt(this.t("Titel der Platzhalterkarte","Placeholder card title"),this.t("Neue Karte","New card"));if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
+        const title=prompt(this.t("Titel der Platzhalterkarte","Placeholder card title"),this.t("Neue Karte","New card"));if(title?.trim()){const c={id:this.uid(),type:'placeholder',title:title.trim().slice(0,80)};if(!await this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();}return;
       }
       if(choice.startsWith('ha:')){
         const type=choice.slice(3);
         const c={id:this.uid(),type:'custom',variant:'ha-native',title:this.nativeCardName(type,hass),custom_config:{type}};
-        this.configureNativeCard(c,()=>{
-          if(!this.placeNewCard(room,c))return;
+        this.configureNativeCard(c,async()=>{
+          if(!await this.placeNewCard(room,c))return;
           room.cards.push(c);
           this._selectedCards={...this._selectedCards,[room.id]:c.id};
           change();
@@ -4159,15 +4135,15 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       }
       if(choice==='custom'){
         const c={id:this.uid(),type:'custom',title:this.t("Neue Custom Card","New custom card"),custom:{card_type:'',configuration:''}};
-        this.configureCustomCard(c,()=>{if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();},true);return;
+        this.configureCustomCard(c,async()=>{if(!await this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();},true);return;
       }
       const domains={light:['light'],switch:['switch','input_boolean'],sensor:['sensor'],window:['binary_sensor'],equinox:['climate'],climate_cluster:['climate'],rotapfel_simple_thermcard:['climate'],rotapfel_climate:['climate']};
-      this.pickEntity(null,eid=>{
+      this.pickEntity(null,async eid=>{
         if(domains[choice]&&!domains[choice].includes(eid.split('.')[0])){alert(this.t("Bitte eine passende Entität auswählen: ","Select a compatible entity: ")+domains[choice].join(', '));return;}
         const c={id:this.uid(),type:'entity',entity_id:eid,title:this._hass.states[eid]?.attributes?.friendly_name||eid};
         if(['equinox','climate_cluster','rotapfel_simple_thermcard','rotapfel_climate'].includes(choice))c.variant=choice;else if(choice!=='nexus')c.variant='nexus-'+choice;
         if(choice==='equinox'&&eid==='climate.wohn_esszimmer_vtherm_wz_ez')c.external_options={power_entity:'sensor.wohn_esszimmer_vtherm_wz_ez_energie',humidity_entity:'sensor.tempsensor_wz_ez_humidity',temperature_entity:'sensor.tempsensor_wz_ez_temperature'};
-        if(!this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();
+        if(!await this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();
         if(choice==='rotapfel_simple_thermcard')this.configureThermostat(c,change);
       });
     };
