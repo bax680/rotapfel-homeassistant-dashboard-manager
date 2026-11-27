@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13963';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.63';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13964';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.64';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
@@ -226,7 +226,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const search=panel.querySelector('#allow-search');search.value=query;
       const manual=document.createElement('input');manual.placeholder='custom:calendar-card-pro';const addButton=document.createElement('button');addButton.className='secondary';addButton.textContent=this.t('Kartentyp ergänzen','Add card type');panel.append(manual,addButton);addButton.onclick=()=>{const t='custom:'+manual.value.trim().toLowerCase().replace(/^custom:/,'');if(!/^custom:[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(t)||this.fixedCustomTypes().includes(t))return;catalog=[...new Set([...catalog,t])].sort();selected.add(t);query='';search.value='';manual.value='';drawList();};
       const fixed=new Set(this.fixedCustomTypes());
-      const drawList=()=>{const list=panel.querySelector('#allow-list');list.replaceChildren();for(const t of catalog.filter(t=>!fixed.has(t)&&t.toLowerCase().includes(query.toLowerCase()))){const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:8px;padding:6px';const input=document.createElement('input');input.type='checkbox';input.style.width='auto';input.checked=fixed.has(t)||selected.has(t);input.disabled=fixed.has(t);input.onchange=()=>{if(input.checked)selected.add(t);else selected.delete(t);count();};label.append(input,document.createTextNode(t+' · '+(fixed.has(t)?this.t('Fest integriert','Built in'):customElements.get(t.slice(7))?this.t('Geladen','Loaded'):this.t('Nicht geladen','Not loaded'))));list.append(label);}count();};
+      const drawList=()=>{const list=panel.querySelector('#allow-list');list.replaceChildren();for(const t of catalog.filter(t=>!fixed.has(t)&&t.toLowerCase().includes(query.toLowerCase()))){const label=document.createElement('label');label.style.cssText='display:flex;align-items:center;gap:8px;padding:6px';const input=document.createElement('input');input.type='checkbox';input.style.width='auto';input.checked=fixed.has(t)||selected.has(t);input.disabled=fixed.has(t);input.onchange=()=>{if(input.checked)selected.add(t);else selected.delete(t);count();};label.append(input,document.createTextNode(t+' · '+(fixed.has(t)?this.t('Fest integriert','Built in'):customElements.get(t.slice(7))?this.t('Im Browser geladen','Loaded in browser'):this.t('Noch nicht im Browser geladen','Not yet loaded in browser'))));list.append(label);}count();};
       const count=()=>{panel.querySelector('#allow-count').textContent=this.t('Zusätzlich freigegeben: ','Additionally allowed: ')+selected.size;};
       search.oninput=()=>{query=search.value;drawList();};
       panel.querySelector('#allow-all').onclick=()=>{selected=new Set(catalog.filter(t=>!fixed.has(t)));drawList();};
@@ -376,6 +376,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const urls=list.map(item=>typeof item==='string'?item:item?.url)
       .filter(url=>this.validResourceUrl(url))
       .filter(url=>new RegExp('(?:^|[/_.-])'+family+'(?:[/_.-]|$)','i').test(url.split('?')[0]));
+    if(!urls.length){try{await this.nativeCardEditorHass();}catch{}if(customElements.get(tag))return true;}
     if(!urls.length)throw Error(this.t("Keine Lovelace-Ressource für ","No Lovelace resource for ")+tag+this.t(" gefunden. Bitte unter Einstellungen → Dashboards → Ressourcen prüfen."," found. Check Settings → Dashboards → Resources."));
     const cache=RotapfelDashboardManager._externalLoads ||= new Map();
     for(const url of urls){
@@ -2458,7 +2459,7 @@ class RotapfelDashboardManager extends HTMLElement {
     this._previewResizeObserver.observe(viewport);
     apply();
   }
-  renderTab(){const e=s=>this.esc(s),t=this.layout.find(x=>x.id===this.tabId);if(!t)return'';const selectedRoom=(t.rooms||[]).find(r=>r.id===this._activeRoomByTab?.[t.id])||t.rooms?.[0];const cv=this.effectiveCanvas(t),fixed=cv.mode==='fixed',cols=cv.columns||12;return `<section class="layout-band layout-band-tabs"><div class="toolbar layout-section-heading"><h2>Tab · ${e(t.name)}</h2><div class="editor-actions" aria-label="${this.t("Tab-Aktionen","Tab actions")}"><button class="editor-primary" id="position-editor">${this.t("▦ Positionierungsfläche öffnen","▦ Open positioning canvas")}</button><button id="add-room">${this.t("+ Raum","+ Room")}</button><button class="secondary" id="tab-canvas">${this.t("Tab-Maße / Raster","Tab dimensions / grid")}</button><button class="secondary" id="tab-appearance">${this.t("Tab-Darstellung","Tab appearance")}</button><details class="editor-action-menu"><summary>${this.t("Tab-Aktionen","Tab actions")}</summary><div class="editor-menu-items"><button class="secondary" id="duplicate-tab">${this.t("Tab duplizieren","Duplicate tab")}</button><button class="secondary" id="rename-tab">${this.t("Tab umbenennen","Rename tab")}</button><button class="secondary layout-action-danger" id="remove-tab">${this.t("Tab löschen","Delete tab")}</button></div></details></div></div>
+  renderTab(){const e=s=>this.esc(s),t=this.layout.find(x=>x.id===this.tabId);if(!t)return'';const selectedRoom=(t.rooms||[]).find(r=>r.id===this._activeRoomByTab?.[t.id])||t.rooms?.[0];const cv=this.effectiveCanvas(t),fixed=cv.mode==='fixed',cols=cv.columns||12;return `<section class="layout-band layout-band-tabs"><div class="toolbar layout-section-heading"><h2>Tab · ${e(t.name)}</h2><div class="editor-actions" aria-label="${this.t("Tab-Aktionen","Tab actions")}"><button class="editor-primary" id="position-editor">${this.t("▦ Positionierungsfläche öffnen","▦ Open positioning canvas")}</button><button id="add-tab-card">${this.t("+ Karte im Tab","+ Card in tab")}</button><button id="add-room">${this.t("+ Raum","+ Room")}</button><button class="secondary" id="tab-canvas">${this.t("Tab-Maße / Raster","Tab dimensions / grid")}</button><button class="secondary" id="tab-appearance">${this.t("Tab-Darstellung","Tab appearance")}</button><details class="editor-action-menu"><summary>${this.t("Tab-Aktionen","Tab actions")}</summary><div class="editor-menu-items"><button class="secondary" id="duplicate-tab">${this.t("Tab duplizieren","Duplicate tab")}</button><button class="secondary" id="rename-tab">${this.t("Tab umbenennen","Rename tab")}</button><button class="secondary layout-action-danger" id="remove-tab">${this.t("Tab löschen","Delete tab")}</button></div></details></div></div>
     <div class="canvas-meta">${fixed?`${this.t("Arbeitsfläche:","Canvas:")} ${cv.width} × ${cv.height} CSS-Pixel`:this.t("Responsive Arbeitsfläche","Responsive canvas")} · ${cols} ${this.t("Rasterspalten","Grid columns")} · ${cv.gap}${this.t("px Abstand","px spacing")} ${t.canvas?'· Tab-Einstellungen':'· Dashboard-Einstellungen'}</div>
     ${this.renderCanvasPreview(t,cv)}
     </section>
@@ -3761,6 +3762,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     root.querySelector('#duplicate-tab').onclick=()=>{const copy=this.cloneTabForLayout(t);copy.name=t.name+this.t(" (Kopie)"," (Copy)");this.layout.splice(this.layout.indexOf(t)+1,0,copy);this.tabId=copy.id;this._activeRoomByTab={...(this._activeRoomByTab||{}),[copy.id]:copy.rooms[0]?.id};change();};
     root.querySelector('#rename-tab').onclick=()=>{const name=ask(this.t("Tab umbenennen","Rename tab"),t.name);if(name){t.name=name;change();}};
     root.querySelector('#remove-tab').onclick=()=>{if(!confirm(`${this.t("Tab „","Tab “")}${t.name}${this.t("“ samt Räumen entfernen?","” and its rooms remove?")}`))return;this.layout=this.layout.filter(x=>x!==t);this.tabId=this.layout[0]?.id;change();};
+    root.querySelector('#add-tab-card').onclick=()=>{let r=t.rooms.find(x=>x.id===t.id+'-direct');if(!r){r={id:t.id+'-direct',name:this.t('Direkte Tab-Karten','Direct tab cards'),cards:[]};t.rooms.unshift(r);this.dirty=true;}this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};this.openCardTypePicker(r,change);};
     root.querySelector('#add-room').onclick=()=>{const name=ask(this.t("Name des Raums","Room name"));if(name){const r={id:this.uid(),name,cards:[]};t.rooms.push(r);this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};change();}};
     root.querySelectorAll('[data-room-action]').forEach(b=>b.onclick=()=>{const r=t.rooms.find(x=>x.id===b.closest('[data-room]').dataset.room),a=b.dataset.roomAction;if(a==='rename'){const name=ask(this.t("Raum umbenennen","Rename room"),r.name);if(name){r.name=name;change();}}else if(a==='duplicate'){const copy=JSON.parse(JSON.stringify(r));copy.id=this.uid();copy.name=r.name+this.t(" (Kopie)"," (Copy)");copy.cards=(copy.cards||[]).map(c=>{c.id=this.uid();return c;});t.rooms.splice(t.rooms.indexOf(r)+1,0,copy);this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:copy.id};change();}else if(a==='transfer'){this.transferRoomDialog(t,r,change);}else if(a==='remove'){if(confirm(`${this.t("Raum „","Room “")}${r.name}${this.t("“ entfernen?","” remove?")}`)){t.rooms=t.rooms.filter(x=>x!==r);if(this._activeRoomByTab?.[t.id]===r.id)this._activeRoomByTab[t.id]=t.rooms[0]?.id;change();}}else if(a==='paste'){if(!this._cardClipboard)return;const c=JSON.parse(JSON.stringify(this._cardClipboard));c.id=this.uid();r.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[r.id]:c.id};this._activeRoomByTab={...(this._activeRoomByTab||{}),[t.id]:r.id};change();}else if(a==='add-type'){this.openCardTypePicker(r,change);}else if(a==='library'){this.openCardLibrary(r,change);}});
     root.querySelectorAll('.room-sort').forEach(sel=>sel.onchange=()=>{const id=sel.closest('[data-room]').dataset.room;this._roomSort={...(this._roomSort||{}),[id]:sel.value};this.render();});
@@ -4088,6 +4090,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       ['custom',this.t("Eigene Custom Card","Custom card"),this.t("Sonstige","Other"),this.t("Eigener Custom-Card-Typ.","Specify your own custom card type.")],
       ...this.nativeCardTypes().map(type=>['ha:'+type,this.nativeCardName(type,hass),'Home Assistant',type])
     ];
+    for(const type of this._customCardAllowed||[]){if(!this.fixedCustomTypes().includes(type))catalog.push(['approved:'+type,type.slice(7),this.t('Freigegebene Custom Cards','Approved custom cards'),type]);}
     const favKey='rotapfel-card-favorites-v1';
     let favorites=[];try{const saved=JSON.parse(localStorage.getItem(favKey)||'[]');if(Array.isArray(saved))favorites=saved.filter(v=>catalog.some(x=>x[0]===v));}catch(_e){}
     const esc=v=>this.esc(v);
@@ -4133,8 +4136,9 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         });
         return;
       }
-      if(choice==='custom'){
-        const c={id:this.uid(),type:'custom',title:this.t("Neue Custom Card","New custom card"),custom:{card_type:'',configuration:''}};
+      if(choice==='custom'||choice.startsWith('approved:')){
+        const type=choice.startsWith('approved:')?choice.slice(9):'';
+        const c={id:this.uid(),type:'custom',title:type?type.slice(7):this.t("Neue Custom Card","New custom card"),custom:{card_type:type,configuration:type?JSON.stringify({type},null,2):''}};
         this.configureCustomCard(c,async()=>{if(!await this.placeNewCard(room,c))return;room.cards.push(c);this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};change();},true);return;
       }
       const domains={light:['light'],switch:['switch','input_boolean'],sensor:['sensor'],window:['binary_sensor'],equinox:['climate'],climate_cluster:['climate'],rotapfel_simple_thermcard:['climate'],rotapfel_climate:['climate']};
