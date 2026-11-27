@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.61, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.62, isolated from existing dashboards."""
 import asyncio
 import base64
 import binascii
@@ -18,7 +18,7 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13961"
+VERSION = "0.2.0a13962"
 FRONTEND_PATH = f"/{DOMAIN}/frontend/{VERSION}"
 MANAGER_MODULE_URL = f"{FRONTEND_PATH}/rotapfel-manager.js"
 
@@ -278,6 +278,8 @@ class RotapfelView(HomeAssistantView):
             if version is None:
                 raise web.HTTPNotFound(text="Version not found")
             return self.json({"snapshot": copy.deepcopy(version["snapshot"])})
+        if action == "custom_card_policy":
+            return self.json({"allowed": self._state()["data"].get("custom_card_allowed", [])})
         if action == "card_library":
             return self.json({"cards": self._state()["data"].get("card_library", [])})
         if action == "layout_templates":
@@ -303,7 +305,7 @@ class RotapfelView(HomeAssistantView):
         def message(de, en):
             return en if english else de
 
-        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "shared_publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library", "upload_background"}:
+        if action not in {"create", "update", "duplicate", "delete", "save_layout", "save_design_templates", "save_layout_templates", "publication", "shared_publication", "restore_version", "create_manual_version", "delete_manual_version", "parse_card_yaml", "save_card_library", "upload_background", "save_custom_card_policy"}:
             raise web.HTTPNotFound()
         try:
             body = await request.json()
@@ -349,6 +351,14 @@ class RotapfelView(HomeAssistantView):
             async def save():
                 await state["store"].async_save(data)
                 state["data"] = data
+
+            if action == "save_custom_card_policy":
+                allowed = body.get("allowed")
+                if not isinstance(allowed, list) or len(allowed) > 2000 or any(not isinstance(t, str) or len(t) > 128 or not t.startswith("custom:") or not t[7:] or not all(c.isascii() and (c.isalnum() or c in "-_") for c in t[7:]) for t in allowed):
+                    raise web.HTTPBadRequest(text=message("Ungültige Kartenfreigabe", "Invalid card allowlist"))
+                data["custom_card_allowed"] = sorted(set(allowed))
+                await save()
+                return self.json({"allowed": data["custom_card_allowed"]})
 
             if action == "save_card_library":
                 cards = body.get("cards")
