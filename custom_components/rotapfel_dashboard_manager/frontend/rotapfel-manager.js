@@ -1895,6 +1895,10 @@ class RotapfelDashboardManager extends HTMLElement {
       return {c,room,x,y,w,h};
     });
   }
+  // Edge contact is permitted when the requested clearance is zero.
+  rectanglesClear(a,b,gap=0){
+    return a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y;
+  }
   planCardPlacement(room,c,size=null,target=null){
     const tab=this.layout?.find(t=>(t.rooms||[]).some(r=>r.id===room.id));
     if(!tab)return null;
@@ -1908,7 +1912,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const h=Math.min(height-gap*2,size?.h??ideal.h);
     const occupied=this.cardPositions(tab,cv,room);
     const free=(x,y)=>x>=gap&&y>=gap&&x+w<=width-gap&&y+h<=height-gap&&
-      occupied.every(p=>x+w+gap<=p.x||p.x+p.w+gap<=x||y+h+gap<=p.y||p.y+p.h+gap<=y);
+      occupied.every(p=>this.rectanglesClear({x,y,w,h},p,gap));
     const makePlan=(x,y,moves=[])=>({width,height,occupied,position:{x,y,w,h},moves});
     if(target)return free(target.x,target.y)?makePlan(target.x,target.y):null;
     // First try the established left-aligned position below the last card.
@@ -1940,8 +1944,7 @@ class RotapfelDashboardManager extends HTMLElement {
       for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
         const shifted=occupied.map(p=>({...p,x:p.x+dx,y:p.y+dy}));
         const within=p=>p.x>=0&&p.y>=0&&p.x+p.w<=width&&p.y+p.h<=height;
-        const clearsCandidate=p=>candidate.x+w+gap<=p.x||p.x+p.w+gap<=candidate.x
-          ||candidate.y+h+gap<=p.y||p.y+p.h+gap<=candidate.y;
+        const clearsCandidate=p=>this.rectanglesClear(candidate,p,gap);
         if(!shifted.every(p=>within(p)&&clearsCandidate(p)))continue;
         return makePlan(gap,gap,shifted);
       }
