@@ -166,7 +166,7 @@ test('device profile switching preserves independent positions, sizes and locks'
   const original={x:120,y:100,w:300,h:200,manualSize:true,manualPosition:true,editorLocked:true};
   const card={position:{...original}};
   const manager=new ProfileManager();
-  Object.assign(manager,{_deviceLayoutProfile:'fire_hd',eachLayoutCard:fn=>fn(card),render:()=>{}});
+  Object.assign(manager,{_deviceLayoutProfile:'fire_hd',eachLayoutCard:fn=>fn(card),render:()=>{},normalizedProfiles:()=>({fire_hd:{width:1920,height:1080},iphone:{width:402,height:874},desktop:{width:1920,height:1080}})});
   manager.switchDeviceLayoutProfile('iphone');
   assert.equal(card.position.manualSize,true);
   assert.equal(card.position.manualPosition,true);
@@ -260,4 +260,28 @@ test('same-room copy retains original and adds independent card',()=>{
   assert.equal(from.cards.length,2);
   assert.equal(from.cards[0],card);
   assert.equal(from.cards[1],copy);
+});
+
+test('mobile initialization uses configured base dimensions and rejects unknown profiles',()=>{
+  const card={position:{x:200,y:100,w:400,h:200}};
+  const manager=new ProfileManager();
+  Object.assign(manager,{eachLayoutCard:fn=>fn(card),render:()=>{},normalizedProfiles:()=>({fire_hd:{width:1000,height:500},iphone:{width:402,height:874}})});
+  manager.switchDeviceLayoutProfile('unknown');
+  assert.equal(card.deviceLayouts,undefined);
+  manager.switchDeviceLayoutProfile('iphone');
+  assert.equal(card.position.x,80);
+  assert.equal(card.position.y,175);
+  assert.equal(card.position.w,161);
+  assert.equal(card.position.h,350);
+});
+const libraryStart=source.indexOf('  libraryCardData(');
+const libraryEnd=source.indexOf('  async saveCardToLibrary(',libraryStart);
+const LibraryManager=vm.runInNewContext('(class LibraryManager {\n'+source.slice(libraryStart,libraryEnd)+'\n})');
+test('library templates preserve nested configuration but detach placement and identity',()=>{
+  const card={id:'a',groupId:'g',position:{x:2},deviceLayouts:{iphone:{x:4}},custom_config:{type:'custom:test-card',entities:[{entity:'sensor.test',name:'Original'}]}};
+  const template=new LibraryManager().libraryCardData(card);
+  for(const key of ['id','groupId','position','deviceLayouts'])assert.equal(template[key],undefined);
+  assert.deepEqual(rect(template.custom_config),card.custom_config);
+  template.custom_config.entities[0].name='Changed';
+  assert.equal(card.custom_config.entities[0].name,'Original');
 });
