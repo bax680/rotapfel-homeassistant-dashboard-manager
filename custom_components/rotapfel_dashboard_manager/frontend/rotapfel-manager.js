@@ -1,7 +1,7 @@
 import {normalizeRotapfelTabStyle,renderRotapfelNavigation,renderRotapfelRoomTabs,rotapfelNavigationCss} from './rotapfel-canvas-card.js';
 
-const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13969';
-const ROTAPFEL_FRONTEND_ALPHA = '13.9.69';
+const ROTAPFEL_FRONTEND_VERSION = '0.2.0a13970';
+const ROTAPFEL_FRONTEND_ALPHA = '13.9.70';
 
 const rotapfelLanguages = ['auto', 'de', 'en'];
 function rotapfelLanguage(hass, country) {
