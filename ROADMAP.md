@@ -6,7 +6,7 @@ Baseline: Alpha 13.9.66. Planned versions are provisional; no new release is imp
 - [x] Initial source structure inventory.
 - [x] Record architecture and roadmap.
 - [ ] Map call sites and persisted card schemas before extraction.
-- [ ] Add syntax/version checks and CI; establish geometry regression fixtures.
+- [x] Add syntax/version checks and CI; establish geometry regression fixtures.
 - [ ] Unify resource resolution and card configuration contracts.
 - [ ] Make Equinox and Climate Cluster regular selectable external cards; keep existing presets as templates.
 - [ ] Keep Rotapfel Simple ThermCard first-party.
@@ -15,12 +15,15 @@ Baseline: Alpha 13.9.66. Planned versions are provisional; no new release is imp
 
 ## 13.9.68 – Geometry / Positionierung
 - [ ] Extract pure rectangle and collision functions.
-- [ ] Central spacing policy, including 0 px; no mandatory grid.
+- [x] Central spacing policy, including 0 px; no mandatory grid.
 - [ ] Shared intrinsic measurement and frame fitting; explicit fallback.
 - [ ] Preserve manual sizes, locks, profile isolation and navigation policy.
 - [ ] Verify preview/published layout parity and async resizing.
 
 ## 13.9.69 – Integration / Stabilisierung
+- [ ] Restore interactive collision pushing (fix committed; CI and HA retest pending).
+- [ ] Confirm 13.9.68 practical acceptance after collision fix.
+- [ ] Verify external card resource loading failure and retry behavior.
 - [ ] Original editor discovery, resource errors, YAML/JSON round-trip.
 - [ ] Templates, direct tab cards, room cards and transfers.
 - [ ] Desktop/mobile profiles and navigation.
@@ -37,3 +40,6 @@ Individual card sizing hacks, cosmetic editor fixes, marketplace matching refine
 
 ## Acceptance principle
 A card can be placed independently of its type, with explicit spacing down to zero where its outer geometry permits. Original card internals remain under card-author control. Existing dashboards are never silently deleted.
+
+## Alpha 13.9.68 validation
+21 regression tests passed before release. User completed eight HA test tasks; screenshots show broadly matching relative geometry, but interactive collision pushing failed. Fix is included in the next development cycle. Browser-level async resizing and full navigation/profile coverage remain open.
