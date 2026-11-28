@@ -109,3 +109,14 @@ test('special pair spacing and collision tolerance remain independent',()=>{
   assert.equal(g.insertionGap(0),8);
   assert.equal(g.manualDistributionGap(0),0);
 });
+
+test('frame sizing retains width reserve, minimum height and rounding',()=>{
+  const g=fixture().manager;
+  assert.equal(g.availableCardWidth(400),376);
+  assert.equal(g.availableCardWidth(90),76);
+  assert.equal(g.minimumFrameHeight(40),60);
+  assert.equal(g.minimumFrameHeight(81),81);
+  assert.equal(g.proportionalFrameHeight(215,430,280),140);
+  assert.equal(g.proportionalFrameHeight(100,430,280),65);
+  assert.equal(g.proportionalFrameHeight(20,430,280),60);
+});
