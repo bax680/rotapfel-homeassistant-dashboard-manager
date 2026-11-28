@@ -190,3 +190,25 @@ test('interactive pushing permits previously positioned cards but respects layou
   assert.equal(g.canAutomaticallyMoveBlocker({groupId:'g'},true),false);
   assert.equal(g.canAutomaticallyMoveBlocker({position:{manualSize:true}},true),true);
 });
+
+const resourceStart=source.indexOf('  async ensureGenericCustomResource(');
+const resourceEnd=source.indexOf('  mountThermPreview(',resourceStart);
+assert.ok(resourceStart>=0&&resourceEnd>resourceStart);
+function resourceFixture(failAll=false){
+  let registered=false;
+  const attempts=[];
+  const ResourceManager=vm.runInNewContext('(class ResourceManager {\n'+source.slice(resourceStart,resourceEnd)+'\n})',{customElements:{get:()=>registered}});
+  const manager=new ResourceManager();
+  Object.assign(manager,{_hass:{callWS:async()=>[{url:'/local/test-first.js'},{url:'/local/test-second.js'}]},resourceTags:()=>({}),manualResources:()=>({}),readResources:()=>({}),validResourceUrl:url=>typeof url==='string'&&url.startsWith('/local/'),t:(de,en)=>en,loadCustomResourceModule:async url=>{attempts.push(url);if(failAll||url.includes('first'))throw Error('offline');registered=true;}});
+  return {manager,attempts};
+}
+test('custom resource discovery continues after a failed candidate',async()=>{
+  const {manager,attempts}=resourceFixture();
+  assert.equal(await manager.ensureGenericCustomResource('test-card'),true);
+  assert.deepEqual(attempts,['/local/test-first.js','/local/test-second.js']);
+});
+test('custom resource discovery reports failed candidates',async()=>{
+  const {manager,attempts}=resourceFixture(true);
+  await assert.rejects(manager.ensureGenericCustomResource('test-card'),/test-first.*test-second/);
+  assert.equal(attempts.length,2);
+});
