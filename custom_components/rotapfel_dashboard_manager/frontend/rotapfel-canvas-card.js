@@ -87,19 +87,13 @@ class RotapfelLabelCard extends HTMLElement {
 if(!customElements.get('rotapfel-label-card'))customElements.define('rotapfel-label-card',RotapfelLabelCard);
 
 export const rotapfelNavigationCss=`
-      .rotapfel-navigation-layout{display:flex;flex-direction:column;min-width:0}
-      .rotapfel-navigation-layout:has(>.rotapfel-tabs[data-position="bottom"]){flex-direction:column-reverse}
-      .rotapfel-navigation-layout:has(>.rotapfel-tabs:is([data-position="left"],[data-position="right"])){flex-direction:row}
-      .rotapfel-navigation-layout:has(>.rotapfel-tabs[data-position="right"]){flex-direction:row-reverse}
-      .rotapfel-navigation-surface{flex:1 1 auto;width:100%;min-width:0;overflow:clip}
-      .rotapfel-tabs[data-mode="bar"]:is([data-position="left"],[data-position="right"]){
-        flex:0 0 auto;max-width:35%;align-self:flex-start;flex-direction:column;flex-wrap:nowrap;align-items:stretch;
-        justify-content:flex-start;border:0;border-inline-end:1px solid var(--divider-color)
-      }
-      .rotapfel-tabs[data-mode="bar"][data-position="right"]{border-inline-start:1px solid var(--divider-color);border-inline-end:0}
-      .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){justify-content:center}
-      .rotapfel-tabs{box-sizing:border-box;align-self:flex-start;max-width:100%}
-      .rotapfel-tabs:is([data-position="center"],[data-position="bottom"]){align-self:center}
+      .rotapfel-navigation-layout{position:relative;min-width:0;isolation:isolate}
+      .rotapfel-navigation-surface{width:100%;min-width:0;overflow:clip}
+      .rotapfel-navigation-layout>.rotapfel-tabs{position:absolute;z-index:10001;top:0;left:0;width:max-content;max-width:100%;box-sizing:border-box;background:var(--card-background-color);border-radius:8px}
+      .rotapfel-navigation-layout>.rotapfel-tabs[data-position="center"]{left:50%;transform:translateX(-50%)}
+      .rotapfel-navigation-layout>.rotapfel-tabs[data-position="bottom"]{top:auto;bottom:0;left:50%;transform:translateX(-50%)}
+      .rotapfel-navigation-layout>.rotapfel-tabs:is([data-position="left"],[data-position="right"]){max-width:35%;flex-direction:column;flex-wrap:nowrap;align-items:stretch}
+      .rotapfel-navigation-layout>.rotapfel-tabs[data-position="right"]{left:auto;right:0}
       .rotapfel-tabs :is(a,span){overflow-wrap:anywhere}
 
       .rotapfel-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-block:8px}
@@ -416,7 +410,7 @@ class RotapfelCanvasCard extends HTMLElement {
       const sideNavigation=['left','right'].includes(navigation?.dataset.position);
       const scale=Math.min(1,(surface.clientWidth||width)/width);
       canvas.style.transform=`scale(${scale})`;
-      const navigationHeight=(sideNavigation?0:navigation?.offsetHeight||0)+(roomTabs?roomTabs.offsetHeight+12:0);
+      const navigationHeight=roomTabs?roomTabs.offsetHeight+12:0;
       const usableHeight=Math.max(1,height-Math.ceil(navigationHeight/scale));
       const expandable=profiles[profile]?.fixed===false||profile==='iphone';
       const effectiveHeight=expandable||navigationHeight
