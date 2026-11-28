@@ -143,3 +143,17 @@ test('automatic frame fitting respects size and layout locks',()=>{
   assert.equal(g.canAutomaticallyFitFrame({position:{manualSize:true}},true),true);
   assert.equal(g.canAutomaticallyFitFrame({position:{editorLocked:true}},true),false);
 });
+
+test('automatic collision blockers respect manual position and layout locks',()=>{
+  const g=fixture().manager;
+  for(const card of [{position:{editorLocked:true}},{position:{manualPosition:true}},{groupId:'g'}])assert.equal(g.canAutomaticallyMoveBlocker(card),false);
+  assert.equal(g.canAutomaticallyMoveBlocker({position:{manualSize:true}}),true);
+});
+test('insertion fallback moves only unprotected cards without mutating the source',()=>{
+  const card={position:{x:8,y:0,w:280,h:300}};
+  const plan=fixture([card]).plan();
+  assert.equal(plan.moves.length,1);
+  assert.equal(plan.moves[0].x,116);
+  assert.equal(card.position.x,8);
+  for(const extra of [{position:{...card.position,manualPosition:true}},{position:{...card.position,editorLocked:true}},{groupId:'g'},{deviceLayouts:{iphone:{x:8}}}])assert.equal(fixture([{...card,...extra}]).plan(),null);
+});
