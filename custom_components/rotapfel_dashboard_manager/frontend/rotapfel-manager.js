@@ -369,16 +369,18 @@ class RotapfelDashboardManager extends HTMLElement {
   async ensureGenericCustomResource(tag){
     if(customElements.get(tag))return true;
     if(!/^[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(tag))throw Error(this.t("Ungültiger Custom-Card-Typ: ","Invalid custom card type: ")+tag);
-    // Generic cards do not belong to the three built-in resource mappings.
+    // Prefer explicit known resource mappings, then discover generic modules.
     // Locate their registered Lovelace module by family (e.g. mushroom-*).
     const family=tag.split('-')[0].toLowerCase();
     let response;
     try{response=await this._hass.callWS({type:'lovelace/resources'});}
     catch(err){throw Error(this.t("Lovelace-Ressourcen konnten nicht gelesen werden: ","Could not read Lovelace resources: ")+String(err));}
     const list=Array.isArray(response)?response:Array.isArray(response?.resources)?response.resources:[];
-    const urls=list.map(item=>typeof item==='string'?item:item?.url)
+    const knownKey=Object.keys(this.resourceTags()).find(key=>this.resourceTags()[key]===tag);
+    const knownUrl=knownKey?this.manualResources()[knownKey]||this.readResources()[knownKey]:'';
+    const urls=[...new Set([knownUrl,...list.map(item=>typeof item==='string'?item:item?.url)
       .filter(url=>this.validResourceUrl(url))
-      .filter(url=>new RegExp('(?:^|[/_.-])'+family+'(?:[/_.-]|$)','i').test(url.split('?')[0]));
+      .filter(url=>new RegExp('(?:^|[/_.-])'+family+'(?:[/_.-]|$)','i').test(url.split('?')[0]))])].filter(url=>this.validResourceUrl(url));
     if(!urls.length){try{await this.nativeCardEditorHass();}catch{}if(customElements.get(tag))return true;}
     if(!urls.length)throw Error(this.t("Keine Lovelace-Ressource für ","No Lovelace resource for ")+tag+this.t(" gefunden. Bitte unter Einstellungen → Dashboards → Ressourcen prüfen."," found. Check Settings → Dashboards → Resources."));
     for(const url of urls){
