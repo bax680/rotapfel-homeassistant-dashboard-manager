@@ -1,4 +1,4 @@
-"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.69, isolated from existing dashboards."""
+"""Rotapfel Dashboard Control Manager v0.2 alpha 13.9.70, isolated from existing dashboards."""
 import asyncio
 import base64
 import binascii
@@ -18,7 +18,7 @@ from homeassistant.components import frontend, panel_custom
 from homeassistant.helpers.storage import Store
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, PANEL_PATH
 
-VERSION = "0.2.0a13969"
+VERSION = "0.2.0a13970"
 FRONTEND_PATH = f"/{DOMAIN}/frontend/{VERSION}"
 MANAGER_MODULE_URL = f"{FRONTEND_PATH}/rotapfel-manager.js"
 
