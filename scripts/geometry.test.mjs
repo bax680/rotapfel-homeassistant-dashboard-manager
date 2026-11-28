@@ -322,3 +322,36 @@ test('interactive displacement repeatedly permits locked individual cards withou
   assert.equal(g.canArrangePosition(card),false);
   assert.equal(g.canArrangePosition(card,true),true);
 });
+
+test('direct tab destination is created without mutating empty tab before transfer',()=>{
+  const manager=new TransferManager();manager.t=(de,en)=>en;manager.uid=()=> 'new';
+  const tab={id:'empty',rooms:[]},card={id:'a',position:{x:20,y:30,w:100,h:80}},from={cards:[card]};
+  const room=manager.transferDestination(tab,'empty-direct');
+  assert.equal(tab.rooms.length,0);
+  assert.equal(manager.transferDestination(tab,'invalid'),null);
+  assert.equal(manager.transferCard(from,room,card,'move'),card);
+  tab.rooms.push(room);
+  assert.equal(tab.rooms[0].cards[0],card);
+  assert.equal(manager.transferDestination(tab,'empty-direct'),room);
+});
+test('position update moves locked card repeatedly without resizing or clearing locks',()=>{
+  const start=source.indexOf('const update=(c,q,manual=true,positionOnly=false)');
+  const end=source.indexOf('// Apply a single atomic batch resize',start);
+  const card={id:'a',position:{x:0,y:0,w:100,h:80,editorLocked:true,manualPosition:true,manualSize:true}};
+  const positions=new Map([['a',{x:0,y:0,w:100,h:80}]]);
+  const update=vm.runInNewContext('(function(){'+source.slice(start,end)+'return update;}).call(manager)',{manager:{minimumFrameHeight:v=>Math.max(60,v)},positions,isEditorLocked:c=>c.position.editorLocked,clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),width:1000,overlay:{querySelectorAll:()=>[]},refreshCanvasHeight(){},fitPositionCards(){},active:null});
+  for(const x of [100,200,300])update(card,{x,y:0,w:200,h:200},false,true);
+  assert.deepEqual(rect(card.position),{x:300,y:0,w:100,h:80,editorLocked:true,manualPosition:true,manualSize:true});
+});
+test('automatic arrangement reserves locked cards unless override is enabled',()=>{
+  const start=source.indexOf('const planAutoLayout=()=>');
+  const end=source.indexOf('const applyAutoLayout=',start);
+  const a={id:'a',position:{editorLocked:true}},b={id:'b',position:{}};
+  const positions=new Map([['a',{x:12,y:12,w:100,h:80}],['b',{x:200,y:12,w:100,h:80}]]);
+  const manager=fixture().manager;manager.cardKind=()=> 'test';
+  for(const ignore of [false,true]){
+    const plan=vm.runInNewContext('(function(){'+source.slice(start,end)+'return planAutoLayout();}).call(manager)',{manager,cards:[{c:a},{c:b}],positions,width:500,height:300,dynamicHeight:false,ignorePositionLocks:()=>ignore,overlay:{querySelector:()=>({value:'keep'})}});
+    assert.ok(plan);assert.equal(plan.has('a'),ignore);assert.ok(plan.has('b'));
+    assert.ok(manager.rectanglesClear(plan.get('a')||positions.get('a'),plan.get('b'),12));
+  }
+});
