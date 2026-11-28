@@ -3955,6 +3955,16 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     search.addEventListener('input',draw);
     draw();dialog.showModal();
   }
+  transferCard(sourceRoom,targetRoom,sourceCard,mode){
+    const index=sourceRoom.cards?.indexOf(sourceCard)??-1;
+    if(index<0||!targetRoom||!['copy','move'].includes(mode)||mode==='move'&&sourceRoom===targetRoom)return null;
+    const card=mode==='copy'?JSON.parse(JSON.stringify(sourceCard)):sourceCard;
+    if(mode==='copy'){card.id=this.uid();card.title=(card.title||this.t("Karte","Card"))+this.t(" (Kopie)"," (Copy)");}
+    delete card.groupId;
+    if(mode==='move')sourceRoom.cards.splice(index,1);
+    (targetRoom.cards||=[]).push(card);
+    return card;
+  }
   openCardTransferDialog(sourceTab,sourceRoom,sourceCard){
     const esc=v=>this.esc(String(v??''));
     const dialog=document.createElement('dialog');
@@ -3971,11 +3981,9 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       ev.preventDefault();const targetTab=this.layout.find(t=>t.id===tabSelect.value),targetRoom=targetTab?.rooms?.find(r=>r.id===roomSelect.value);
       if(!targetRoom){dialog.querySelector('#transfer-error').textContent=this.t("Bitte einen Zielraum auswählen.","Select a destination room.");return;}
       if(mode.value==='move'&&targetRoom===sourceRoom){dialog.querySelector('#transfer-error').textContent=this.t("Die Karte befindet sich bereits in diesem Raum.","This card is already in that room.");return;}
-      const card=mode.value==='copy'?JSON.parse(JSON.stringify(sourceCard)):sourceCard;
-      if(mode.value==='copy'){card.id=this.uid();delete card.groupId;card.title=(card.title||this.t("Karte","Card"))+this.t(" (Kopie)"," (Copy)");}
-      if(mode.value==='move')sourceRoom.cards.splice(sourceRoom.cards.indexOf(sourceCard),1);
-      targetRoom.cards=targetRoom.cards||[];targetRoom.cards.push(card);
-      this._selectedCards={...(this._selectedCards||{}),[targetRoom.id]:card.id,[sourceRoom.id]:mode.value==='move'?sourceRoom.cards[0]?.id:this._selectedCards?.[sourceRoom.id]};
+      const card=this.transferCard(sourceRoom,targetRoom,sourceCard,mode.value);
+      if(!card){dialog.querySelector('#transfer-error').textContent=this.t("Karte konnte nicht übertragen werden.","Card could not be transferred.");return;}
+      this._selectedCards={...(this._selectedCards||{}),[sourceRoom.id]:mode.value==='move'?sourceRoom.cards[0]?.id:this._selectedCards?.[sourceRoom.id],[targetRoom.id]:card.id};
       this._activeRoomByTab={...(this._activeRoomByTab||{}),[targetTab.id]:targetRoom.id};
       this.tabId=targetTab.id;this.dirty=true;dialog.close();this.render();
     };
