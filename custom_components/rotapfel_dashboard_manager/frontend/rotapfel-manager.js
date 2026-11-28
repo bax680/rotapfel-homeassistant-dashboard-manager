@@ -203,7 +203,7 @@ class RotapfelDashboardManager extends HTMLElement {
       registered:!!customElements.get(tag),url:values[key],
       source:manual[key]?this.t("Manuell","Manual"):auto[key]?'Home Assistant':this.t("Nicht gefunden","Not found")}));
   }
-  fixedCustomTypes(){return Object.values(this.resourceTags()).map(t=>'custom:'+t);}
+  fixedCustomTypes(){return ['custom:rotapfel-simple-thermcard'];}
   async loadCustomCardPolicy(){
     const result=await this.api('custom_card_policy');
     this._customCardAllowed=Array.isArray(result.allowed)?result.allowed:[];
@@ -221,7 +221,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(!overlay.isConnected)return;
       overlay.firstElementChild.innerHTML='<h2>'+this.t('Custom-Card-Ressourcen','Custom card resources')+'</h2><div class="actions"><button id="resource-save">'+this.t('Speichern','Save')+'</button><button class="secondary" id="resource-refresh">'+this.t('Erneut suchen','Search again')+'</button><button class="secondary" id="resource-close">'+this.t('Schließen','Close')+'</button></div><p id="resource-error" class="error"></p>';
       const panel=document.createElement('section');
-      panel.innerHTML='<h3>'+this.t('Freigabe für den Layoutmanager','Layout manager allowlist')+'</h3><p>'+this.t('Die drei integrierten Karten bleiben immer verfügbar.','The three integrated cards remain available.')+'</p><input id="allow-search" type="search" placeholder="'+this.t('Karten suchen','Search cards')+'"><div class="actions"><button id="allow-all" class="secondary">'+this.t('Alle auswählen','Select all')+'</button><button id="allow-none" class="secondary">'+this.t('Alle abwählen','Deselect all')+'</button></div><div id="allow-list" style="max-height:35vh;overflow:auto"></div><p id="allow-count"></p>';
+      panel.innerHTML='<h3>'+this.t('Freigabe für den Layoutmanager','Layout manager allowlist')+'</h3><p>'+this.t('Die Rotapfel Simple ThermCard bleibt immer verfügbar.','The Rotapfel Simple ThermCard remains available.')+'</p><input id="allow-search" type="search" placeholder="'+this.t('Karten suchen','Search cards')+'"><div class="actions"><button id="allow-all" class="secondary">'+this.t('Alle auswählen','Select all')+'</button><button id="allow-none" class="secondary">'+this.t('Alle abwählen','Deselect all')+'</button></div><div id="allow-list" style="max-height:35vh;overflow:auto"></div><p id="allow-count"></p>';
       overlay.querySelector('.actions').before(panel);
       const search=panel.querySelector('#allow-search');search.value=query;
       const manual=document.createElement('input');manual.placeholder='custom:calendar-card-pro';const addButton=document.createElement('button');addButton.className='secondary';addButton.textContent=this.t('Kartentyp ergänzen','Add card type');panel.append(manual,addButton);addButton.onclick=()=>{const t='custom:'+manual.value.trim().toLowerCase().replace(/^custom:/,'');if(!/^custom:[a-z][a-z0-9-]*-[a-z0-9-]+$/.test(t)||this.fixedCustomTypes().includes(t))return;catalog=[...new Set([...catalog,t])].sort();selected.add(t);query='';search.value='';manual.value='';drawList();};
@@ -4073,8 +4073,6 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       ['switch',this.t("Rotapfel – Schalter","Rotapfel – Switch"),this.t("Licht & Schalter","Lights & switches"),this.t("Für Schalter und input_boolean.","For switches and input booleans.")],
       ['sensor',this.t("Rotapfel – Sensor","Rotapfel – Sensor"),this.t("Sensoren & Kontakte","Sensors & contacts"),this.t("Zeigt Sensorwerte an.","Displays sensor readings.")],
       ['window',this.t("Rotapfel – Fenster / Tür","Rotapfel – Window / door"),this.t("Sensoren & Kontakte","Sensors & contacts"),this.t("Für binäre Fenster- und Türkontakte.","For binary window and door contacts.")],
-      ['equinox','Equinox – Original Custom Card',this.t("Heizung","Heating"),this.t("Benötigt die Equinox-Ressource.","Requires the Equinox resource.")],
-      ['climate_cluster','Climate Cluster – Original Custom Card',this.t("Heizung","Heating"),this.t("Benötigt die Climate-Cluster-Ressource.","Requires the Climate Cluster resource.")],
       ['rotapfel_simple_thermcard','Rotapfel Simple ThermCard',this.t("Heizung","Heating"),this.t("Benötigt die ThermCard-Ressource.","Requires the ThermCard resource.")],
       ['rotapfel_climate',this.t("Rotapfel Standard – Thermostatsteuerung","Rotapfel standard thermostat controls"),this.t("Heizung","Heating"),this.t("Interne Thermostatkarte.","Built-in thermostat card.")],
       ['label-horizontal',this.t("Beschriftung horizontal","Horizontal label"),this.t("Sonstige","Other"),this.t("Leserichtung von links nach rechts.","Reads from left to right.")],
