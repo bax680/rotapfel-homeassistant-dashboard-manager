@@ -120,3 +120,12 @@ test('frame sizing retains width reserve, minimum height and rounding',()=>{
   assert.equal(g.proportionalFrameHeight(100,430,280),65);
   assert.equal(g.proportionalFrameHeight(20,430,280),60);
 });
+
+test('frame width minimum is independent of available width reserve',()=>{
+  const g=fixture().manager;
+  assert.equal(g.minimumFrameWidth(50),76);
+  assert.equal(g.minimumFrameWidth(76),76);
+  assert.equal(g.minimumFrameWidth(100),100);
+  assert.equal(g.availableCardWidth(100),76);
+  assert.equal(g.availableCardWidth(101),77);
+});
