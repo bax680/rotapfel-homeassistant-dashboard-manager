@@ -212,3 +212,52 @@ test('custom resource discovery reports failed candidates',async()=>{
   await assert.rejects(manager.ensureGenericCustomResource('test-card'),/test-first.*test-second/);
   assert.equal(attempts.length,2);
 });
+
+const transferStart=source.indexOf('  transferCard(');
+const transferEnd=source.indexOf('  openCardTransferDialog(',transferStart);
+assert.ok(transferStart>=0&&transferEnd>transferStart);
+const TransferManager=vm.runInNewContext('(class TransferManager {\n'+source.slice(transferStart,transferEnd)+'\n})');
+function transferFixture(){
+  const manager=new TransferManager();
+  Object.assign(manager,{uid:()=> 'copy-id',t:(de,en)=>en});
+  const card={id:'original',title:'Test',groupId:'g',custom_config:{type:'custom:test-card',entities:[{entity:'sensor.test'}]},position:{x:8,y:12,w:100,h:80},deviceLayouts:{iphone:{x:4,y:6,w:90,h:70}}};
+  return {manager,card,from:{cards:[card]},to:{cards:[]}};
+}
+test('copy preserves configuration and profile geometry without sharing objects',()=>{
+  const {manager,card,from,to}=transferFixture();
+  const copy=manager.transferCard(from,to,card,'copy');
+  assert.equal(copy.id,'copy-id');
+  assert.equal(copy.groupId,undefined);
+  assert.equal(card.groupId,'g');
+  assert.deepEqual(rect(copy.custom_config),card.custom_config);
+  assert.deepEqual(rect(copy.deviceLayouts),card.deviceLayouts);
+  copy.deviceLayouts.iphone.x=99;
+  assert.equal(card.deviceLayouts.iphone.x,4);
+  assert.equal(from.cards.length,1);
+  assert.equal(to.cards[0],copy);
+});
+test('move retains identity and geometry and removes room group',()=>{
+  const {manager,card,from,to}=transferFixture();
+  const before=rect(card.position);
+  assert.equal(manager.transferCard(from,to,card,'move'),card);
+  assert.equal(from.cards.length,0);
+  assert.equal(to.cards[0],card);
+  assert.equal(card.groupId,undefined);
+  assert.deepEqual(card.position,before);
+});
+test('invalid transfers leave both rooms unchanged',()=>{
+  const {manager,card,from,to}=transferFixture();
+  assert.equal(manager.transferCard(from,to,{id:'missing'},'move'),null);
+  assert.equal(manager.transferCard(from,from,card,'move'),null);
+  assert.equal(manager.transferCard(from,to,card,'invalid'),null);
+  assert.equal(from.cards[0],card);
+  assert.equal(to.cards.length,0);
+  assert.equal(card.groupId,'g');
+});
+test('same-room copy retains original and adds independent card',()=>{
+  const {manager,card,from}=transferFixture();
+  const copy=manager.transferCard(from,from,card,'copy');
+  assert.equal(from.cards.length,2);
+  assert.equal(from.cards[0],card);
+  assert.equal(from.cards[1],copy);
+});
