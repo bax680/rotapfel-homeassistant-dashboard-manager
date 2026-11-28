@@ -72,3 +72,11 @@ test('rectangle clearance is symmetric and respects requested gap',()=>{
   assert.equal(g.rectanglesClear(b,a,8),true);
   assert.equal(g.rectanglesClear(a,b,9),false);
 });
+
+test('overlap depth preserves one pixel technical tolerance',()=>{
+  const g=fixture().manager,a={x:0,y:0,w:100,h:80};
+  for(const x of [100,99])assert.equal(g.rectanglesOverlap(a,{x,y:0,w:100,h:80}),false);
+  assert.equal(g.rectanglesOverlap(a,{x:98,y:0,w:100,h:80}),true);
+  assert.equal(g.rectanglesOverlap(a,{x:98,y:79,w:100,h:80}),false);
+  assert.equal(g.rectanglesOverlap(a,{x:99,y:0,w:100,h:80},0),true);
+});
