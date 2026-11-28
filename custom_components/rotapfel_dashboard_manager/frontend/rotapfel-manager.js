@@ -4428,13 +4428,14 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         const cls=customElements.get(tag);
         if(!cls?.getConfigElement)throw Error(this.t('Kein grafischer Originaleditor verfügbar. YAML/JSON bleibt verfügbar.','No original visual editor available. YAML/JSON remains available.'));
         const editor=await cls.getConfigElement();
-        if(!overlay.isConnected||token!==generation)return;
+        if(!overlay.isConnected||token!==generation||typeInput.value.trim()!==type)return;
         if(!editor?.setConfig)throw Error(this.t('Grafischer Editor nicht verfügbar','Visual editor unavailable'));
         let config=await readVisualConfig(type);
+        const needsStub=Object.keys(config).length===1;
         if(Object.keys(config).length===1&&cls.getStubConfig){try{const stub=await cls.getStubConfig(hass,Object.keys(hass?.states||{}),[]);if(stub&&typeof stub==='object')config={...stub,type};}catch{}}
-        if(!overlay.isConnected||token!==generation)return;
+        if(!overlay.isConnected||token!==generation||typeInput.value.trim()!==type)return;
         editor.hass=hass;editor.setConfig(config);
-        configInput.value=JSON.stringify(config,null,2);visual=editor;visualType=type;
+        if(needsStub&&Object.keys(config).length>1)configInput.value=JSON.stringify(config,null,2);visual=editor;visualType=type;
         editor.addEventListener('config-changed',event=>{if(syncing||visual!==editor||!event.detail?.config)return;configInput.value=JSON.stringify({...event.detail.config,type},null,2);templateManaged=false;detectType();refreshQuick();entityLabel.textContent=getConfiguredEntity();});
         editorHost.replaceChildren(editor);codeLabel.hidden=true;editorStatus.textContent='';editorButton.textContent=this.t('Zu YAML / JSON wechseln','Switch to YAML / JSON');
       }catch(err){if(token===generation&&overlay.isConnected){closeVisual();editorStatus.textContent=String(err.message||err);}}
