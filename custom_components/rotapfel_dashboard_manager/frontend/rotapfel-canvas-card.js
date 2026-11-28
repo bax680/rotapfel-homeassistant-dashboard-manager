@@ -241,7 +241,7 @@ export function renderRotapfelNavigation(cfg,{german,preview=false,wide=false,on
       }else if(cfg.shared)target.searchParams.set('rotapfel_tab',tab.path);
       else target.pathname='/'+url.pathname.split('/')[1]+'/'+encodeURIComponent(tab.path);
       if(!preview)link.href=target.pathname+target.search+target.hash;
-      link.textContent=tab.label||tab.path;
+      link.textContent=typeof tab.label==='string'&&tab.label.trim()?tab.label:tab.path;
       if(tab.path===cfg.path)link.setAttribute('aria-current','page');
       nav.append(link);
     }
