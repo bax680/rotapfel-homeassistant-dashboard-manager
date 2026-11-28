@@ -1899,6 +1899,9 @@ class RotapfelDashboardManager extends HTMLElement {
   rectanglesClear(a,b,gap=0){
     return a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y;
   }
+  rectanglesOverlap(a,b,tolerance=1){
+    return Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>tolerance&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>tolerance;
+  }
   planCardPlacement(room,c,size=null,target=null){
     const tab=this.layout?.find(t=>(t.rooms||[]).some(r=>r.id===room.id));
     if(!tab)return null;
@@ -3166,7 +3169,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(chosen.length<2){alert(this.t("Bitte mindestens zwei entsperrte Karten auswählen.","Select at least two unlocked cards."));return;}
       const horizontal=axis==='x',gap=fixedGap(),ordered=chosen.sort((a,b)=>a.q[axis]-b.q[axis]);
       const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
-      const overlaps=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>1;
+      const overlaps=(a,b)=>this.rectanglesOverlap(a,b,1);
       const originals=new Map([...positions].map(([id,q])=>[id,{...q}]));
       const movedIds=new Set(ordered.map(v=>v.c.id));
       const size=horizontal?'w':'h',cross=horizontal?'h':'w',otherAxis=horizontal?'y':'x';
@@ -3561,7 +3564,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
           intended.y=Math.max(0,Math.round(intended.y));
           const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
           const gap=fixedGap();
-          const overlaps=(a,b)=>Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>1&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>1;
+          const overlaps=(a,b)=>this.rectanglesOverlap(a,b,1);
           const inside=v=>v.x>=0&&v.y>=0&&v.x+v.w<=width&&(!fixed||v.y+v.h<=height);
           // Recompute from the pointer-down layout on every move. This prevents
           // displaced cards from accumulating offsets or needing another drag.
