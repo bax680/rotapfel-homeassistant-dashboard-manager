@@ -91,3 +91,13 @@ test('edge intersection preserves layer and alignment policies',()=>{
   assert.equal(g.rectanglesIntersect(a,tiny,1),true);
   assert.equal(g.rectanglesOverlap(a,tiny,1),false);
 });
+
+test('automatic and manual spacing policies remain independent',()=>{
+  const g=fixture().manager;
+  for(const value of [0,undefined,-4,4,'invalid'])assert.equal(g.insertionGap(value),8);
+  assert.equal(g.insertionGap(12),12);
+  assert.equal(g.manualDistributionGap(0),0);
+  assert.equal(g.manualDistributionGap(-4),0);
+  assert.equal(g.manualDistributionGap('12.4'),12);
+  assert.equal(g.manualDistributionGap(250),200);
+});
