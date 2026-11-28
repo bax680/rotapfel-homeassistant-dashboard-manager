@@ -3132,7 +3132,7 @@ class RotapfelDashboardManager extends HTMLElement {
           const dynamic=dynamicHeight;
           const lowest=Math.max(0,...cards.map(({c})=>{const r=positions.get(c.id);return r.y+r.h;}));
           const maxY=dynamic?Math.max(height,Math.ceil(lowest+blockH+24)):height;
-          const others=cards.filter(({c})=>!selectedIds.has(c.id)).map(({c})=>positions.get(c.id));
+          const others=cards.filter(({c})=>!chosen.some(v=>v.c.id===c.id)).map(({c})=>positions.get(c.id));
           const intersects=(r,t)=>this.rectanglesIntersect(r,t,this.collisionTolerance());
           const originalY=a.q.y;
           const candidates=[];
@@ -3173,7 +3173,7 @@ class RotapfelDashboardManager extends HTMLElement {
       const collision=rectangles.some((a,i)=>rectangles.slice(i+1).some(b=>
         // Alignment is allowed to overlap cards within the selection.
         // Only newly introduced intersections with unselected cards block it.
-        !(selectedIds.has(a.id)&&selectedIds.has(b.id))&&
+        !(chosen.some(v=>v.c.id===a.id)&&chosen.some(v=>v.c.id===b.id))&&
         (moved.has(a.id)||moved.has(b.id))&&overlaps(a,b)&&
         !overlaps(oldById.get(a.id),oldById.get(b.id))));
       if(outOfBounds||collision){
@@ -3278,7 +3278,7 @@ class RotapfelDashboardManager extends HTMLElement {
           const id=queue.shift(),a=next.get(id);
           for(const {c} of cards){
             if(c.id===id||!overlaps(a,next.get(c.id)))continue;
-            if(movedIds.has(c.id)||!this.canAutomaticallyMoveBlocker(c)||touched.has(c.id)){possible=false;break;}
+            if(movedIds.has(c.id)||!this.canAutomaticallyMoveBlocker(c,ignorePositionLocks())||touched.has(c.id)){possible=false;break;}
             const q=next.get(c.id);
             q[axis]=Math.round(a[axis]+a[size]+gap);
             if(!inside(q)){possible=false;break;}
@@ -3293,14 +3293,14 @@ class RotapfelDashboardManager extends HTMLElement {
       const changes=cards.filter(({c})=>{const a=originals.get(c.id),b=solution.get(c.id);return a.x!==b.x||a.y!==b.y;});
       if(!changes.length)return;
       rememberChange();
-      for(const {c} of changes)update(c,solution.get(c.id));
+      for(const {c} of changes)update(c,solution.get(c.id),false,true);
       syncSelection();
     };
     overlay.querySelectorAll('[data-fixed-gap]').forEach(b=>b.onclick=()=>arrangeFixedGap(b.dataset.fixedGap));
     overlay.querySelectorAll('[data-align]').forEach(b=>b.onclick=()=>applyAlignment(b.dataset.align));
     // Alpha 13.5.17: deterministic, size-aware shelf packing of every card.
     // The arrangement is atomic: if all rectangles do not fit, nothing is changed.
-    // Existing position locks are deliberately ignored, but their flags are preserved.
+    // Position locks are respected unless the temporary override is enabled.
     let autoLayoutUndo=null;
     const planAutoLayout=()=>{
       const spacing=12,margin=12,usable=width-2*margin;
