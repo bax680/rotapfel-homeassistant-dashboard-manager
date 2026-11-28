@@ -49,3 +49,11 @@ A card can be placed independently of its type, with explicit spacing down to ze
 - Practical HA acceptance: 10/12 checks passed (Marketplace update, locked cards, original editors, templates, transfers, device profiles, navigation, DE/EN UI, save/publish, preview parity).
 - Open, not reported as failed: interactive collision pushing and YAML/JSON save/reopen.
 - Full acceptance pending these two checks; full translation and lossless external editor round-trip are not established by this checklist alone.
+
+### Alpha 13.9.70 – user-approved positioning policy
+- Interactive collision displacement must allow even fully locked cards to move repeatedly, preserving dimensions and all lock flags.
+- Automatic insertion respects position locks.
+- Automatic arrangement and horizontal/vertical distribution respect locks by default; add a default-off checkbox to temporarily ignore position locks without clearing stored flags.
+- Regression coverage must exercise repeated collision displacement, lock preservation and both checkbox states.
+- Fix transfers into tabs without rooms using a direct-tab destination; preserve card geometry and profile data.
+- Investigate compact navigation footprint and dynamic translation of system-generated room labels and canvas metadata.
