@@ -285,3 +285,28 @@ test('library templates preserve nested configuration but detach placement and i
   template.custom_config.entities[0].name='Changed';
   assert.equal(card.custom_config.entities[0].name,'Original');
 });
+
+const navStart=source.indexOf('  presentationFor(');
+const navEnd=source.indexOf('  presentationDialog(',navStart);
+const NavManager=vm.runInNewContext('(class NavManager {\n'+source.slice(navStart,navEnd)+'\n})');
+test('navigation preserves routes and falls back from whitespace labels',()=>{
+  const manager=new NavManager();
+  Object.assign(manager,{backgroundFor:()=>({}),tabRoute:t=>t.id,t:(de,en)=>en});
+  const tabs=[{id:'a',name:'Living',navigationLabel:'   '},{id:'b',name:'Kitchen',navigationLabel:' Cooking '}];
+  const result=manager.presentationFor({tabs,canvas:{presentation:{navigation:'bar',navigationPosition:'bottom'}}},tabs[1],new Map([['a','living'],['b','kitchen']]));
+  assert.equal(result.tabs[0].label,'Living');
+  assert.equal(result.tabs[1].label,'Cooking');
+  assert.equal(result.path,'kitchen');
+  assert.equal(result.navigationPosition,'bottom');
+});
+const canvasSource=readFileSync(new URL('../custom_components/rotapfel_dashboard_manager/frontend/rotapfel-canvas-card.js',import.meta.url),'utf8');
+test('published navigation uses path fallback for blank labels',()=>{
+  const start=canvasSource.indexOf('function renderRotapfelNavigation(');
+  const end=canvasSource.indexOf('class RotapfelCanvasCard',start);
+  const node=()=>({dataset:{},children:[],toggleAttribute(){},setAttribute(){},append(child){this.children.push(child)},get childElementCount(){return this.children.length}});
+  const render=vm.runInNewContext('('+canvasSource.slice(start,end).trim()+')',{URL,location:{href:'https://example.test/dashboard/a'},document:{createElement:node},styleRotapfelTabs:()=>{}});
+  const nav=render({kiosk:true,navigation:'bar',navigationPosition:'right',path:'a',tabs:[{path:'a',label:'  '},{path:'b',label:'Kitchen'}]},{preview:true});
+  assert.equal(nav.dataset.position,'right');
+  assert.equal(nav.children[0].textContent,'a');
+  assert.equal(nav.children[1].textContent,'Kitchen');
+});
