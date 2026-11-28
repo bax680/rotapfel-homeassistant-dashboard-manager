@@ -101,3 +101,11 @@ test('automatic and manual spacing policies remain independent',()=>{
   assert.equal(g.manualDistributionGap('12.4'),12);
   assert.equal(g.manualDistributionGap(250),200);
 });
+
+test('special pair spacing and collision tolerance remain independent',()=>{
+  const g=fixture().manager;
+  assert.equal(g.pairDistributionGap(),12);
+  assert.equal(g.collisionTolerance(),1);
+  assert.equal(g.insertionGap(0),8);
+  assert.equal(g.manualDistributionGap(0),0);
+});
