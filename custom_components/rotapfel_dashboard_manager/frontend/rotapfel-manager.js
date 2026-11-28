@@ -1899,6 +1899,10 @@ class RotapfelDashboardManager extends HTMLElement {
   rectanglesClear(a,b,gap=0){
     return a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y;
   }
+  // Preserve edge-based intersection semantics separately from overlap depth.
+  rectanglesIntersect(a,b,tolerance=0){
+    return a.x<b.x+b.w-tolerance&&a.x+a.w>b.x+tolerance&&a.y<b.y+b.h-tolerance&&a.y+a.h>b.y+tolerance;
+  }
   rectanglesOverlap(a,b,tolerance=1){
     return Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x)>tolerance&&Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y)>tolerance;
   }
@@ -2970,7 +2974,7 @@ class RotapfelDashboardManager extends HTMLElement {
       // effect because unrelated cards occupy intermediate stack positions.
       const intersects=(a,b)=>{
         const p=positions.get(a.id),q=positions.get(b.id);
-        return !!(p&&q&&p.x<q.x+q.w&&p.x+p.w>q.x&&p.y<q.y+q.h&&p.y+p.h>q.y);
+        return !!(p&&q&&this.rectanglesIntersect(p,q,0));
       };
       let to;
       if(action==='front')to=order.length-1;
@@ -3106,7 +3110,7 @@ class RotapfelDashboardManager extends HTMLElement {
           const lowest=Math.max(0,...cards.map(({c})=>{const r=positions.get(c.id);return r.y+r.h;}));
           const maxY=dynamic?Math.max(height,Math.ceil(lowest+blockH+24)):height;
           const others=cards.filter(({c})=>!selectedIds.has(c.id)).map(({c})=>positions.get(c.id));
-          const intersects=(r,t)=>r.x<t.x+t.w-1&&r.x+r.w>t.x+1&&r.y<t.y+t.h-1&&r.y+r.h>t.y+1;
+          const intersects=(r,t)=>this.rectanglesIntersect(r,t,1);
           const originalY=a.q.y;
           const candidates=[];
           for(let y=0;y+blockH<=maxY;y+=4)candidates.push(y);
@@ -3135,7 +3139,7 @@ class RotapfelDashboardManager extends HTMLElement {
       // out-of-bounds geometry must not prevent an otherwise valid alignment.
       const outOfBounds=rectangles.some(r=>selectedIds.has(r.id)&&
         (r.x<0||r.y<0||r.x+r.w>width||(this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed&&r.y+r.h>height)));
-      const overlaps=(a,b)=>a.x<b.x+b.w-1&&a.x+a.w>b.x+1&&a.y<b.y+b.h-1&&a.y+a.h>b.y+1;
+      const overlaps=(a,b)=>this.rectanglesIntersect(a,b,1);
       // Preserve pre-existing overlaps without introducing new ones. Only pairs
       // involving a moved card are relevant to an explicit alignment operation.
       const moved=new Set(chosen.filter(({c})=>{
