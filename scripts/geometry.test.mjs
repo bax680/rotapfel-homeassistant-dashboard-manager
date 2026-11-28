@@ -157,3 +157,27 @@ test('insertion fallback moves only unprotected cards without mutating the sourc
   assert.equal(card.position.x,8);
   for(const extra of [{position:{...card.position,manualPosition:true}},{position:{...card.position,editorLocked:true}},{groupId:'g'},{deviceLayouts:{iphone:{x:8}}}])assert.equal(fixture([{...card,...extra}]).plan(),null);
 });
+
+const profileStart=source.indexOf('  switchDeviceLayoutProfile(');
+const profileEnd=source.indexOf('  canvasDialog(',profileStart);
+assert.ok(profileStart>=0&&profileEnd>profileStart);
+const ProfileManager=vm.runInNewContext('(class ProfileManager {\n'+source.slice(profileStart,profileEnd)+'\n})');
+test('device profile switching preserves independent positions, sizes and locks',()=>{
+  const original={x:120,y:100,w:300,h:200,manualSize:true,manualPosition:true,editorLocked:true};
+  const card={position:{...original}};
+  const manager=new ProfileManager();
+  Object.assign(manager,{_deviceLayoutProfile:'fire_hd',eachLayoutCard:fn=>fn(card),render:()=>{}});
+  manager.switchDeviceLayoutProfile('iphone');
+  assert.equal(card.position.manualSize,true);
+  assert.equal(card.position.manualPosition,true);
+  assert.equal(card.position.editorLocked,true);
+  card.position.x=20;
+  const phone=rect(card.position);
+  manager.switchDeviceLayoutProfile('fire_hd');
+  assert.deepEqual(rect(card.position),original);
+  card.position.x=150;
+  manager.switchDeviceLayoutProfile('iphone');
+  assert.deepEqual(rect(card.position),phone);
+  assert.equal(card.deviceLayouts.fire_hd.x,150);
+  assert.notEqual(card.position,card.deviceLayouts.iphone);
+});
