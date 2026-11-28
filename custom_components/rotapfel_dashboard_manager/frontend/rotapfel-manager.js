@@ -1896,6 +1896,8 @@ class RotapfelDashboardManager extends HTMLElement {
     });
   }
   // Edge contact is permitted when the requested clearance is zero.
+  pairDistributionGap(){return 12;}
+  collisionTolerance(){return 1;}
   insertionGap(value){return Math.max(8,Number(value)||8);}
   manualDistributionGap(value){return Math.max(0,Math.min(200,Math.round(Number(value)||0)));}
   rectanglesClear(a,b,gap=0){
@@ -3106,13 +3108,13 @@ class RotapfelDashboardManager extends HTMLElement {
           // A pair has no intermediate card: place the second card directly
           // below the first, preserving its x position and a 12 px gap.
           // Search for a collision-free anchor instead of rejecting the first try.
-          const gap=12,[a,b]=ordered;
+          const gap=this.pairDistributionGap(),[a,b]=ordered;
           const blockH=a.q.h+gap+b.q.h;
           const dynamic=dynamicHeight;
           const lowest=Math.max(0,...cards.map(({c})=>{const r=positions.get(c.id);return r.y+r.h;}));
           const maxY=dynamic?Math.max(height,Math.ceil(lowest+blockH+24)):height;
           const others=cards.filter(({c})=>!selectedIds.has(c.id)).map(({c})=>positions.get(c.id));
-          const intersects=(r,t)=>this.rectanglesIntersect(r,t,1);
+          const intersects=(r,t)=>this.rectanglesIntersect(r,t,this.collisionTolerance());
           const originalY=a.q.y;
           const candidates=[];
           for(let y=0;y+blockH<=maxY;y+=4)candidates.push(y);
@@ -3141,7 +3143,7 @@ class RotapfelDashboardManager extends HTMLElement {
       // out-of-bounds geometry must not prevent an otherwise valid alignment.
       const outOfBounds=rectangles.some(r=>selectedIds.has(r.id)&&
         (r.x<0||r.y<0||r.x+r.w>width||(this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed&&r.y+r.h>height)));
-      const overlaps=(a,b)=>this.rectanglesIntersect(a,b,1);
+      const overlaps=(a,b)=>this.rectanglesIntersect(a,b,this.collisionTolerance());
       // Preserve pre-existing overlaps without introducing new ones. Only pairs
       // involving a moved card are relevant to an explicit alignment operation.
       const moved=new Set(chosen.filter(({c})=>{
@@ -3175,7 +3177,7 @@ class RotapfelDashboardManager extends HTMLElement {
       if(chosen.length<2){alert(this.t("Bitte mindestens zwei entsperrte Karten auswählen.","Select at least two unlocked cards."));return;}
       const horizontal=axis==='x',gap=fixedGap(),ordered=chosen.sort((a,b)=>a.q[axis]-b.q[axis]);
       const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
-      const overlaps=(a,b)=>this.rectanglesOverlap(a,b,1);
+      const overlaps=(a,b)=>this.rectanglesOverlap(a,b,this.collisionTolerance());
       const originals=new Map([...positions].map(([id,q])=>[id,{...q}]));
       const movedIds=new Set(ordered.map(v=>v.c.id));
       const size=horizontal?'w':'h',cross=horizontal?'h':'w',otherAxis=horizontal?'y':'x';
@@ -3570,7 +3572,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
           intended.y=Math.max(0,Math.round(intended.y));
           const fixed=!!this.normalizedProfiles(this.deviceProfiles)[this._deviceLayoutProfile||'fire_hd']?.fixed;
           const gap=fixedGap();
-          const overlaps=(a,b)=>this.rectanglesOverlap(a,b,1);
+          const overlaps=(a,b)=>this.rectanglesOverlap(a,b,this.collisionTolerance());
           const inside=v=>v.x>=0&&v.y>=0&&v.x+v.w<=width&&(!fixed||v.y+v.h<=height);
           // Recompute from the pointer-down layout on every move. This prevents
           // displaced cards from accumulating offsets or needing another drag.
