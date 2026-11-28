@@ -249,6 +249,20 @@ class RotapfelDashboardManager extends HTMLElement {
     overlay.addEventListener('click',ev=>{if(ev.target===overlay)overlay.remove();});
     try{await this.discoverResources(true);const policy=await this.loadCustomCardPolicy();selected=new Set(policy.filter(t=>!this.fixedCustomTypes().includes(t)));catalog=[...new Set([...await this.refreshCustomCardCatalog(true),...selected])].sort();draw();}catch(err){overlay.firstElementChild.textContent=this.t('Kartenfreigabe konnte nicht geladen werden: ','Could not load card allowlist: ')+String(err);overlay.onclick=()=>overlay.remove();}
   }
+  async loadCustomResourceModule(url){
+    if(!this.validResourceUrl(url))throw Error(this.t("Ungültige Ressource: ","Invalid resource: ")+url);
+    const cache=RotapfelDashboardManager._externalLoads ||= new Map();
+    if(!cache.has(url)){
+      cache.set(url,new Promise((resolve,reject)=>{
+        const script=document.createElement('script');
+        script.type='module';script.src=url;
+        script.onload=resolve;
+        script.onerror=()=>{script.remove();reject(new Error(this.t("Ressource nicht erreichbar: ","Resource unavailable: ")+url));};
+        document.head.appendChild(script);
+      }));
+    }
+    try{await cache.get(url);}catch(err){cache.delete(url);throw err;}
+  }
   async ensureExternalResource(c){
     const tag=this.externalConfig(c)?.type?.replace(/^custom:/,'');
     if(!tag)return false;
@@ -256,22 +270,11 @@ class RotapfelDashboardManager extends HTMLElement {
     await this.discoverResources();
     const url=this.readResources()[c.variant];
     if(!url)return false;
-    // A single shared promise prevents multiple cards from injecting the same script.
-    const cache=RotapfelDashboardManager._externalLoads ||= new Map();
-    if(!cache.has(url)){
-      cache.set(url,new Promise((resolve,reject)=>{
-        const script=document.createElement('script');
-        script.type='module';script.src=url;
-        script.onload=()=>resolve();
-        script.onerror=()=>reject(new Error(this.t("Ressource nicht erreichbar: ","Resource unavailable: ")+url));
-        document.head.appendChild(script);
-      }));
-    }
-    try{await cache.get(url);}catch(err){cache.delete(url);throw err;}
+    await this.loadCustomResourceModule(url);
     if(!customElements.get(tag)){
       await Promise.race([
         customElements.whenDefined(tag),
-        new Promise((_,reject)=>setTimeout(()=>reject(new Error(tag+' wurde nicht registriert')),8000))
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error(tag+' was not registered')),8000))
       ]);
     }
     return !!customElements.get(tag);
@@ -378,16 +381,8 @@ class RotapfelDashboardManager extends HTMLElement {
       .filter(url=>new RegExp('(?:^|[/_.-])'+family+'(?:[/_.-]|$)','i').test(url.split('?')[0]));
     if(!urls.length){try{await this.nativeCardEditorHass();}catch{}if(customElements.get(tag))return true;}
     if(!urls.length)throw Error(this.t("Keine Lovelace-Ressource für ","No Lovelace resource for ")+tag+this.t(" gefunden. Bitte unter Einstellungen → Dashboards → Ressourcen prüfen."," found. Check Settings → Dashboards → Resources."));
-    const cache=RotapfelDashboardManager._externalLoads ||= new Map();
     for(const url of urls){
-      if(!cache.has(url)){
-        cache.set(url,new Promise((resolve,reject)=>{
-          const script=document.createElement('script');script.type='module';script.src=url;
-          script.onload=resolve;script.onerror=()=>reject(new Error(this.t("Ressource nicht erreichbar: ","Resource unavailable: ")+url));
-          document.head.appendChild(script);
-        }));
-      }
-      try{await cache.get(url);}catch(err){cache.delete(url);throw err;}
+      await this.loadCustomResourceModule(url);
       if(customElements.get(tag))return true;
     }
     throw Error(this.t("Ressource geladen, aber ","Resource loaded, but ")+tag+this.t(" wurde nicht registriert. Geprüfte Ressourcen: "," was not registered. Resources checked: ")+urls.join(', '));
