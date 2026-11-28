@@ -383,10 +383,12 @@ class RotapfelDashboardManager extends HTMLElement {
       .filter(url=>new RegExp('(?:^|[/_.-])'+family+'(?:[/_.-]|$)','i').test(url.split('?')[0]))])].filter(url=>this.validResourceUrl(url));
     if(!urls.length){try{await this.nativeCardEditorHass();}catch{}if(customElements.get(tag))return true;}
     if(!urls.length)throw Error(this.t("Keine Lovelace-Ressource für ","No Lovelace resource for ")+tag+this.t(" gefunden. Bitte unter Einstellungen → Dashboards → Ressourcen prüfen."," found. Check Settings → Dashboards → Resources."));
+    const failures=[];
     for(const url of urls){
-      await this.loadCustomResourceModule(url);
+      try{await this.loadCustomResourceModule(url);}catch(err){failures.push(url+': '+String(err));continue;}
       if(customElements.get(tag))return true;
     }
+    if(failures.length)throw Error(this.t("Kartenressource konnte nicht vollständig geladen werden: ","Card resource could not be fully loaded: ")+tag+' — '+failures.join('; '));
     throw Error(this.t("Ressource geladen, aber ","Resource loaded, but ")+tag+this.t(" wurde nicht registriert. Geprüfte Ressourcen: "," was not registered. Resources checked: ")+urls.join(', '));
   }
   mountThermPreview(box,card){
