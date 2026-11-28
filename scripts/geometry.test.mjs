@@ -186,7 +186,7 @@ test('interactive pushing permits previously positioned cards but respects layou
   const g=fixture().manager;
   assert.equal(g.canAutomaticallyMoveBlocker({position:{manualPosition:true}},true),true);
   assert.equal(g.canAutomaticallyMoveBlocker({position:{manualPosition:true}}),false);
-  assert.equal(g.canAutomaticallyMoveBlocker({position:{editorLocked:true}},true),false);
+  assert.equal(g.canAutomaticallyMoveBlocker({position:{editorLocked:true}},true),true);
   assert.equal(g.canAutomaticallyMoveBlocker({groupId:'g'},true),false);
   assert.equal(g.canAutomaticallyMoveBlocker({position:{manualSize:true}},true),true);
 });
@@ -309,4 +309,16 @@ test('published navigation uses path fallback for blank labels',()=>{
   assert.equal(nav.dataset.position,'right');
   assert.equal(nav.children[0].textContent,'a');
   assert.equal(nav.children[1].textContent,'Kitchen');
+});
+
+test('interactive displacement repeatedly permits locked individual cards without clearing flags',()=>{
+  const g=fixture().manager;
+  const card={position:{editorLocked:true,manualPosition:true,manualSize:true,x:0,w:100}};
+  for(let i=0;i<3;i++){assert.equal(g.canAutomaticallyMoveBlocker(card,true),true);card.position.x+=100;}
+  assert.equal(card.position.editorLocked,true);
+  assert.equal(card.position.manualPosition,true);
+  assert.equal(card.position.manualSize,true);
+  assert.equal(g.canAutomaticallyMoveForInsertion(card),false);
+  assert.equal(g.canArrangePosition(card),false);
+  assert.equal(g.canArrangePosition(card,true),true);
 });
