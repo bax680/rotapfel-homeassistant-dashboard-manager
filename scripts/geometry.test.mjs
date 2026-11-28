@@ -129,3 +129,17 @@ test('frame width minimum is independent of available width reserve',()=>{
   assert.equal(g.availableCardWidth(100),76);
   assert.equal(g.availableCardWidth(101),77);
 });
+
+test('automatic insertion respects position locks, groups and device layouts',()=>{
+  const g=fixture().manager;
+  assert.equal(g.canAutomaticallyMoveForInsertion({}),true);
+  for(const card of [{position:{editorLocked:true}},{position:{manualPosition:true}},{groupId:'group'},{deviceLayouts:{phone:{x:10}}}])assert.equal(g.canAutomaticallyMoveForInsertion(card),false);
+  assert.equal(g.canAutomaticallyMoveForInsertion({position:{manualSize:true}}),true);
+});
+test('automatic frame fitting respects size and layout locks',()=>{
+  const g=fixture().manager;
+  assert.equal(g.canAutomaticallyFitFrame({}),true);
+  assert.equal(g.canAutomaticallyFitFrame({position:{manualSize:true}}),false);
+  assert.equal(g.canAutomaticallyFitFrame({position:{manualSize:true}},true),true);
+  assert.equal(g.canAutomaticallyFitFrame({position:{editorLocked:true}},true),false);
+});
