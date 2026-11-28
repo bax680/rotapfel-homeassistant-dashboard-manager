@@ -1898,6 +1898,9 @@ class RotapfelDashboardManager extends HTMLElement {
   // Edge contact is permitted when the requested clearance is zero.
   pairDistributionGap(){return 12;}
   collisionTolerance(){return 1;}
+  availableCardWidth(canvasWidth){return Math.max(76,canvasWidth-24);}
+  minimumFrameHeight(value){return Math.max(60,value);}
+  proportionalFrameHeight(width,nativeWidth,nativeHeight){return this.minimumFrameHeight(Math.round(width*nativeHeight/nativeWidth));}
   insertionGap(value){return Math.max(8,Number(value)||8);}
   manualDistributionGap(value){return Math.max(0,Math.min(200,Math.round(Number(value)||0)));}
   rectanglesClear(a,b,gap=0){
@@ -2345,11 +2348,11 @@ class RotapfelDashboardManager extends HTMLElement {
     else if(kind==='rotapfel_simple_thermcard'){w=450;h=180;}
     else if(card.type==='custom'){w=320;h=/calendar|graph|chart|weather|picture|history|entities/.test(type)?240:100;}
     if(natural?.w>0&&natural?.h>0){w=natural.w;h=natural.h+8;}
-    const fitted=Math.min(Math.max(76,width-24),w);
-    return {w:Math.round(fitted),h:Math.max(60,Math.ceil(kind&&card.type!=='custom'?h*fitted/w:h))};
+    const fitted=Math.min(this.availableCardWidth(width),w);
+    return {w:Math.round(fitted),h:this.minimumFrameHeight(Math.ceil(kind&&card.type!=='custom'?h*fitted/w:h))};
   }
   idealCustomCardWidth(card,currentWidth,canvasWidth){
-    const available=Math.max(76,canvasWidth-24);
+    const available=this.availableCardWidth(canvasWidth);
     const type=card.custom_config?.type||card.custom?.card_type;
     const preferred=type==='custom:mushroom-entity-card'?320:Math.max(220,currentWidth);
     return Math.min(available,preferred);
@@ -2362,12 +2365,12 @@ class RotapfelDashboardManager extends HTMLElement {
     // Use layout dimensions instead of visual bounds, which may be zoomed.
     const contentHeight=surface&&surface!==host?Math.max(surface.offsetHeight||0,surface.scrollHeight||0):Math.max(host.offsetHeight,host.scrollHeight);
     if(contentHeight<8)return null;
-    return Math.max(60,Math.ceil(contentHeight)+Math.max(0,tile.offsetHeight-tile.clientHeight));
+    return this.minimumFrameHeight(Math.ceil(contentHeight)+Math.max(0,tile.offsetHeight-tile.clientHeight));
   }
   fittedFrameHeight(card,tile,w){
     const size=this.externalCardSize(card,tile);
     if(!size)return null;
-    return Math.max(60,Math.round(w*size.nativeHeight/size.nativeWidth));
+    return this.proportionalFrameHeight(w,size.nativeWidth,size.nativeHeight);
   }
   // Move cards only when necessary, preserving the current order and positions.
   // The frame fit must never silently introduce an overlap.
