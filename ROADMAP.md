@@ -43,3 +43,9 @@ A card can be placed independently of its type, with explicit spacing down to ze
 
 ## Alpha 13.9.68 validation
 21 regression tests passed before release. User completed eight HA test tasks; screenshots show broadly matching relative geometry, but interactive collision pushing failed. Fix is included in the next development cycle. Browser-level async resizing and full navigation/profile coverage remain open.
+
+## Alpha 13.9.69 validation (2026-11-28)
+- Automated quality gate: 32/32 tests passed, run 46126603201, version 0.2.0a13969.
+- Practical HA acceptance: 10/12 checks passed (Marketplace update, locked cards, original editors, templates, transfers, device profiles, navigation, DE/EN UI, save/publish, preview parity).
+- Open, not reported as failed: interactive collision pushing and YAML/JSON save/reopen.
+- Full acceptance pending these two checks; full translation and lossless external editor round-trip are not established by this checklist alone.
