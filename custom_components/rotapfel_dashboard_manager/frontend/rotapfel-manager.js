@@ -4082,6 +4082,9 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       ...this.nativeCardTypes().map(type=>['ha:'+type,this.nativeCardName(type,hass),'Home Assistant',type])
     ];
     for(const type of this._customCardAllowed||[]){if(!this.fixedCustomTypes().includes(type))catalog.push(['approved:'+type,type.slice(7),this.t('Freigegebene Custom Cards','Approved custom cards'),type]);}
+    for(const [variant,type,name] of [['equinox','custom:equinox-card','Equinox'],['climate_cluster','custom:climate-cluster-card','Climate Cluster']]){
+      if(this._customCardAllowed?.includes(type))catalog.push(['template:'+variant,name+' – Rotapfel',this.t('Kartenvorlagen','Card templates'),this.t('Optimierte Rotapfel-Konfiguration','Optimized Rotapfel configuration')]);
+    }
     const favKey='rotapfel-card-favorites-v1';
     let favorites=[];try{const saved=JSON.parse(localStorage.getItem(favKey)||'[]');if(Array.isArray(saved))favorites=saved.filter(v=>catalog.some(x=>x[0]===v));}catch(_e){}
     const esc=v=>this.esc(v);
@@ -4125,6 +4128,22 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
           this._selectedCards={...this._selectedCards,[room.id]:c.id};
           change();
         });
+        return;
+      }
+      if(choice.startsWith('template:')){
+        const variant=choice.slice(9);
+        this.pickEntity(null,eid=>{
+          const title=this._hass.states[eid]?.attributes?.friendly_name||eid;
+          const config=this.externalConfig({variant,entity_id:eid,title});
+          if(!config)return;
+          const c={id:this.uid(),type:'custom',title,custom_config:config};
+          this.configureCustomCard(c,async()=>{
+            if(!await this.placeNewCard(room,c))return;
+            room.cards.push(c);
+            this._selectedCards={...(this._selectedCards||{}),[room.id]:c.id};
+            change();
+          },true);
+        },{domains:['climate']});
         return;
       }
       if(choice==='custom'||choice.startsWith('approved:')){
