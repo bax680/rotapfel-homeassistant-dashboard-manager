@@ -1902,8 +1902,8 @@ class RotapfelDashboardManager extends HTMLElement {
   availableCardWidth(canvasWidth){return this.minimumFrameWidth(canvasWidth-24);}
   minimumFrameHeight(value){return Math.max(60,value);}
   proportionalFrameHeight(width,nativeWidth,nativeHeight){return this.minimumFrameHeight(Math.round(width*nativeHeight/nativeWidth));}
-  canAutomaticallyMoveBlocker(card){
-    return !card.position?.editorLocked&&!card.position?.manualPosition&&!card.groupId;
+  canAutomaticallyMoveBlocker(card,interactive=false){
+    return !card.position?.editorLocked&&(interactive||!card.position?.manualPosition)&&!card.groupId;
   }
   canAutomaticallyMoveForInsertion(card){
     return this.canAutomaticallyMoveBlocker(card)&&!Object.keys(card.deviceLayouts||{}).length;
@@ -3629,7 +3629,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
             if(!pair)return layout;
             const [a,b]=pair;
             // The dragged card is fixed. Only the obstructing card may move.
-            const movable=[a,b].filter(c=>c.id!==start.c.id&&this.canAutomaticallyMoveBlocker(c));
+            const movable=[a,b].filter(c=>c.id!==start.c.id&&this.canAutomaticallyMoveBlocker(c,true));
             if(!movable.length)return null;
             for(const c of movable){
               const other=c.id===a.id?b:a;
