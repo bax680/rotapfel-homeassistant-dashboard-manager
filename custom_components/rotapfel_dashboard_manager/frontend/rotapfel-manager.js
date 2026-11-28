@@ -1902,6 +1902,12 @@ class RotapfelDashboardManager extends HTMLElement {
   availableCardWidth(canvasWidth){return this.minimumFrameWidth(canvasWidth-24);}
   minimumFrameHeight(value){return Math.max(60,value);}
   proportionalFrameHeight(width,nativeWidth,nativeHeight){return this.minimumFrameHeight(Math.round(width*nativeHeight/nativeWidth));}
+  canAutomaticallyMoveForInsertion(card){
+    return !card.position?.editorLocked&&!card.position?.manualPosition&&!card.groupId&&!Object.keys(card.deviceLayouts||{}).length;
+  }
+  canAutomaticallyFitFrame(card,includeProtected=false){
+    return card.position?.editorLocked!==true&&(includeProtected||card.position?.manualSize!==true);
+  }
   insertionGap(value){return Math.max(8,Number(value)||8);}
   manualDistributionGap(value){return Math.max(0,Math.min(200,Math.round(Number(value)||0)));}
   rectanglesClear(a,b,gap=0){
@@ -1952,8 +1958,7 @@ class RotapfelDashboardManager extends HTMLElement {
     // Move the existing arrangement only when every card can move and the
     // entire result fits. Keep protected layouts intact.
     const movable=occupied.length>0&&occupied.every(({c:card})=>
-      !card.position?.editorLocked&&!card.position?.manualPosition
-      &&!card.groupId&&!Object.keys(card.deviceLayouts||{}).length);
+      this.canAutomaticallyMoveForInsertion(card));
     if(movable){
       const candidate={x:gap,y:gap,w,h};
       for(const [dx,dy] of [[w+gap,0],[-(w+gap),0],[0,h+gap]]){
@@ -2385,7 +2390,7 @@ class RotapfelDashboardManager extends HTMLElement {
     for(const tile of tiles){
       const card=all.find(c=>c.id===tile.dataset.id);
       if(onlyCardId&&card?.id!==onlyCardId)continue;
-      if(!card||!(this.externalVariant(card)||card.type==='custom')||card.position?.editorLocked===true||(!includeProtected&&card.position?.manualSize===true))continue;
+      if(!card||!(this.externalVariant(card)||card.type==='custom')||!this.canAutomaticallyFitFrame(card,includeProtected))continue;
       const old=positions.get(card.id);
       if(!old)continue;
       const generic=card.type==='custom';
