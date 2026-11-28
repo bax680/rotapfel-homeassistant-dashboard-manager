@@ -274,7 +274,7 @@ class RotapfelDashboardManager extends HTMLElement {
     if(!customElements.get(tag)){
       await Promise.race([
         customElements.whenDefined(tag),
-        new Promise((_,reject)=>setTimeout(()=>reject(new Error(tag+' was not registered')),8000))
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error(tag+this.t(' wurde nicht registriert',' was not registered'))),8000))
       ]);
     }
     return !!customElements.get(tag);
@@ -471,7 +471,7 @@ class RotapfelDashboardManager extends HTMLElement {
         await this.ensureGenericCustomResource(tag);
         if(!slot.isConnected||slot.dataset.externalCard!==c.id)return;
         const el=document.createElement(tag);
-        if(typeof el.setConfig!=='function')throw Error('setConfig fehlt bei '+tag);
+        if(typeof el.setConfig!=='function')throw Error(this.t('setConfig fehlt bei ','setConfig missing for ')+tag);
         el.setConfig(structuredClone(cfg));
         if(el.localName==='hui-error-card'||el.localName==='hui-warning'){
           const message=el._error?.message||el.error?.message||el._config?.error||el._config?.message||this.t("Home Assistant hat die Kartenkonfiguration abgelehnt.","Home Assistant rejected the card configuration.");
@@ -779,7 +779,7 @@ class RotapfelDashboardManager extends HTMLElement {
     return {...d.canvas?.presentation,
       background:this.backgroundFor(d.canvas,tab),
       tabs:(d.tabs||[]).filter(item=>routes.has(item.id)).map(item=>({
-        path:routes.get(item.id),legacyPath:this.tabRoute(item),label:item.navigationLabel||item.name||'Tab'
+        path:routes.get(item.id),legacyPath:this.tabRoute(item),label:item.navigationLabel?.trim()||item.name||this.t('Tab','Tab')
       })),
       path:routes.get(tab.id)
     };
@@ -4288,7 +4288,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
       const type=typeInput.value.trim(),error=overlay.querySelector('#custom-error');
       if(!type){error.textContent=this.t("Bitte zuerst einen Kartentyp auswählen.","Select a card type first.");return;}
       let obj;
-      try{const raw=configInput.value.trim();try{obj=raw?JSON.parse(raw):{type};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error('Invalid configuration');}
+      try{const raw=configInput.value.trim();try{obj=raw?JSON.parse(raw):{type};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error(this.t('Ungültige Konfiguration','Invalid configuration'));}
       catch(err){error.textContent=String(err.message||err);return;}
       const multi=type==='custom:calendar-card-pro'||Array.isArray(obj.entities);
       const previous=multi?(obj.entities||[]).map(x=>typeof x==='string'?x:x?.entity).filter(Boolean):obj.entity;
@@ -4305,7 +4305,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     const multiButton=document.createElement('button');multiButton.type='button';multiButton.className='secondary';multiButton.textContent=this.t('Mehrere Entitäten auswählen','Select multiple entities');
     overlay.querySelector('#custom-pick-entity').after(multiButton);
     multiButton.onclick=async()=>{
-      try{const raw=configInput.value.trim();let obj;try{obj=raw?JSON.parse(raw):{type:typeInput.value.trim()};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error('Invalid configuration');
+      try{const raw=configInput.value.trim();let obj;try{obj=raw?JSON.parse(raw):{type:typeInput.value.trim()};}catch{obj=(await this.api('parse_card_yaml',{yaml:raw})).config;}if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error(this.t('Ungültige Konfiguration','Invalid configuration'));
         const old=Array.isArray(obj.entities)?obj.entities:[];this.pickEntity(old.map(x=>typeof x==='string'?x:x?.entity).filter(Boolean),ids=>{obj.entities=ids.map(id=>old.find(x=>(typeof x==='string'?x:x?.entity)===id)??(typeInput.value.trim()==='custom:calendar-card-pro'?{entity:id}:id));delete obj.entity;configInput.value=JSON.stringify(obj,null,2);generatedTemplate=configInput.value;entityLabel.textContent=ids.join(', ');detectType();},{multiple:true});
       }catch(err){overlay.querySelector('#custom-error').textContent=String(err.message||err);}
     };
