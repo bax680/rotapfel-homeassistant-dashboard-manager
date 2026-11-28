@@ -80,3 +80,14 @@ test('overlap depth preserves one pixel technical tolerance',()=>{
   assert.equal(g.rectanglesOverlap(a,{x:98,y:79,w:100,h:80}),false);
   assert.equal(g.rectanglesOverlap(a,{x:99,y:0,w:100,h:80},0),true);
 });
+
+test('edge intersection preserves layer and alignment policies',()=>{
+  const g=fixture().manager,a={x:0,y:0,w:100,h:80};
+  assert.equal(g.rectanglesIntersect(a,{x:100,y:0,w:100,h:80}),false);
+  assert.equal(g.rectanglesIntersect(a,{x:99,y:0,w:100,h:80}),true);
+  assert.equal(g.rectanglesIntersect(a,{x:99,y:0,w:100,h:80},1),false);
+  assert.equal(g.rectanglesIntersect(a,{x:98,y:0,w:100,h:80},1),true);
+  const tiny={x:20,y:20,w:1,h:1};
+  assert.equal(g.rectanglesIntersect(a,tiny,1),true);
+  assert.equal(g.rectanglesOverlap(a,tiny,1),false);
+});
