@@ -1844,18 +1844,19 @@ class RotapfelDashboardManager extends HTMLElement {
   }
   eachLayoutCard(callback){for(const tab of this.layout||[])for(const room of tab.rooms||[])for(const card of room.cards||[])callback(card);}
   switchDeviceLayoutProfile(next){
-    const previous=this._deviceLayoutProfile||'fire_hd';if(next===previous)return;
+    const previous=this._deviceLayoutProfile||'fire_hd';if(next===previous||!Object.prototype.hasOwnProperty.call(this.normalizedProfiles(this.deviceProfiles),next))return;
     this.eachLayoutCard(card=>{
       card.deviceLayouts=card.deviceLayouts||{};
       if(card.position)card.deviceLayouts[previous]=JSON.parse(JSON.stringify(card.position));
       if(!card.deviceLayouts[next]){
         const base=card.deviceLayouts.fire_hd||card.position||{};
         const q=JSON.parse(JSON.stringify(base));
+        const profiles=this.normalizedProfiles(this.deviceProfiles),baseProfile=profiles.fire_hd;
         if(next==='iphone'){
-          q.x=Math.max(0,Math.min(326,Math.round((Number(q.x)||0)*402/1920)));
-          q.y=Math.max(0,Math.min(814,Math.round((Number(q.y)||0)*874/1080)));
-          q.w=Math.max(76,Math.min(402,Math.round((Number(q.w)||300)*402/1920)));
-          q.h=Math.max(60,Math.min(874,Math.round((Number(q.h)||200)*874/1080)));
+          q.x=Math.max(0,Math.min(326,Math.round((Number(q.x)||0)*402/baseProfile.width)));
+          q.y=Math.max(0,Math.min(814,Math.round((Number(q.y)||0)*874/baseProfile.height)));
+          q.w=Math.max(76,Math.min(402,Math.round((Number(q.w)||300)*402/baseProfile.width)));
+          q.h=Math.max(60,Math.min(874,Math.round((Number(q.h)||200)*874/baseProfile.height)));
           q.x=Math.min(q.x,402-q.w);q.y=Math.min(q.y,874-q.h);
         }
         if(next!=='iphone'&&next!=='fire_hd'&&next!=='desktop'){
