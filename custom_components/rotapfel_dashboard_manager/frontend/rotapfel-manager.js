@@ -3974,6 +3974,9 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     (targetRoom.cards||=[]).push(card);
     return card;
   }
+  transferDestination(tab,id){
+    return tab?.rooms?.find(r=>r.id===id)||(tab&&id===tab.id+'-direct'?{id,name:this.t('Direkte Tab-Karten','Direct tab cards'),cards:[]}:null);
+  }
   openCardTransferDialog(sourceTab,sourceRoom,sourceCard){
     const esc=v=>this.esc(String(v??''));
     const dialog=document.createElement('dialog');
@@ -3987,7 +3990,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
     dialog.querySelector('#transfer-cancel').onclick=()=>dialog.close();
     dialog.addEventListener('close',()=>dialog.remove(),{once:true});
     dialog.querySelector('form').onsubmit=ev=>{
-      ev.preventDefault();const targetTab=this.layout.find(t=>t.id===tabSelect.value),existingRoom=targetTab?.rooms?.find(r=>r.id===roomSelect.value),targetRoom=existingRoom||(targetTab&&roomSelect.value===targetTab.id+'-direct'?{id:roomSelect.value,name:this.t('Direkte Tab-Karten','Direct tab cards'),cards:[]}:null);
+      ev.preventDefault();const targetTab=this.layout.find(t=>t.id===tabSelect.value),existingRoom=targetTab?.rooms?.find(r=>r.id===roomSelect.value),targetRoom=this.transferDestination(targetTab,roomSelect.value);
       if(!targetRoom){dialog.querySelector('#transfer-error').textContent=this.t("Bitte einen Zielraum auswählen.","Select a destination room.");return;}
       if(mode.value==='move'&&targetRoom===sourceRoom){dialog.querySelector('#transfer-error').textContent=this.t("Die Karte befindet sich bereits in diesem Raum.","This card is already in that room.");return;}
       const card=this.transferCard(sourceRoom,targetRoom,sourceCard,mode.value);
