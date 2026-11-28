@@ -59,3 +59,16 @@ test('placement is isolated to selected room',()=>{
   f.tab.rooms.push({id:'other',cards:[{position:{x:0,y:0,w:400,h:300}}]});
   assert.equal(f.plan().position.x,8);
 });
+
+test('rectangle clearance permits touching edges at zero gap',()=>{
+  const g=fixture().manager,a={x:0,y:0,w:100,h:80};
+  assert.equal(g.rectanglesClear(a,{x:100,y:0,w:100,h:80}),true);
+  assert.equal(g.rectanglesClear(a,{x:99,y:0,w:100,h:80}),false);
+  assert.equal(g.rectanglesClear(a,{x:0,y:80,w:100,h:80}),true);
+});
+test('rectangle clearance is symmetric and respects requested gap',()=>{
+  const g=fixture().manager,a={x:0,y:0,w:100,h:80},b={x:108,y:0,w:100,h:80};
+  assert.equal(g.rectanglesClear(a,b,8),true);
+  assert.equal(g.rectanglesClear(b,a,8),true);
+  assert.equal(g.rectanglesClear(a,b,9),false);
+});
