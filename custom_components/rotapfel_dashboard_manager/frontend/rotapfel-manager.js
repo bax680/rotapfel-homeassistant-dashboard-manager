@@ -1896,6 +1896,8 @@ class RotapfelDashboardManager extends HTMLElement {
     });
   }
   // Edge contact is permitted when the requested clearance is zero.
+  insertionGap(value){return Math.max(8,Number(value)||8);}
+  manualDistributionGap(value){return Math.max(0,Math.min(200,Math.round(Number(value)||0)));}
   rectanglesClear(a,b,gap=0){
     return a.x+a.w+gap<=b.x||b.x+b.w+gap<=a.x||a.y+a.h+gap<=b.y||b.y+b.h+gap<=a.y;
   }
@@ -1912,7 +1914,7 @@ class RotapfelDashboardManager extends HTMLElement {
     const cv=this.effectiveCanvas(tab);
     const width=Math.max(320,Number(cv.width)||1920);
     const height=Math.max(240,Number(cv.height)||1080);
-    const gap=Math.max(8,Number(cv.gap)||8);
+    const gap=this.insertionGap(cv.gap);
     const kind=this.externalVariant(c);
     const ideal=this.idealCardDimensions(c,width);
     const w=Math.min(width-gap*2,size?.w??ideal.w);
@@ -3167,7 +3169,7 @@ class RotapfelDashboardManager extends HTMLElement {
       });
       syncSelection();
     };
-    const fixedGap=()=>Math.max(0,Math.min(200,Math.round(Number(overlay.querySelector('#fixed-card-gap').value)||0)));
+    const fixedGap=()=>this.manualDistributionGap(overlay.querySelector('#fixed-card-gap').value);
     const arrangeFixedGap=axis=>{
       const chosen=cards.filter(({c})=>selectedIds.has(c.id)&&!isEditorLocked(c)).map(({c})=>({c,q:{...positions.get(c.id)}}));
       if(chosen.length<2){alert(this.t("Bitte mindestens zwei entsperrte Karten auswählen.","Select at least two unlocked cards."));return;}
