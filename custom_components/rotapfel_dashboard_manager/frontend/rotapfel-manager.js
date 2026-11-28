@@ -1902,8 +1902,11 @@ class RotapfelDashboardManager extends HTMLElement {
   availableCardWidth(canvasWidth){return this.minimumFrameWidth(canvasWidth-24);}
   minimumFrameHeight(value){return Math.max(60,value);}
   proportionalFrameHeight(width,nativeWidth,nativeHeight){return this.minimumFrameHeight(Math.round(width*nativeHeight/nativeWidth));}
+  canAutomaticallyMoveBlocker(card){
+    return !card.position?.editorLocked&&!card.position?.manualPosition&&!card.groupId;
+  }
   canAutomaticallyMoveForInsertion(card){
-    return !card.position?.editorLocked&&!card.position?.manualPosition&&!card.groupId&&!Object.keys(card.deviceLayouts||{}).length;
+    return this.canAutomaticallyMoveBlocker(card)&&!Object.keys(card.deviceLayouts||{}).length;
   }
   canAutomaticallyFitFrame(card,includeProtected=false){
     return card.position?.editorLocked!==true&&(includeProtected||card.position?.manualSize!==true);
@@ -3268,7 +3271,7 @@ class RotapfelDashboardManager extends HTMLElement {
           const id=queue.shift(),a=next.get(id);
           for(const {c} of cards){
             if(c.id===id||!overlaps(a,next.get(c.id)))continue;
-            if(movedIds.has(c.id)||isEditorLocked(c)||c.groupId||touched.has(c.id)){possible=false;break;}
+            if(movedIds.has(c.id)||!this.canAutomaticallyMoveBlocker(c)||touched.has(c.id)){possible=false;break;}
             const q=next.get(c.id);
             q[axis]=Math.round(a[axis]+a[size]+gap);
             if(!inside(q)){possible=false;break;}
@@ -3626,7 +3629,7 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
             if(!pair)return layout;
             const [a,b]=pair;
             // The dragged card is fixed. Only the obstructing card may move.
-            const movable=[a,b].filter(c=>c.id!==start.c.id&&!isEditorLocked(c)&&!c.groupId);
+            const movable=[a,b].filter(c=>c.id!==start.c.id&&this.canAutomaticallyMoveBlocker(c));
             if(!movable.length)return null;
             for(const c of movable){
               const other=c.id===a.id?b:a;
