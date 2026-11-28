@@ -1898,7 +1898,8 @@ class RotapfelDashboardManager extends HTMLElement {
   // Edge contact is permitted when the requested clearance is zero.
   pairDistributionGap(){return 12;}
   collisionTolerance(){return 1;}
-  availableCardWidth(canvasWidth){return Math.max(76,canvasWidth-24);}
+  minimumFrameWidth(value){return Math.max(76,value);}
+  availableCardWidth(canvasWidth){return this.minimumFrameWidth(canvasWidth-24);}
   minimumFrameHeight(value){return Math.max(60,value);}
   proportionalFrameHeight(width,nativeWidth,nativeHeight){return this.minimumFrameHeight(Math.round(width*nativeHeight/nativeWidth));}
   insertionGap(value){return Math.max(8,Number(value)||8);}
@@ -3016,9 +3017,9 @@ class RotapfelDashboardManager extends HTMLElement {
       const ratio=measured?.nativeWidth>0&&measured?.nativeHeight>0
         ?measured.nativeHeight/measured.nativeWidth:old.h/Math.max(1,old.w);
       if(!Number.isFinite(ratio)||ratio<=0)return null;
-      return Math.max(60,Math.round(w*ratio));
+      return this.minimumFrameHeight(Math.round(w*ratio));
     };
-    const update=(c,q,manual=true)=>{if(isEditorLocked(c))return;const w=clamp(Math.round(q.w),76,width),h=Math.max(60,Math.round(q.h));const tile=[...overlay.querySelectorAll('.position-tile[data-id]')].find(el=>el.dataset.id===c.id);
+    const update=(c,q,manual=true)=>{if(isEditorLocked(c))return;const w=clamp(Math.round(q.w),76,width),h=this.minimumFrameHeight(Math.round(q.h));const tile=[...overlay.querySelectorAll('.position-tile[data-id]')].find(el=>el.dataset.id===c.id);
       const finalH=h;
       const v={x:clamp(Math.round(q.x),0,width-w),y:Math.max(0,Math.round(q.y)),w,h:finalH};const prior=positions.get(c.id)||v;positions.set(c.id,v);const prev=c.position||{};c.position={...prev,...v,manualSize:manual&&(w!==prior.w||h!==prior.h)?true:prev.manualSize===true,manualPosition:manual&&(v.x!==prior.x||v.y!==prior.y)?true:prev.manualPosition===true};if(manual&&(w!==prior.w||h!==prior.h))delete c.position.thermScale;const el=[...overlay.querySelectorAll('.position-tile')].find(el=>el.dataset.id===c.id);if(el){el.style.left=v.x+'px';el.style.top=v.y+'px';el.style.width=w+'px';el.style.height=v.h+'px';}this.dirty=true;refreshCanvasHeight();fitPositionCards();if(active===c)choose(c.id);};
     // Apply a single atomic batch resize to selected, unlocked cards; update() handles
@@ -3033,7 +3034,7 @@ class RotapfelDashboardManager extends HTMLElement {
         const h=mode==='height'||mode==='both'?ref.h:mode==='scale'?Math.round(q.h*percent/100):q.h;
         return {c,q:{...q,w,h}};
       }).filter(Boolean);
-      if(!proposals.some(({c,q})=>{const p=positions.get(c.id);return Math.min(width,Math.max(76,q.w))!==p.w||Math.min(height,Math.max(60,q.h))!==p.h;}))return;
+      if(!proposals.some(({c,q})=>{const p=positions.get(c.id);return Math.min(width,this.minimumFrameWidth(q.w))!==p.w||Math.min(height,this.minimumFrameHeight(q.h))!==p.h;}))return;
       rememberChange();for(const {c,q} of proposals)update(c,q);
       syncSelection();
     };
@@ -3528,8 +3529,8 @@ ${this.t("Gruppen zuerst · Einzelkarten nach Typ · mindestens 12 px Abstand.\n
         const standard=await this.standardExternalSize(card);
         if(!standard){alert(this.t("Die Custom Card stellt keine zuverlässig ermittelbare Standardgröße bereit. Die Kartengröße bleibt unverändert.","The custom card has no reliably detectable default size. Its size is preserved."));return;}
         if(!overlay.isConnected)return;
-        const w=Math.min(width,Math.max(76,Math.round(standard.w)));
-        const h=Math.min(height,Math.max(60,Math.round(standard.h)));
+        const w=Math.min(width,this.minimumFrameWidth(Math.round(standard.w)));
+        const h=Math.min(height,this.minimumFrameHeight(Math.round(standard.h)));
         rememberChange();
         card.position={...(card.position||{}),manualSize:true};
         update(card,{x:before.x,y:before.y,w,h},false);
