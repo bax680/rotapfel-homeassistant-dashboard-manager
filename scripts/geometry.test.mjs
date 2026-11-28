@@ -181,3 +181,12 @@ test('device profile switching preserves independent positions, sizes and locks'
   assert.equal(card.deviceLayouts.fire_hd.x,150);
   assert.notEqual(card.position,card.deviceLayouts.iphone);
 });
+
+test('interactive pushing permits previously positioned cards but respects layout locks and groups',()=>{
+  const g=fixture().manager;
+  assert.equal(g.canAutomaticallyMoveBlocker({position:{manualPosition:true}},true),true);
+  assert.equal(g.canAutomaticallyMoveBlocker({position:{manualPosition:true}}),false);
+  assert.equal(g.canAutomaticallyMoveBlocker({position:{editorLocked:true}},true),false);
+  assert.equal(g.canAutomaticallyMoveBlocker({groupId:'g'},true),false);
+  assert.equal(g.canAutomaticallyMoveBlocker({position:{manualSize:true}},true),true);
+});
